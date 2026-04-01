@@ -57,7 +57,8 @@ class FrostRing(BaseWeapon):
                         enemy = e
                         break
                 if enemy:
-                    enemy.speed = enemy.max_speed  # Restore original speed
+                    if hasattr(enemy, 'max_speed'):
+                        enemy.speed = enemy.max_speed  # Restore original speed
                 del self.frozen_enemies[enemy_id]
 
         # Expand all rings and check for collisions
