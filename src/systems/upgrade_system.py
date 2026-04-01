@@ -64,6 +64,51 @@ WEAPON_CLASSES = [
     "LightningChain"
 ]
 
+WEAPON_META = {
+    "ArcaneBolt": {
+        "name": "Arcane Bolt",
+        "new_description": "Fires homing bolts that seek out nearby enemies.",
+        "upgrade_description": "Upgrade Arcane Bolt — adds bolts and piercing at max level.",
+        "icon_color": (120, 80, 220),
+        "symbol": "AB",
+    },
+    "HolyNova": {
+        "name": "Holy Nova",
+        "new_description": "Emits a ring of holy energy that damages nearby enemies.",
+        "upgrade_description": "Upgrade Holy Nova — increases radius and damage.",
+        "icon_color": (255, 220, 80),
+        "symbol": "HN",
+    },
+    "SpectralBlade": {
+        "name": "Spectral Blade",
+        "new_description": "Orbiting swords that continuously slash surrounding foes.",
+        "upgrade_description": "Upgrade Spectral Blade — adds blades and increases damage.",
+        "icon_color": (80, 220, 200),
+        "symbol": "SB",
+    },
+    "FlameWhip": {
+        "name": "Flame Whip",
+        "new_description": "Cracks a fiery whip in a directional cone, applying burn.",
+        "upgrade_description": "Upgrade Flame Whip — widens cone and increases burn damage.",
+        "icon_color": (240, 100, 30),
+        "symbol": "FW",
+    },
+    "FrostRing": {
+        "name": "Frost Ring",
+        "new_description": "Expands an ice ring that freezes enemies in place.",
+        "upgrade_description": "Upgrade Frost Ring — increases radius and freeze duration.",
+        "icon_color": (140, 210, 255),
+        "symbol": "FR",
+    },
+    "LightningChain": {
+        "name": "Lightning Chain",
+        "new_description": "Strikes an enemy with lightning that chains to nearby foes.",
+        "upgrade_description": "Upgrade Lightning Chain — adds more chain targets.",
+        "icon_color": (255, 255, 100),
+        "symbol": "LC",
+    },
+}
+
 class UpgradeSystem:
     def __init__(self, projectile_group, enemy_group):
         self.projectile_group = projectile_group
@@ -82,17 +127,28 @@ class UpgradeSystem:
                     has_weapon = True
                     break
             if not has_weapon:
+                meta = WEAPON_META.get(weapon_class, {})
                 candidates.append({
                     "weapon_class": weapon_class,
-                    "type": "new_weapon"
+                    "type": "new_weapon",
+                    "name": meta.get("name", weapon_class),
+                    "description": meta.get("new_description", "Unlock this weapon."),
+                    "icon_color": meta.get("icon_color", (100, 100, 180)),
+                    "symbol": meta.get("symbol", weapon_class[:2]),
                 })
 
         # Add weapons the player HAS but not at level 5 (offer as "upgrade" card)
         for weapon in player.weapons:
             if weapon.level < 5:
+                weapon_class = weapon.__class__.__name__
+                meta = WEAPON_META.get(weapon_class, {})
                 candidates.append({
-                    "weapon_class": weapon.__class__.__name__,
-                    "type": "upgrade"
+                    "weapon_class": weapon_class,
+                    "type": "upgrade",
+                    "name": f"Upgrade {meta.get('name', weapon_class)}",
+                    "description": meta.get("upgrade_description", f"Upgrade {weapon_class} to level {weapon.level + 1}."),
+                    "icon_color": meta.get("icon_color", (100, 100, 180)),
+                    "symbol": meta.get("symbol", weapon_class[:2]),
                 })
 
         # Add all passive upgrades always available

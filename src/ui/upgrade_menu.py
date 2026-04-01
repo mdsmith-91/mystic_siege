@@ -117,7 +117,7 @@ class UpgradeMenu:
             # Draw weapon initial or stat symbol
             symbol_text = ""
             if "weapon_class" in choice:
-                symbol_text = choice["weapon_class"][0]  # First letter of weapon name
+                symbol_text = choice.get("symbol", choice["weapon_class"][:2])
             elif "stat" in choice:
                 # Simple stat symbol based on stat type
                 stat_symbols = {
