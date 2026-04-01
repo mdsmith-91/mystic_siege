@@ -71,5 +71,6 @@ class ArcaneBolt(BaseWeapon):
                 enemy_group_ref=self.enemy_group,
                 pierce=self.pierce,
                 homing=self.homing,
-                color=self.projectile_color
+                color=self.projectile_color,
+                target_enemy=nearest_enemy
             )

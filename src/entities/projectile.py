@@ -6,7 +6,7 @@ import math
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
-                 color: tuple = (200, 100, 255)):
+                 color: tuple = (200, 100, 255), target_enemy=None):
         super().__init__(groups)
 
         # image: 10x10 circle surface with given color
@@ -32,6 +32,9 @@ class Projectile(pygame.sprite.Sprite):
         self.homing = homing
         self.pos = Vector2(pos)
 
+        # Store the original target enemy (for homing projectiles that should not track new enemies)
+        self.original_target = target_enemy
+
     def update(self, dt):
         # If homing and enemy_group_ref has sprites:
         if self.homing and self.enemy_group_ref:
@@ -39,11 +42,17 @@ class Projectile(pygame.sprite.Sprite):
             nearest_enemy = None
             nearest_distance = float('inf')
 
-            for enemy in self.enemy_group_ref:
-                distance = (enemy.pos - self.pos).length()
-                if distance < nearest_distance:
-                    nearest_distance = distance
-                    nearest_enemy = enemy
+            # If we have an original target and it's still alive, track that target
+            # Otherwise, track the nearest enemy in the group
+            if self.original_target and self.original_target.alive():
+                nearest_enemy = self.original_target
+            else:
+                # Find the nearest enemy in the group
+                for enemy in self.enemy_group_ref:
+                    distance = (enemy.pos - self.pos).length()
+                    if distance < nearest_distance:
+                        nearest_distance = distance
+                        nearest_enemy = enemy
 
             # Steer direction toward nearest enemy by max 120 degrees/sec (gradual curve)
             if nearest_enemy:
