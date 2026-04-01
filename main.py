@@ -32,4 +32,3 @@ if __name__ == "__main__":
     finally:
         # Handle clean quit
         pygame.quit()
-        sys.exit()
