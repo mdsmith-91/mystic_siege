@@ -104,10 +104,12 @@ class ClassSelect:
             color_band = pygame.Rect(x, y, card_width, 40)
             pygame.draw.rect(screen, hero["color"], color_band)
 
-            # Hero name (bold, large) below color band
+            # Hero name wrapped to fit card width
             name = hero["name"]
-            name_surface = font_large.render(name, True, (255, 255, 255))
-            screen.blit(name_surface, (x + card_width // 2 - name_surface.get_width() // 2, y + 50))
+            name_lines = textwrap.wrap(name, width=20)
+            for j, line in enumerate(name_lines):
+                line_surface = font_medium.render(line, True, (255, 255, 255))
+                screen.blit(line_surface, (x + card_width // 2 - line_surface.get_width() // 2, y + 50 + j * 24))
 
             # Stats grid: HP / SPD / ARM values
             stats_y = y + 100
@@ -130,10 +132,12 @@ class ClassSelect:
                 line_surface = font_small.render(line, True, (200, 200, 200))
                 screen.blit(line_surface, (x + 20, passive_y + j * 20))
 
-            # Starting weapon name
+            # Starting weapon name wrapped to fit card width
             weapon_y = y + 250
-            weapon_surface = font_medium.render(f"Starts with: {hero['starting_weapon']}", True, (255, 255, 255))
-            screen.blit(weapon_surface, (x + 20, weapon_y))
+            weapon_lines = textwrap.wrap(f"Starts with: {hero['starting_weapon']}", width=26)
+            for j, line in enumerate(weapon_lines):
+                weapon_surface = font_small.render(line, True, (255, 255, 255))
+                screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))
 
         # 4. "CONFIRM" button (only shown if a card is selected) at bottom center
         if self.selected_class is not None:
