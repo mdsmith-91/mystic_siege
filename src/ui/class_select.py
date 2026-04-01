@@ -32,7 +32,7 @@ class ClassSelect:
                     if self.selected_class is not None:
                         confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
                         if confirm_rect.collidepoint(mouse_pos):
-                            self.next_scene = "game"
+                            self.next_scene = "playing"
                             self.next_scene_kwargs = {"hero": self.selected_class}
                             return
 
