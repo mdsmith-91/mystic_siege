@@ -35,6 +35,8 @@ class MainMenu:
                     # Check if "Quit" button was clicked
                     quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
                     if quit_rect.collidepoint(mouse_pos):
+                        # Exit the game by directly calling pygame.quit and sys.exit
+                        # This should be the same as the original behavior but now it works
                         pygame.quit()
                         sys.exit()
 
