@@ -3,6 +3,7 @@ from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from src.entities.xp_orb import XPOrb
 from settings import WORLD_WIDTH, WORLD_HEIGHT
+from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
     def __init__(self, pos, target, all_groups: tuple, enemy_data: dict, xp_orb_group=None):
@@ -95,6 +96,8 @@ class Enemy(BaseEntity):
         self.knockback_vel = direction * force
 
     def on_death(self, xp_orb_group):
-        """Handle enemy death by spawning an XP orb."""
+        """Handle enemy death by spawning an XP orb and crediting the player."""
+        AudioManager.instance().play_sfx(AudioManager.ENEMY_DEATH)
+        self.target.kill_count += 1
         all_sprites = self.all_groups[0]
         XPOrb(self.pos, self.xp_value, (all_sprites, xp_orb_group))

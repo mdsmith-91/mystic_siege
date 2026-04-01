@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+from src.utils.audio_manager import AudioManager
 
 class SpectralBlade(BaseWeapon):
     name = "Spectral Blade"
@@ -58,6 +59,7 @@ class SpectralBlade(BaseWeapon):
                         # Deal damage
                         damage = self.base_damage * self.owner.damage_multiplier
                         enemy.take_damage(damage)
+                        AudioManager.instance().play_sfx(AudioManager.WEAPON_BLADE)
 
                         # Start 0.5s cooldown for that enemy
                         self.enemy_cooldowns[enemy.sprite_id] = 0.5

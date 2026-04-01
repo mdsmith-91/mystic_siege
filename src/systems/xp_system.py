@@ -1,4 +1,5 @@
 from settings import BASE_XP_REQUIRED, XP_SCALE_FACTOR
+from src.utils.audio_manager import AudioManager
 
 class XPSystem:
     def __init__(self):
@@ -25,6 +26,7 @@ class XPSystem:
 
         # orb.kill()
         orb.kill()
+        AudioManager.instance().play_sfx(AudioManager.XP_PICKUP)
 
         # gained = orb.value * player.xp_multiplier
         gained = orb.value * player.xp_multiplier
@@ -57,6 +59,7 @@ class XPSystem:
 
             # levelup_pending = True
             self.levelup_pending = True
+            AudioManager.instance().play_sfx(AudioManager.LEVEL_UP)
 
         # return levelup_pending
         return self.levelup_pending

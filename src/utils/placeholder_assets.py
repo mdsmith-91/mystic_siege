@@ -2,6 +2,8 @@
 """Generate placeholder assets for Mystic Siege."""
 
 import os
+import wave
+import numpy as np
 import pygame
 from pygame.math import Vector2
 
@@ -173,6 +175,65 @@ def generate_weapon_icon_assets():
         filepath = f"assets/sprites/ui/{filename}"
         pygame.image.save(surface, filepath)
 
+def _write_sine_wav(path: str, freq_hz: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
+    """Write a mono sine-wave WAV file."""
+    n = int(sample_rate * duration_s)
+    t = np.linspace(0, duration_s, n, endpoint=False)
+    # Apply a short fade-out envelope to avoid clicks
+    envelope = np.minimum(1.0, np.linspace(1.0, 0.0, n) * (n / max(1, int(sample_rate * 0.01))))
+    samples = (np.sin(2 * np.pi * freq_hz * t) * envelope * volume * 32767).astype(np.int16)
+    with wave.open(path, 'w') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(samples.tobytes())
+
+
+def _write_sweep_wav(path: str, freq_start: float, freq_end: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
+    """Write a mono frequency-sweep (chirp) WAV file."""
+    n = int(sample_rate * duration_s)
+    freq = np.linspace(freq_start, freq_end, n)
+    phase = np.cumsum(2 * np.pi * freq / sample_rate)
+    envelope = np.linspace(1.0, 0.0, n)
+    samples = (np.sin(phase) * envelope * volume * 32767).astype(np.int16)
+    with wave.open(path, 'w') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(samples.tobytes())
+
+
+def _write_chord_wav(path: str, freqs: list, duration_s: float, volume: float = 0.2, sample_rate: int = 44100):
+    """Write a mono chord WAV file by mixing multiple sine frequencies."""
+    n = int(sample_rate * duration_s)
+    t = np.linspace(0, duration_s, n, endpoint=False)
+    envelope = np.linspace(1.0, 0.0, n)
+    mixed = sum(np.sin(2 * np.pi * f * t) for f in freqs) / len(freqs)
+    samples = (mixed * envelope * volume * 32767).astype(np.int16)
+    with wave.open(path, 'w') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(samples.tobytes())
+
+
+def generate_audio_placeholders():
+    """Generate placeholder SFX WAV files using simple sine waves."""
+    sfx_dir = "assets/audio/sfx/"
+
+    _write_sine_wav(f"{sfx_dir}player_hit.wav",     freq_hz=220,  duration_s=0.10)
+    _write_sweep_wav(f"{sfx_dir}player_death.wav",  freq_start=440, freq_end=110, duration_s=0.40)
+    _write_sine_wav(f"{sfx_dir}enemy_death.wav",    freq_hz=660,  duration_s=0.06)
+    _write_sine_wav(f"{sfx_dir}xp_pickup.wav",      freq_hz=1320, duration_s=0.05)
+    _write_chord_wav(f"{sfx_dir}level_up.wav",      freqs=[330, 440, 550], duration_s=0.35)
+    _write_sine_wav(f"{sfx_dir}arcane_bolt.wav",    freq_hz=880,  duration_s=0.07)
+    _write_sine_wav(f"{sfx_dir}holy_nova.wav",      freq_hz=110,  duration_s=0.25)
+    _write_sine_wav(f"{sfx_dir}flame_whip.wav",     freq_hz=330,  duration_s=0.10)
+    _write_sine_wav(f"{sfx_dir}spectral_blade.wav", freq_hz=550,  duration_s=0.06)
+    _write_sine_wav(f"{sfx_dir}lightning_chain.wav",freq_hz=1760, duration_s=0.08)
+    _write_sine_wav(f"{sfx_dir}frost_ring.wav",     freq_hz=220,  duration_s=0.20)
+
+
 def main():
     """Generate all placeholder assets."""
     print("Generating placeholder assets...")
@@ -186,8 +247,9 @@ def main():
     generate_projectile_assets()
     generate_xp_orb_asset()
     generate_weapon_icon_assets()
+    generate_audio_placeholders()
 
-    print("Generated 17 placeholder assets to assets/")
+    print("Generated 28 placeholder assets to assets/")
     print("Run 'python main.py' to start the game")
 
 if __name__ == "__main__":

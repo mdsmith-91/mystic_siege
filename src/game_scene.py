@@ -15,6 +15,7 @@ from src.systems.upgrade_system import UpgradeSystem
 from src.systems.collision import CollisionSystem
 from src.ui.hud import HUD
 from src.ui.upgrade_menu import UpgradeMenu
+from src.utils.audio_manager import AudioManager
 
 class GameScene:
     def __init__(self, hero: dict):
@@ -74,6 +75,20 @@ class GameScene:
         # 6. upgrade_system = UpgradeSystem()
         self.upgrade_system = UpgradeSystem(self.projectile_group, self.enemy_group)
 
+        # Load all SFX into AudioManager cache
+        _am = AudioManager.instance()
+        _am.load_sfx(AudioManager.PLAYER_HIT,    "assets/audio/sfx/player_hit.wav")
+        _am.load_sfx(AudioManager.PLAYER_DEATH,  "assets/audio/sfx/player_death.wav")
+        _am.load_sfx(AudioManager.ENEMY_DEATH,   "assets/audio/sfx/enemy_death.wav")
+        _am.load_sfx(AudioManager.XP_PICKUP,     "assets/audio/sfx/xp_pickup.wav")
+        _am.load_sfx(AudioManager.LEVEL_UP,      "assets/audio/sfx/level_up.wav")
+        _am.load_sfx(AudioManager.WEAPON_ARCANE, "assets/audio/sfx/arcane_bolt.wav")
+        _am.load_sfx(AudioManager.WEAPON_NOVA,   "assets/audio/sfx/holy_nova.wav")
+        _am.load_sfx(AudioManager.WEAPON_WHIP,   "assets/audio/sfx/flame_whip.wav")
+        _am.load_sfx(AudioManager.WEAPON_BLADE,  "assets/audio/sfx/spectral_blade.wav")
+        _am.load_sfx(AudioManager.WEAPON_CHAIN,  "assets/audio/sfx/lightning_chain.wav")
+        _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
+
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()
 
@@ -85,6 +100,8 @@ class GameScene:
 
         # 10. paused = False
         self.paused = False
+        self._settings_open = False
+        self._settings_menu = None
 
         # 11. next_scene: str = None
         self.next_scene = None
@@ -120,10 +137,10 @@ class GameScene:
             self.background.blit(scaled_pattern, (0, 0))
 
     def _pause_button_rects(self):
-        """Return (resume_rect, restart_rect, menu_rect) for the pause menu buttons."""
+        """Return (resume_rect, settings_rect, restart_rect, menu_rect) for the pause menu buttons."""
         cx = SCREEN_WIDTH // 2
-        # Title sits at cy - 80; buttons start below it
-        top = SCREEN_HEIGHT // 2 - 30
+        # Shift up to vertically center 4 buttons on screen
+        top = SCREEN_HEIGHT // 2 - 100
         step = PAUSE_BUTTON_HEIGHT + PAUSE_BUTTON_SPACING
         make = lambda row: pygame.Rect(
             cx - PAUSE_BUTTON_WIDTH // 2,
@@ -131,10 +148,19 @@ class GameScene:
             PAUSE_BUTTON_WIDTH,
             PAUSE_BUTTON_HEIGHT,
         )
-        return make(0), make(1), make(2)
+        return make(0), make(1), make(2), make(3)
 
     def handle_events(self, events):
         """Handle user input events."""
+        # When settings overlay is open, delegate entirely to it
+        if self._settings_open:
+            self._settings_menu.handle_events(events)
+            if self._settings_menu.next_scene is not None:
+                # Back/ESC in settings returns to pause screen
+                self._settings_open = False
+                self._settings_menu.next_scene = None
+            return
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -151,9 +177,13 @@ class GameScene:
                     self.show_fps = not self.show_fps
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.paused:
                 # Click on pause menu buttons
-                resume_rect, restart_rect, menu_rect = self._pause_button_rects()
+                resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
                 if resume_rect.collidepoint(event.pos):
                     self.paused = False
+                elif settings_rect.collidepoint(event.pos):
+                    from src.ui.settings_menu import SettingsMenu
+                    self._settings_menu = SettingsMenu()
+                    self._settings_open = True
                 elif restart_rect.collidepoint(event.pos):
                     self.next_scene = STATE_CLASS_SELECT
                 elif menu_rect.collidepoint(event.pos):
@@ -273,12 +303,15 @@ class GameScene:
         if self.upgrade_menu:
             self.upgrade_menu.draw(screen)
 
-        # 6. If paused: draw pause overlay with interactive buttons
+        # 6. If paused: draw pause overlay or settings overlay
         if self.paused:
-            self._draw_pause_overlay(screen)
+            if self._settings_open:
+                self._settings_menu.draw(screen)
+            else:
+                self._draw_pause_overlay(screen)
 
     def _draw_pause_overlay(self, screen):
-        """Draw the pause menu: overlay, title, and three interactive buttons."""
+        """Draw the pause menu: overlay, title, and four interactive buttons."""
         # Semi-transparent darkening overlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
@@ -291,12 +324,17 @@ class GameScene:
         # "PAUSED" title above the buttons
         title_surf = title_font.render("PAUSED", True, (255, 255, 255))
         cx = SCREEN_WIDTH // 2
-        title_y = SCREEN_HEIGHT // 2 - 30 - title_surf.get_height() - 20
+        resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
+        title_y = resume_rect.top - title_surf.get_height() - 20
         screen.blit(title_surf, (cx - title_surf.get_width() // 2, title_y))
 
         mouse_pos = pygame.mouse.get_pos()
-        resume_rect, restart_rect, menu_rect = self._pause_button_rects()
-        labels = [("RESUME", resume_rect), ("RESTART", restart_rect), ("MAIN MENU", menu_rect)]
+        labels = [
+            ("RESUME", resume_rect),
+            ("SETTINGS", settings_rect),
+            ("RESTART", restart_rect),
+            ("MAIN MENU", menu_rect),
+        ]
 
         for label, rect in labels:
             color = PAUSE_BUTTON_HOVER_COLOR if rect.collidepoint(mouse_pos) else PAUSE_BUTTON_COLOR
@@ -307,6 +345,5 @@ class GameScene:
                                     rect.centery - text_surf.get_height() // 2))
 
         # Keyboard hint below the buttons
-        _, _, last_rect = self._pause_button_rects()
         hint_surf = hint_font.render("ESC or R to resume  •  M for main menu", True, (180, 180, 180))
-        screen.blit(hint_surf, (cx - hint_surf.get_width() // 2, last_rect.bottom + 16))
+        screen.blit(hint_surf, (cx - hint_surf.get_width() // 2, menu_rect.bottom + 16))

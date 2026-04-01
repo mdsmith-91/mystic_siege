@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+from src.utils.audio_manager import AudioManager
 
 class FrostRing(BaseWeapon):
     name = "Frost Ring"
@@ -32,6 +33,7 @@ class FrostRing(BaseWeapon):
 
     def fire(self):
         """Emit a new frost ring."""
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_FROST)
         # Append new ring dict
         ring = {
             "radius": 0,

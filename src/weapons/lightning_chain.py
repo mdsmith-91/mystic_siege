@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import random
+from src.utils.audio_manager import AudioManager
 
 class LightningChain(BaseWeapon):
     name = "Lightning Chain"
@@ -46,6 +47,8 @@ class LightningChain(BaseWeapon):
 
         if not nearest_enemy:
             return
+
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN)
 
         # Build chain: start with nearest, find next closest enemy within chain_range
         # that hasn't been hit in this chain. Repeat up to chain_count times.

@@ -2,6 +2,7 @@ import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT
+from src.utils.audio_manager import AudioManager
 
 class Player(BaseEntity):
     def __init__(self, pos, hero_class_data: dict, groups):
@@ -112,8 +113,8 @@ class Player(BaseEntity):
         if self.hp <= 0 and not self.dying:
             self.dying = True
             self.death_timer = 1.0
-            # Set initial alpha to 255
             self.image.set_alpha(255)
+            AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
 
         if self.dying:
             self.death_timer -= dt
@@ -127,6 +128,11 @@ class Player(BaseEntity):
 
         # Sync rect
         self.rect.center = self.pos
+
+    def take_damage(self, amount: float):
+        """Play hit sound and apply damage."""
+        AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
+        super().take_damage(amount)
 
     def add_weapon(self, weapon_instance):
         """Add a weapon to the player's inventory if there's space."""

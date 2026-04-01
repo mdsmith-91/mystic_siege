@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+from src.utils.audio_manager import AudioManager
 
 class HolyNova(BaseWeapon):
     name = "Holy Nova"
@@ -29,6 +30,7 @@ class HolyNova(BaseWeapon):
 
     def fire(self):
         """Emit a new ring of holy light."""
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_NOVA)
         # Append new ring dict
         ring = {
             "radius": 0,

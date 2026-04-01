@@ -45,7 +45,7 @@ cd mystic_siege
 # Install dependencies
 pip install -r requirements.txt
 
-# Generate placeholder sprites (first-time setup)
+# Generate placeholder sprites and audio (first-time setup)
 python src/utils/placeholder_assets.py
 
 # Run the game
@@ -86,11 +86,13 @@ python main.py
 # Check all imports and verify pygame-ce version
 python run_check.py
 
-# Regenerate placeholder sprites for any missing assets
+# Regenerate placeholder sprites and audio for any missing assets
 python src/utils/placeholder_assets.py
 ```
 
 **Adding real sprites:** Drop a PNG at the correct path under `assets/sprites/` — `ResourceLoader` picks it up automatically. No code changes needed.
+
+**Adding real audio:** Drop a WAV file at the correct path under `assets/audio/sfx/` — `AudioManager` loads it at game start automatically. No code changes needed.
 
 **Adding a new enemy:** Create `src/entities/enemies/newenemy.py` inheriting from `Enemy`, add spawn data to `wave_manager.py`, and add it to the wave timeline in `_check_timeline()`.
 

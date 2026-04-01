@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+from src.utils.audio_manager import AudioManager
 
 class FlameWhip(BaseWeapon):
     name = "Flame Whip"
@@ -33,6 +34,7 @@ class FlameWhip(BaseWeapon):
 
     def fire(self):
         """Lash a cone of fire in the player's facing direction."""
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_WHIP)
         # Get owner.facing direction
         facing = self.owner.facing
 

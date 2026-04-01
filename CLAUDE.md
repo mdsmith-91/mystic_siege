@@ -78,7 +78,7 @@ mystic_siege/
 │       ├── resource_loader.py     # Singleton asset loader with fallback placeholders
 │       ├── spritesheet.py         # Spritesheet frame/animation extractor
 │       ├── audio_manager.py       # Singleton audio with silent fallback
-│       └── placeholder_assets.py  # Generates colored rect PNGs for all sprites
+│       └── placeholder_assets.py  # Generates colored rect PNGs and sine-wave WAVs for all assets
 └── assets/
     ├── sprites/heroes|enemies|projectiles|effects|ui/
     ├── audio/sfx|music/
@@ -214,11 +214,15 @@ All audio methods fail silently if files are missing or mixer isn't initialized.
 ## Placeholder vs Real Assets
 
 Real sprites can be swapped in at any time by placing a PNG at the correct path
-in `assets/`. `ResourceLoader` will automatically use it over the placeholder.
+in `assets/sprites/`. `ResourceLoader` will automatically use it over the
+placeholder. No code changes needed — just drop the file in.
+
+Real audio can be swapped in at any time by placing a WAV file at the correct
+path in `assets/audio/sfx/`. `AudioManager` loads all SFX at `GameScene` init.
 No code changes needed — just drop the file in.
 
-Run `python src/utils/placeholder_assets.py` any time to regenerate placeholders
-for any missing asset files.
+Run `python src/utils/placeholder_assets.py` any time to regenerate placeholder
+sprites and audio for any missing asset files.
 
 ---
 

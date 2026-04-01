@@ -3,6 +3,7 @@ from src.weapons.base_weapon import BaseWeapon
 from src.entities.projectile import Projectile
 from pygame.math import Vector2
 from settings import ARCANE_BOLT_RANGE
+from src.utils.audio_manager import AudioManager
 
 class ArcaneBolt(BaseWeapon):
     name = "Arcane Bolt"
@@ -44,6 +45,8 @@ class ArcaneBolt(BaseWeapon):
 
         if not nearest_enemy:
             return
+
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_ARCANE)
 
         # Spawn bolt_count Projectiles at owner.pos, aimed at nearest enemy
         # (if bolt_count > 1, spread them ±10 degrees apart)
