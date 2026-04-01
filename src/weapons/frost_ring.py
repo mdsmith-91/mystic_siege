@@ -28,16 +28,17 @@ class FrostRing(BaseWeapon):
         # Track frozen enemies: dict {enemy_id: remaining_freeze_time}
         self.frozen_enemies = {}
 
-        # Active rings list: each ring is {radius: float, damage_done: set()}
+        # Active rings list: each ring is {radius: float, damage_done: set(), center: Vector2}
         self.rings = []
 
     def fire(self):
         """Emit a new frost ring."""
         AudioManager.instance().play_sfx(AudioManager.WEAPON_FROST)
-        # Append new ring dict
+        # Append new ring dict with initial center position
         ring = {
             "radius": 0,
-            "damage_done": set()
+            "damage_done": set(),
+            "center": self.owner.pos.copy()  # Store initial position where ring was cast
         }
         self.rings.append(ring)
 
@@ -72,7 +73,7 @@ class FrostRing(BaseWeapon):
             # Check each ring against enemies (circle vs rect)
             for enemy in self.enemy_group:
                 # Calculate distance from ring center to enemy center
-                distance = (enemy.pos - self.owner.pos).length()
+                distance = (enemy.pos - ring["center"]).length()
 
                 # Check if enemy is within the ring
                 if (distance >= ring["radius"] - 5 and  # Allow some overlap
@@ -103,7 +104,7 @@ class FrostRing(BaseWeapon):
         """Draw the frost rings."""
         for ring in self.rings:
             # Draw ring as a cyan circle outline (pygame.draw.circle with width=3)
-            center = self.owner.pos
+            center = ring["center"]
             radius = ring["radius"]
             pygame.draw.circle(surface, (0, 200, 255),  # Cyan color
                              (int(center.x - camera_offset.x), int(center.y - camera_offset.y)),
