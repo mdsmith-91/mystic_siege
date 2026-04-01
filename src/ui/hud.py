@@ -200,5 +200,3 @@ class HUD:
             text = font.render(fps_text, True, (255, 255, 255))
             screen.blit(text, (10, SCREEN_HEIGHT - 30))
 
-        # 8. Draw threat arrows
-        self.draw_threat_arrows(screen, player, enemy_group, camera)

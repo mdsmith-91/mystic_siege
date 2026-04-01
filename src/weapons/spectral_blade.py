@@ -29,6 +29,9 @@ class SpectralBlade(BaseWeapon):
         # Per-enemy hit cooldown dict: {enemy_id: timer} — each enemy can only be hit once per 0.5s
         self.enemy_cooldowns = {}
 
+    def fire(self):
+        pass  # SpectralBlade deals damage via continuous orbital collision in update()
+
     def update(self, dt):
         """Update the orbiting blades and check for enemy collisions."""
         # orbit_angle += orbit_speed * dt
