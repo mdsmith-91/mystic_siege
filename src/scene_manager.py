@@ -31,7 +31,7 @@ class SceneManager:
                 # GameScene is created fresh each time to get fresh state
                 self.scenes[scene_name] = GameScene(**kwargs)
             elif scene_name == STATE_GAMEOVER:
-                self.scenes[scene_name] = GameOver()
+                self.scenes[scene_name] = GameOver(**kwargs)
 
         self.current_scene = self.scenes[scene_name]
 
