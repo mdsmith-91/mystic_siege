@@ -4,7 +4,8 @@ from src.ui.class_select import ClassSelect
 from src.game_scene import GameScene
 from src.ui.game_over import GameOver
 from src.ui.settings_menu import SettingsMenu
-from settings import STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER, STATE_SETTINGS
+from src.ui.stats_menu import StatsMenu
+from settings import STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER, STATE_SETTINGS, STATE_STATS
 
 class SceneManager:
     def __init__(self):
@@ -14,6 +15,7 @@ class SceneManager:
             STATE_PLAYING: None,
             STATE_GAMEOVER: None,
             STATE_SETTINGS: None,
+            STATE_STATS: None,
         }
         self.current_scene = None
         self._switch_to(STATE_MENU)
@@ -39,6 +41,8 @@ class SceneManager:
                 self.scenes[scene_name] = GameOver(**kwargs)
             elif scene_name == STATE_SETTINGS:
                 self.scenes[scene_name] = SettingsMenu()
+            elif scene_name == STATE_STATS:
+                self.scenes[scene_name] = StatsMenu()
 
         self.current_scene = self.scenes[scene_name]
 

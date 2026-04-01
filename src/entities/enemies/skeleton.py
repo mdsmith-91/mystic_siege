@@ -36,12 +36,8 @@ class Skeleton(Enemy):
         # Apply the angle offset to movement
         direction = self.target.pos - self.pos
         if direction.length() > 0:
-            direction = direction.normalize()
-            # Apply angle offset to direction
-            angle = direction.angle_to(Vector2(1, 0))
-            angle += self.angle_offset
-            new_direction = Vector2(1, 0).rotate(angle)
-            self.vel = new_direction * self.speed
+            direction = direction.normalize().rotate(self.angle_offset)
+            self.vel = direction * self.speed
 
         # Call parent update method
         super().update(dt)

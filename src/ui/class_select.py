@@ -8,6 +8,8 @@ class ClassSelect:
         self.next_scene_kwargs = {}
         self.selected_class = None
         self.hovered_card = None
+        self.nav_index = 0  # keyboard nav index for hero cards (0–2)
+        self.keyboard_active = False
 
     def handle_events(self, events):
         """Handle user input events."""
@@ -42,6 +44,25 @@ class ClassSelect:
                     if back_rect.collidepoint(mouse_pos):
                         self.next_scene = "menu"
                         return
+
+            elif event.type == pygame.MOUSEMOTION:
+                self.keyboard_active = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_LEFT, pygame.K_a):
+                    self.keyboard_active = True
+                    self.nav_index = max(0, self.nav_index - 1)
+                    self.selected_class = HERO_CLASSES[self.nav_index]
+                elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                    self.keyboard_active = True
+                    self.nav_index = min(2, self.nav_index + 1)
+                    self.selected_class = HERO_CLASSES[self.nav_index]
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    if self.selected_class is not None:
+                        self.next_scene = "playing"
+                        self.next_scene_kwargs = {"hero": self.selected_class}
+                elif event.key == pygame.K_ESCAPE:
+                    self.next_scene = "menu"
 
             elif event.type == pygame.QUIT:
                 pygame.quit()
@@ -96,8 +117,8 @@ class ClassSelect:
                 # Dark stone background
                 pygame.draw.rect(screen, (40, 30, 20), card_rect)
 
-            # Draw gold border if hovered or selected
-            if hovered or self.selected_class == hero:
+            # Draw gold border if hovered, keyboard-navigated, or selected
+            if hovered or self.selected_class == hero or (self.keyboard_active and i == self.nav_index):
                 pygame.draw.rect(screen, (255, 215, 0), card_rect, 3)
 
             # Top band filled with hero["color"] (40px tall)
@@ -150,7 +171,9 @@ class ClassSelect:
 
         # 5. "BACK" button bottom-left
         back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
-        pygame.draw.rect(screen, (40, 30, 20), back_rect)
+        mouse_pos = pygame.mouse.get_pos()
+        back_color = (80, 60, 30) if back_rect.collidepoint(mouse_pos) else (40, 30, 20)
+        pygame.draw.rect(screen, back_color, back_rect)
         pygame.draw.rect(screen, (255, 215, 0), back_rect, 2)  # Gold border
 
         back_text = font_small.render("BACK", True, (255, 255, 255))

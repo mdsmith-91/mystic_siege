@@ -31,6 +31,7 @@ BASE_XP_REQUIRED = 50
 XP_SCALE_FACTOR = 1.12
 
 # WEAPONS
+MAX_WEAPON_SLOTS = 6
 ARCANE_BOLT_RANGE = 350  # max distance to target an enemy
 
 # SPAWNING
@@ -43,11 +44,11 @@ SMALL_FONT_SIZE = 16
 TITLE_FONT_SIZE = 72
 
 # PAUSE MENU BUTTONS
-PAUSE_BUTTON_WIDTH = 220
+PAUSE_BUTTON_WIDTH = 240
 PAUSE_BUTTON_HEIGHT = 50
 PAUSE_BUTTON_SPACING = 18
-PAUSE_BUTTON_COLOR = (60, 40, 100)
-PAUSE_BUTTON_HOVER_COLOR = (90, 60, 140)
+PAUSE_BUTTON_COLOR = (30, 20, 10)
+PAUSE_BUTTON_HOVER_COLOR = (40, 30, 20)
 PAUSE_BUTTON_TEXT_COLOR = (255, 255, 255)
 
 # GAME STATES (string constants)
@@ -58,6 +59,7 @@ STATE_PAUSED = "paused"
 STATE_GAMEOVER = "gameover"
 STATE_VICTORY = "victory"
 STATE_SETTINGS = "settings"
+STATE_STATS = "stats"
 
 # HERO_CLASSES list of 3 dicts, each with keys:
 # name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)

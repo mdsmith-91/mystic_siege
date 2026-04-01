@@ -1,5 +1,5 @@
 import pygame
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR, MAX_WEAPON_SLOTS
 
 class HUD:
     def __init__(self):
@@ -116,6 +116,28 @@ class HUD:
         text = font.render(f"HP  {int(player.hp)} / {int(player.max_hp)}", True, (255, 255, 255))
         screen.blit(text, (230, 20))
 
+        # 1b. Player stat block (top-left, below HP bar)
+        #     Always show Speed and Armor; show others only when non-default
+        stat_font = pygame.font.SysFont("serif", 14)
+        stat_lines = [
+            (f"SPD  {int(player.speed)}", (200, 200, 200)),
+            (f"ARM  {int(player.armor)}%", (200, 200, 200)),
+        ]
+        if player.cooldown_reduction > 0:
+            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
+        if player.damage_multiplier > 1.0:
+            stat_lines.append((f"DMG  {player.damage_multiplier:.1f}x", (255, 200, 120)))
+        if player.crit_chance > 0:
+            stat_lines.append((f"CRIT  {int(player.crit_chance * 100)}%", (255, 230, 80)))
+        if player.regen_rate > 0:
+            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 160)))
+
+        stat_y = 48
+        for label, color in stat_lines:
+            surf = stat_font.render(label, True, color)
+            screen.blit(surf, (20, stat_y))
+            stat_y += 16
+
         # 2. XP Bar (bottom of screen, full width, y=SCREEN_HEIGHT-30, height=20):
         #    Background full-width dark rect
         #    Fill rect scaled to xp_system.xp_progress()
@@ -153,34 +175,30 @@ class HUD:
         # 4. Kill counter (top-right):
         #    "✦ {player.kill_count}" right-aligned
         font = pygame.font.SysFont("serif", 16)
-        kill_text = f"✦ {player.kill_count}"
+        kill_text = f"KILLS  {player.kill_count}"
         text = font.render(kill_text, True, (255, 255, 255))
         screen.blit(text, (SCREEN_WIDTH - text.get_width() - 10, 20))
 
-        # 5. Weapon slots (bottom-right, 6 slots of 40x40):
-        #    Dark background per slot
-        #    Gold border on occupied slots
-        #    First letter of weapon name centered in slot
-        #    Slot color = weapon's projectile_color or a default per weapon type
-        weapon_slots_x = SCREEN_WIDTH - 250
+        # 5. Weapon slots (bottom-right, MAX_WEAPON_SLOTS slots of 40x40):
+        #    All slots always drawn — empty slots show a dim border, occupied slots gold
+        weapon_slots_x = SCREEN_WIDTH - (MAX_WEAPON_SLOTS * 45 + 5)
         weapon_slots_y = SCREEN_HEIGHT - 75
+        font = pygame.font.SysFont("serif", 20)
 
-        for i, weapon in enumerate(player.weapons):
+        for i in range(MAX_WEAPON_SLOTS):
             slot_rect = pygame.Rect(weapon_slots_x + i * 45, weapon_slots_y, 40, 40)
-
-            # Dark background per slot
             pygame.draw.rect(screen, (40, 40, 40), slot_rect)
 
-            # Gold border on occupied slots
-            pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2)
-
-            # First letter of weapon name centered in slot
-            weapon_name = weapon.name
-            letter = weapon_name[0] if weapon_name else "?"
-            font = pygame.font.SysFont("serif", 20)
-            text = font.render(letter, True, (255, 255, 255))
-            text_rect = text.get_rect(center=slot_rect.center)
-            screen.blit(text, text_rect)
+            if i < len(player.weapons):
+                # Occupied slot: gold border + weapon initial
+                pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2)
+                weapon_name = player.weapons[i].name
+                letter = weapon_name[0] if weapon_name else "?"
+                text = font.render(letter, True, (255, 255, 255))
+                screen.blit(text, text.get_rect(center=slot_rect.center))
+            else:
+                # Empty slot: dim border only
+                pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1)
 
         # 6. Wave warning (center screen, fades out):
         #    wave_manager.get_warning() if non-empty

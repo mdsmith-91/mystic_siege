@@ -6,6 +6,8 @@ from src.systems.save_system import SaveSystem
 class GameOver:
     def __init__(self, victory: bool, stats: dict):
         self.next_scene = None
+        self.selected_index = 0  # keyboard nav: 0=PLAY AGAIN, 1=MAIN MENU
+        self.keyboard_active = False
         self.victory = victory
         self.stats = stats
 
@@ -34,6 +36,22 @@ class GameOver:
                     if main_menu_rect.collidepoint(mouse_pos):
                         self.next_scene = "menu"
                         return
+
+            elif event.type == pygame.MOUSEMOTION:
+                self.keyboard_active = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    self.keyboard_active = True
+                    self.selected_index = max(0, self.selected_index - 1)
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
+                    self.keyboard_active = True
+                    self.selected_index = min(1, self.selected_index + 1)
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    if self.selected_index == 0:
+                        self.next_scene = "class_select"
+                    else:
+                        self.next_scene = "menu"
 
             elif event.type == pygame.QUIT:
                 pygame.quit()
@@ -98,18 +116,12 @@ class GameOver:
         # 4. Two buttons: "PLAY AGAIN" and "MAIN MENU", centered, y=480 and y=550
         font_small = pygame.font.SysFont("serif", 18)
 
-        # PLAY AGAIN button
-        play_again_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 480, 200, 50)
-        pygame.draw.rect(screen, (40, 30, 20), play_again_rect)
-        pygame.draw.rect(screen, GOLD, play_again_rect, 2)  # Gold border
-
-        play_again_text = font_small.render("PLAY AGAIN", True, (255, 255, 255))
-        screen.blit(play_again_text, (SCREEN_WIDTH // 2 - play_again_text.get_width() // 2, 495))
-
-        # MAIN MENU button
-        main_menu_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 550, 200, 50)
-        pygame.draw.rect(screen, (40, 30, 20), main_menu_rect)
-        pygame.draw.rect(screen, GOLD, main_menu_rect, 2)  # Gold border
-
-        main_menu_text = font_small.render("MAIN MENU", True, (255, 255, 255))
-        screen.blit(main_menu_text, (SCREEN_WIDTH // 2 - main_menu_text.get_width() // 2, 565))
+        mouse_pos = pygame.mouse.get_pos()
+        go_buttons = [("PLAY AGAIN", 480), ("MAIN MENU", 550)]
+        for i, (label, y) in enumerate(go_buttons):
+            rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, y, 200, 50)
+            highlighted = rect.collidepoint(mouse_pos) or (self.keyboard_active and i == self.selected_index)
+            pygame.draw.rect(screen, (60, 45, 25) if highlighted else (40, 30, 20), rect)
+            pygame.draw.rect(screen, GOLD, rect, 2)
+            text_surf = font_small.render(label, True, (255, 255, 255))
+            screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, y + 15))

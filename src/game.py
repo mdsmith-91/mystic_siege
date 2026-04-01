@@ -4,9 +4,10 @@ from settings import STATE_MENU
 from datetime import datetime, timezone
 
 class Game:
-    def __init__(self, screen, clock):
+    def __init__(self, screen, clock, refresh_rate: int = 60):
         self.screen = screen
         self.clock = clock
+        self.refresh_rate = refresh_rate
         self.scene_manager = SceneManager()
         self.scene_manager.switch_to(STATE_MENU)
 
@@ -29,7 +30,7 @@ class Game:
                         print(f"Screenshot saved: {filename}")
 
             # Update with dt capped at 0.05 to prevent spiral-of-death on lag spikes
-            dt = self.clock.tick() / 1000.0
+            dt = self.clock.tick(self.refresh_rate) / 1000.0
             if dt > 0.05:
                 dt = 0.05
 

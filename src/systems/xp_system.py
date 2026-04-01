@@ -70,4 +70,4 @@ class XPSystem:
 
     def xp_progress(self) -> float:
         """Return XP progress toward next level (0.0 to 1.0)."""
-        return self.current_xp / self.xp_to_next
+        return min(1.0, self.current_xp / self.xp_to_next)

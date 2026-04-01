@@ -2,7 +2,7 @@ import os
 import pygame
 from pygame.math import Vector2
 from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
-                       STATE_MENU, STATE_CLASS_SELECT,
+                       STATE_MENU, STATE_CLASS_SELECT, GOLD,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR)
 from src.systems.save_system import SaveSystem
@@ -100,6 +100,8 @@ class GameScene:
 
         # 10. paused = False
         self.paused = False
+        self.pause_selected = 0  # keyboard-nav index for pause menu (0=RESUME…3=MAIN MENU)
+        self.pause_keyboard_active = False
         self._settings_open = False
         self._settings_menu = None
 
@@ -112,7 +114,7 @@ class GameScene:
         # 13. show_fps — read from saved settings so the settings menu toggle takes effect
         save_system = SaveSystem()
         self.show_fps = save_system.get_setting("show_fps")
-        self._fps_clock = pygame.time.Clock()
+        self._smooth_dt = 1 / 60  # exponential moving average of dt for stable FPS display
 
         # 14. background — use Gemini-generated image if available, else procedural tiles
         bg_path = "assets/backgrounds/game_bg.png"
@@ -150,6 +152,19 @@ class GameScene:
         )
         return make(0), make(1), make(2), make(3)
 
+    def _activate_pause_button(self, index: int):
+        """Fire the action for the pause menu button at the given index."""
+        if index == 0:
+            self.paused = False
+        elif index == 1:
+            from src.ui.settings_menu import SettingsMenu
+            self._settings_menu = SettingsMenu()
+            self._settings_open = True
+        elif index == 2:
+            self.next_scene = STATE_CLASS_SELECT
+        elif index == 3:
+            self.next_scene = STATE_MENU
+
     def handle_events(self, events):
         """Handle user input events."""
         # When settings overlay is open, delegate entirely to it
@@ -164,17 +179,24 @@ class GameScene:
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    # ESC: toggle paused (also acts as resume when paused)
+                    was_paused = self.paused
                     self.paused = not self.paused
-                elif event.key == pygame.K_r and self.paused:
-                    # R: resume from pause
-                    self.paused = False
-                elif event.key == pygame.K_m and self.paused:
-                    # M: return to main menu from pause
-                    self.next_scene = STATE_MENU
+                    if not was_paused:
+                        self.pause_selected = 0
+                        self.pause_keyboard_active = False
+                elif self.paused and event.key in (pygame.K_UP, pygame.K_w):
+                    self.pause_keyboard_active = True
+                    self.pause_selected = max(0, self.pause_selected - 1)
+                elif self.paused and event.key in (pygame.K_DOWN, pygame.K_s):
+                    self.pause_keyboard_active = True
+                    self.pause_selected = min(3, self.pause_selected + 1)
+                elif self.paused and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    self._activate_pause_button(self.pause_selected)
                 elif event.key == pygame.K_F3:
                     # F3: toggle show_fps
                     self.show_fps = not self.show_fps
+            elif event.type == pygame.MOUSEMOTION and self.paused:
+                self.pause_keyboard_active = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.paused:
                 # Click on pause menu buttons
                 resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
@@ -201,7 +223,7 @@ class GameScene:
         if self.paused or (self.upgrade_menu and not self.upgrade_menu.done):
             return
 
-        self._fps_clock.tick()
+        self._smooth_dt = dt * 0.1 + self._smooth_dt * 0.9
 
         # all_sprites.update(dt)  — this updates player, enemies, orbs
         self.all_sprites.update(dt)
@@ -297,7 +319,8 @@ class GameScene:
                 weapon.draw_effect(screen, self.camera.offset)
 
         # 4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
-        self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, self._fps_clock.get_fps())
+        fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
+        self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, fps)
 
         # 5. If upgrade_menu: upgrade_menu.draw(screen)
         if self.upgrade_menu:
@@ -312,20 +335,20 @@ class GameScene:
 
     def _draw_pause_overlay(self, screen):
         """Draw the pause menu: overlay, title, and four interactive buttons."""
-        # Semi-transparent darkening overlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
         screen.blit(overlay, (0, 0))
 
         title_font = pygame.font.SysFont("serif", 72)
         btn_font = pygame.font.SysFont("serif", 28)
-        hint_font = pygame.font.SysFont("serif", 18)
 
-        # "PAUSED" title above the buttons
-        title_surf = title_font.render("PAUSED", True, (255, 255, 255))
         cx = SCREEN_WIDTH // 2
         resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
+
+        title_surf = title_font.render("PAUSED", True, GOLD)
+        title_shadow = title_font.render("PAUSED", True, (0, 0, 0))
         title_y = resume_rect.top - title_surf.get_height() - 20
+        screen.blit(title_shadow, (cx - title_surf.get_width() // 2 + 3, title_y + 3))
         screen.blit(title_surf, (cx - title_surf.get_width() // 2, title_y))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -336,14 +359,11 @@ class GameScene:
             ("MAIN MENU", menu_rect),
         ]
 
-        for label, rect in labels:
-            color = PAUSE_BUTTON_HOVER_COLOR if rect.collidepoint(mouse_pos) else PAUSE_BUTTON_COLOR
+        for i, (label, rect) in enumerate(labels):
+            highlighted = rect.collidepoint(mouse_pos) or (self.pause_keyboard_active and i == self.pause_selected)
+            color = PAUSE_BUTTON_HOVER_COLOR if highlighted else PAUSE_BUTTON_COLOR
             pygame.draw.rect(screen, color, rect, border_radius=6)
-            pygame.draw.rect(screen, (120, 90, 180), rect, width=2, border_radius=6)
+            pygame.draw.rect(screen, GOLD, rect, width=2, border_radius=6)
             text_surf = btn_font.render(label, True, PAUSE_BUTTON_TEXT_COLOR)
             screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
                                     rect.centery - text_surf.get_height() // 2))
-
-        # Keyboard hint below the buttons
-        hint_surf = hint_font.render("ESC or R to resume  •  M for main menu", True, (180, 180, 180))
-        screen.blit(hint_surf, (cx - hint_surf.get_width() // 2, menu_rect.bottom + 16))

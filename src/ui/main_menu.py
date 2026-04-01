@@ -7,6 +7,8 @@ class MainMenu:
     def __init__(self):
         self.next_scene = None
         self.next_scene_kwargs = {}
+        self.selected_index = 0  # keyboard nav: 0=NEW RUN, 1=STATS, 2=SETTINGS, 3=QUIT
+        self.keyboard_active = False
         self.particles = []
 
         # Initialize particles
@@ -32,15 +34,40 @@ class MainMenu:
                         self.next_scene = "class_select"
                         return
 
+                    # Check if "Stats" button was clicked
+                    stats_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+                    if stats_rect.collidepoint(mouse_pos):
+                        self.next_scene = "stats"
+                        return
+
                     # Check if "Settings" button was clicked
-                    settings_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+                    settings_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 520, 240, 50)
                     if settings_rect.collidepoint(mouse_pos):
                         self.next_scene = "settings"
                         return
 
                     # Check if "Quit" button was clicked
-                    quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 520, 240, 50)
+                    quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 590, 240, 50)
                     if quit_rect.collidepoint(mouse_pos):
+                        pygame.quit()
+                        sys.exit()
+
+            elif event.type == pygame.MOUSEMOTION:
+                self.keyboard_active = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    self.keyboard_active = True
+                    self.selected_index = (self.selected_index - 1) % 4
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
+                    self.keyboard_active = True
+                    self.selected_index = (self.selected_index + 1) % 4
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    actions = ["class_select", "stats", "settings", None]
+                    action = actions[self.selected_index]
+                    if action:
+                        self.next_scene = action
+                    else:
                         pygame.quit()
                         sys.exit()
 
@@ -104,29 +131,17 @@ class MainMenu:
         #    Highlighted button: slightly lighter background
         mouse_pos = pygame.mouse.get_pos()
 
-        # NEW RUN button
-        new_run_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 380, 240, 50)
-        new_run_hover = new_run_rect.collidepoint(mouse_pos)
-        button_color = (40, 30, 20) if new_run_hover else (30, 20, 10)
-        pygame.draw.rect(screen, button_color, new_run_rect)
-        pygame.draw.rect(screen, GOLD, new_run_rect, 2)
-        new_run_text = subtitle_font.render("NEW RUN", True, (255, 255, 255))
-        screen.blit(new_run_text, (SCREEN_WIDTH // 2 - new_run_text.get_width() // 2, 395))
-
-        # SETTINGS button
-        settings_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
-        settings_hover = settings_rect.collidepoint(mouse_pos)
-        button_color = (40, 30, 20) if settings_hover else (30, 20, 10)
-        pygame.draw.rect(screen, button_color, settings_rect)
-        pygame.draw.rect(screen, GOLD, settings_rect, 2)
-        settings_text = subtitle_font.render("SETTINGS", True, (255, 255, 255))
-        screen.blit(settings_text, (SCREEN_WIDTH // 2 - settings_text.get_width() // 2, 465))
-
-        # QUIT button
-        quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 520, 240, 50)
-        quit_hover = quit_rect.collidepoint(mouse_pos)
-        button_color = (40, 30, 20) if quit_hover else (30, 20, 10)
-        pygame.draw.rect(screen, button_color, quit_rect)
-        pygame.draw.rect(screen, GOLD, quit_rect, 2)
-        quit_text = subtitle_font.render("QUIT", True, (255, 255, 255))
-        screen.blit(quit_text, (SCREEN_WIDTH // 2 - quit_text.get_width() // 2, 535))
+        buttons = [
+            ("NEW RUN",  380),
+            ("STATS",    450),
+            ("SETTINGS", 520),
+            ("QUIT",     590),
+        ]
+        for i, (label, y) in enumerate(buttons):
+            rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, y, 240, 50)
+            highlighted = rect.collidepoint(mouse_pos) or (self.keyboard_active and i == self.selected_index)
+            button_color = (40, 30, 20) if highlighted else (30, 20, 10)
+            pygame.draw.rect(screen, button_color, rect)
+            pygame.draw.rect(screen, GOLD, rect, 2)
+            text_surf = subtitle_font.render(label, True, (255, 255, 255))
+            screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, y + 15))

@@ -1,6 +1,6 @@
 import pygame
 from pygame.math import Vector2
-from settings import INITIAL_SPAWN_RATE, WORLD_WIDTH, WORLD_HEIGHT
+from settings import INITIAL_SPAWN_RATE, WORLD_WIDTH, WORLD_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.entities.enemies.skeleton import Skeleton
 from src.entities.enemies.dark_goblin import DarkGoblin
 from src.entities.enemy import Enemy
@@ -197,23 +197,31 @@ class WaveManager:
                 enemy.damage = int(enemy.damage * 1.5)
 
     def _get_spawn_pos(self) -> Vector2:
-        """Get a random point on one of 4 world edges, 100px outside screen view."""
-        # Choose edge (0=top, 1=right, 2=bottom, 3=left)
+        """Get a random point just outside the visible screen, relative to the player."""
+        # Margin beyond the screen half-extents so enemies spawn off-screen
+        margin = 150
+        half_w = SCREEN_WIDTH // 2 + margin
+        half_h = SCREEN_HEIGHT // 2 + margin
+
+        px, py = self.player.pos
+
         edge = random.randint(0, 3)
-
         if edge == 0:  # Top
-            x = random.randint(-100, WORLD_WIDTH + 100)
-            y = -100
+            x = px + random.randint(-half_w, half_w)
+            y = py - half_h
         elif edge == 1:  # Right
-            x = WORLD_WIDTH + 100
-            y = random.randint(-100, WORLD_HEIGHT + 100)
+            x = px + half_w
+            y = py + random.randint(-half_h, half_h)
         elif edge == 2:  # Bottom
-            x = random.randint(-100, WORLD_WIDTH + 100)
-            y = WORLD_HEIGHT + 100
+            x = px + random.randint(-half_w, half_w)
+            y = py + half_h
         else:  # Left
-            x = -100
-            y = random.randint(-100, WORLD_HEIGHT + 100)
+            x = px - half_w
+            y = py + random.randint(-half_h, half_h)
 
+        # Clamp to world bounds so enemies don't spawn outside the map
+        x = max(0, min(WORLD_WIDTH, x))
+        y = max(0, min(WORLD_HEIGHT, y))
         return Vector2(x, y)
 
     def get_elapsed_str(self) -> str:

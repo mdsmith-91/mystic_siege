@@ -22,8 +22,7 @@ class CollisionSystem:
                 player.iframes = IFRAME_DURATION
                 diff = player.pos - enemy.pos
                 knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                player.vel = knockback_dir * 300  # brief knockback
-                # (vel decays: add player velocity decay in Player.update — vel *= max(0, 1 - 8*dt))
+                player.knockback_vel = knockback_dir * 300
 
     def check_projectile_enemies(self, projectile_group, enemy_group):
         """Check for projectile-enemy collisions."""

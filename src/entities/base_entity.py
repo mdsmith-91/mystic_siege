@@ -23,8 +23,9 @@ class BaseEntity(pygame.sprite.Sprite):
 
     def take_damage(self, amount: float):
         """Apply damage to the entity, accounting for armor."""
-        # Subtract armor if present
-        damage = max(0, amount - self.armor if hasattr(self, 'armor') else amount)
+        # Reduce damage by armor percentage (e.g. armor=15 means 15% reduction)
+        armor = getattr(self, 'armor', 0)
+        damage = amount * (1.0 - armor / 100.0) if armor else amount
 
         self.hp -= damage
         if self.hp <= 0:

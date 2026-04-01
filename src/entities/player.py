@@ -1,7 +1,7 @@
 import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
-from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT
+from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS
 from src.utils.audio_manager import AudioManager
 
 class Player(BaseEntity):
@@ -43,6 +43,9 @@ class Player(BaseEntity):
         self.iframes = 0.0
         self.flash_timer = 0.0
 
+        # knockback_vel: separate from movement vel so WASD doesn't cancel it
+        self.knockback_vel = Vector2(0, 0)
+
         # facing: Vector2 = Vector2(1, 0)  (updated each frame from movement)
         self.facing = Vector2(1, 0)
 
@@ -75,8 +78,9 @@ class Player(BaseEntity):
             # Update facing if moving
             self.facing = direction
 
-        # pos += direction * speed * dt
-        self.vel = direction * self.speed
+        # pos += direction * speed * dt, plus decaying knockback
+        self.vel = direction * self.speed + self.knockback_vel
+        self.knockback_vel *= max(0.0, 1.0 - 8.0 * dt)
         super().update(dt)
 
         # Clamp pos to world bounds (WORLD_WIDTH, WORLD_HEIGHT from settings)
@@ -136,7 +140,7 @@ class Player(BaseEntity):
 
     def add_weapon(self, weapon_instance):
         """Add a weapon to the player's inventory if there's space."""
-        if len(self.weapons) < 6:
+        if len(self.weapons) < MAX_WEAPON_SLOTS:
             self.weapons.append(weapon_instance)
 
     def upgrade_weapon(self, weapon_class_name: str):

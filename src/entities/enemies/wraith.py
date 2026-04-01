@@ -42,12 +42,10 @@ class Wraith(Enemy):
             # During lunge
             self.lunge_duration -= dt
             if self.lunge_duration <= 0:
-                # End lunge
+                # End lunge — restore speed and reset timer for next lunge
                 self.lunge_active = False
-                self.speed /= 3  # Return to normal speed
-            else:
-                # Continue lunge
-                pass
+                self.speed /= 3
+                self.lunge_timer = 3.0
 
         # Call super.update() but after movement, handle lunge timing
         super().update(dt)

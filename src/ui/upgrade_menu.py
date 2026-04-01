@@ -9,7 +9,8 @@ class UpgradeMenu:
         self.upgrade_system = upgrade_system
         self.player = player
         self.selected = -1
-        self.hovered = -1
+        self.hovered = 0  # shared mouse/keyboard highlight index
+        self.keyboard_active = False
         self.done = False
 
         # Card layout parameters
@@ -24,7 +25,7 @@ class UpgradeMenu:
 
         for event in events:
             if event.type == pygame.MOUSEMOTION:
-                # Update hovered card
+                self.keyboard_active = False
                 self.hovered = -1
                 for i in range(3):
                     card_rect = pygame.Rect(self.start_x + i * (self.card_width + self.gap), 150, self.card_width, self.card_height)
@@ -43,8 +44,16 @@ class UpgradeMenu:
                             return
 
             elif event.type == pygame.KEYDOWN:
-                # Key 1/2/3: same as clicking card 1/2/3
-                if event.key == pygame.K_1:
+                if event.key in (pygame.K_LEFT, pygame.K_a):
+                    self.keyboard_active = True
+                    self.hovered = max(0, self.hovered - 1)
+                elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                    self.keyboard_active = True
+                    self.hovered = min(len(self.choices) - 1, self.hovered + 1)
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    self._apply_choice(self.hovered)
+                    self.done = True
+                elif event.key == pygame.K_1:
                     self._apply_choice(0)
                     self.done = True
                 elif event.key == pygame.K_2:
@@ -99,7 +108,7 @@ class UpgradeMenu:
             # Create card surface with scaling effect
             card_surface = pygame.Surface((self.card_width, self.card_height), pygame.SRCALPHA)
 
-            # Scale up 3% on hover
+            # Scale up 3% on mouse hover or keyboard selection
             scale_factor = 1.03 if i == self.hovered else 1.0
             scaled_width = int(self.card_width * scale_factor)
             scaled_height = int(self.card_height * scale_factor)
@@ -168,6 +177,6 @@ class UpgradeMenu:
 
         # 4. "Press 1 / 2 / 3 or click to choose" hint text at bottom
         hint_font = pygame.font.SysFont("serif", 16)
-        hint_text = "Press 1 / 2 / 3 or click to choose"
+        hint_text = "Arrow keys / click to choose  •  Enter to confirm"
         hint_surface = hint_font.render(hint_text, True, (200, 200, 200))
         screen.blit(hint_surface, (SCREEN_WIDTH // 2 - hint_surface.get_width() // 2, SCREEN_HEIGHT - 40))
