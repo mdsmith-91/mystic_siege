@@ -132,7 +132,12 @@ class LightningChain(BaseWeapon):
             # randomly offset ±15px perpendicular)
 
             # Calculate direction and perpendicular
-            direction = (end - start).normalize()
+            direction_vector = end - start
+            # Check if the vector is zero-length to avoid normalization error
+            if direction_vector.length() == 0:
+                continue
+
+            direction = direction_vector.normalize()
             perpendicular = Vector2(-direction.y, direction.x)
 
             # Create points for the arc
