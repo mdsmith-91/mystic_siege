@@ -24,3 +24,9 @@ Thumbs.db
 # IDE folders
 .vscode/
 .idea/
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+*.spec
