@@ -71,3 +71,14 @@ class HolyNova(BaseWeapon):
                 self.rings.pop(i)
             else:
                 i += 1
+
+    def draw(self, surface, camera_offset):
+        """Draw the expanding holy rings."""
+        for ring in self.rings:
+            center = (
+                int(self.owner.pos.x - camera_offset.x),
+                int(self.owner.pos.y - camera_offset.y),
+            )
+            radius = int(ring["radius"])
+            if radius > 0:
+                pygame.draw.circle(surface, (255, 230, 100), center, radius, self.ring_width)

@@ -141,8 +141,11 @@ class GameScene:
 
         self._fps_clock.tick()
 
-        # all_sprites.update(dt)  — this updates player, enemies, projectiles, orbs
+        # all_sprites.update(dt)  — this updates player, enemies, orbs
         self.all_sprites.update(dt)
+
+        # projectile_group is separate from all_sprites, update it explicitly
+        self.projectile_group.update(dt)
 
         # wave_manager.update(dt)
         self.wave_manager.update(dt)
@@ -204,11 +207,14 @@ class GameScene:
         # Blit the visible portion
         screen.blit(self.background, (0, 0), visible_rect)
 
-        # 2. For each sprite in all_sprites (sorted by rect.bottom for depth):
+        # 2. For each sprite in all_sprites + projectile_group (sorted by rect.bottom for depth):
         #    screen.blit(sprite.image, camera.apply(sprite))
         #    sprite.draw_health_bar(screen, camera.offset) if enemy
-        # Sort sprites by y-position for proper drawing order
-        sorted_sprites = sorted(self.all_sprites, key=lambda s: s.rect.bottom)
+        # Sort sprites by y-position for proper drawing order (projectiles are not in all_sprites)
+        sorted_sprites = sorted(
+            list(self.all_sprites) + list(self.projectile_group),
+            key=lambda s: s.rect.bottom,
+        )
 
         for sprite in sorted_sprites:
             # Apply camera offset
@@ -219,12 +225,11 @@ class GameScene:
             if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite != self.player:
                 sprite.draw_health_bar(screen, self.camera.offset)
 
-        # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, FlameWhip arc, etc.)
-        # Draw SpectralBlade effects
+        # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
         for weapon in self.player.weapons:
-            if weapon.__class__.__name__ == "SpectralBlade":
+            if hasattr(weapon, 'draw'):
                 weapon.draw(screen, self.camera.offset)
-            elif weapon.__class__.__name__ == "FlameWhip":
+            if hasattr(weapon, 'draw_effect'):
                 weapon.draw_effect(screen, self.camera.offset)
 
         # 4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)

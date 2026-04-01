@@ -2,6 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from src.entities.projectile import Projectile
 from pygame.math import Vector2
+from settings import ARCANE_BOLT_RANGE
 
 class ArcaneBolt(BaseWeapon):
     name = "Arcane Bolt"
@@ -37,7 +38,7 @@ class ArcaneBolt(BaseWeapon):
 
         for enemy in self.enemy_group:
             distance = (enemy.pos - self.owner.pos).length()
-            if distance < nearest_distance:
+            if distance < nearest_distance and distance <= ARCANE_BOLT_RANGE:
                 nearest_distance = distance
                 nearest_enemy = enemy
 
