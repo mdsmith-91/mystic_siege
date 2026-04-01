@@ -13,7 +13,7 @@ class Game:
     def run(self):
         running = True
         while running:
-            # Handle events
+            # Collect events once per frame so nothing is dropped
             events = pygame.event.get()
             for event in events:
                 if event.type == pygame.QUIT:
@@ -33,8 +33,8 @@ class Game:
             if dt > 0.05:
                 dt = 0.05
 
-            # Update and draw
-            self.scene_manager.update(dt)
+            # Update and draw — pass the already-collected events so the queue isn't drained twice
+            self.scene_manager.update(dt, events)
             self.scene_manager.draw(self.screen)
 
             # Update display

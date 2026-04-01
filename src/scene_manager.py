@@ -39,13 +39,14 @@ class SceneManager:
         """Switch to a new scene, passing kwargs to scene constructor if needed."""
         self._switch_to(scene_name, **kwargs)
 
-    def update(self, dt):
+    def update(self, dt, events=None):
         """Update the current scene."""
         if self.current_scene is None:
             return
 
-        # Handle events
-        events = pygame.event.get()
+        # Use the events collected by the caller; fall back to polling if not provided
+        if events is None:
+            events = pygame.event.get()
         self.current_scene.handle_events(events)
 
         # Update scene
