@@ -1,6 +1,19 @@
 import pygame
 import os
+import sys
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
+
+
+def _get_base_path() -> str:
+    """Return the root directory for asset loading.
+
+    When running as a PyInstaller bundle, files are unpacked to sys._MEIPASS.
+    In development, resolve 2 levels up from src/utils/ to reach the project root.
+    """
+    if hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 class ResourceLoader:
     _instance = None
@@ -22,15 +35,13 @@ class ResourceLoader:
         if cache_key in self.cache:
             return self.cache[cache_key]
 
+        full_path = os.path.join(_get_base_path(), path)
         try:
-            # Try to load the image
-            image = pygame.image.load(path).convert_alpha()
+            image = pygame.image.load(full_path).convert_alpha()
 
-            # Apply scaling if requested
             if scale is not None:
                 image = pygame.transform.scale(image, scale)
 
-            # Apply colorkey if requested
             if colorkey is not None:
                 image.set_colorkey(colorkey)
 
@@ -38,7 +49,6 @@ class ResourceLoader:
             return image
 
         except pygame.error:
-            # If file not found, return a magenta 32x32 placeholder rect
             placeholder = pygame.Surface((32, 32), pygame.SRCALPHA)
             placeholder.fill((255, 0, 255))  # Magenta placeholder
             self.cache[cache_key] = placeholder
@@ -46,15 +56,16 @@ class ResourceLoader:
 
     def load_sound(self, path) -> pygame.mixer.Sound:
         """Load a sound from path, returning None if file not found."""
+        full_path = os.path.join(_get_base_path(), path)
         try:
-            return pygame.mixer.Sound(path)
+            return pygame.mixer.Sound(full_path)
         except pygame.error:
             return None
 
     def load_font(self, name, size) -> pygame.font.Font:
-        """Load a font from path, falling back to pygame default font."""
+        """Load a font file by path, falling back to the pygame default font."""
         try:
-            return pygame.font.Font(name, size)
+            font_path = os.path.join(_get_base_path(), name) if name else None
+            return pygame.font.Font(font_path, size)
         except pygame.error:
-            # Fall back to pygame default font
             return pygame.font.SysFont(None, size)

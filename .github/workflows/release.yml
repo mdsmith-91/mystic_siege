@@ -1,0 +1,99 @@
+name: Release Build
+
+# Triggers only after CI passes on main, so broken builds are never released
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Skip if CI failed
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: MysticSiege-linux
+            binary_src: dist/MysticSiege
+            binary_dst: dist/MysticSiege-linux
+          - os: windows-latest
+            artifact_name: MysticSiege-windows.exe
+            binary_src: dist/MysticSiege.exe
+            binary_dst: dist/MysticSiege-windows.exe
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Check out the exact commit that CI tested
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      # Generate placeholder PNGs so assets/ is never empty in the bundle
+      - name: Generate placeholder assets
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python src/utils/placeholder_assets.py
+
+      - name: Build with PyInstaller
+        run: >
+          pyinstaller
+          --onefile
+          --windowed
+          --name MysticSiege
+          --add-data "assets:assets"
+          main.py
+
+      - name: Rename binary to include platform
+        shell: bash
+        run: mv "${{ matrix.binary_src }}" "${{ matrix.binary_dst }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.binary_dst }}
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Read version from version.txt
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}.${{ github.run_number }}
+          name: v${{ env.VERSION }}.${{ github.run_number }}
+          body: |
+            Automated build — commit ${{ github.event.workflow_run.head_sha }}
+
+            **To play on Linux:** `chmod +x MysticSiege-linux && ./MysticSiege-linux`
+            **To play on Windows:** double-click `MysticSiege-windows.exe`
+          files: |
+            artifacts/MysticSiege-linux/MysticSiege-linux
+            artifacts/MysticSiege-windows.exe/MysticSiege-windows.exe
