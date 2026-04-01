@@ -13,7 +13,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 - 3 hero classes with unique passives and starting weapons
 - 6 weapon types with 5 upgrade levels each
-- 8 enemy types with distinct behaviors (melee, ranged, phasing, orbiting, splitting)
+- 7 enemy types with distinct behaviors (melee, ranged, phasing, orbiting, splitting)
 - Progressive wave difficulty scaling over 30 minutes
 - XP orb collection and leveling system with 3-card upgrade choices
 - Visual effects: damage numbers, hit sparks, death explosions, level-up burst

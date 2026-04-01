@@ -91,12 +91,17 @@ mystic_siege/
 │   │   ├── base_entity.py   # Base sprite class
 │   │   ├── player.py        # Player controller
 │   │   ├── enemy.py         # Base enemy class
-│   │   ├── enemies/         # Specific enemy types
-│   │   │   ├── skeleton.py
-│   │   │   ├── dark_knight.py
-│   │   │   ├── wraith.py
-│   │   │   └── goblin_mage.py
-│   │   └── projectile.py    # Projectile base class
+│   │   ├── projectile.py    # Projectile base class
+│   │   ├── xp_orb.py        # XP orb with auto-collect
+│   │   ├── effects.py       # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect
+│   │   └── enemies/         # Specific enemy types
+│   │       ├── skeleton.py
+│   │       ├── dark_goblin.py
+│   │       ├── wraith.py
+│   │       ├── plague_bat.py
+│   │       ├── cursed_knight.py
+│   │       ├── lich_familiar.py
+│   │       └── stone_golem.py
 │   │
 │   ├── weapons/
 │   │   ├── __init__.py
@@ -114,7 +119,8 @@ mystic_siege/
 │   │   ├── xp_system.py     # XP collection, leveling
 │   │   ├── upgrade_system.py# Level-up choices UI
 │   │   ├── collision.py     # Collision detection
-│   │   └── camera.py        # Camera / scrolling
+│   │   ├── camera.py        # Camera / scrolling
+│   │   └── save_system.py   # JSON meta-progression
 │   │
 │   ├── ui/
 │   │   ├── __init__.py
@@ -122,14 +128,17 @@ mystic_siege/
 │   │   ├── upgrade_menu.py  # Level-up selection screen
 │   │   ├── main_menu.py
 │   │   ├── class_select.py  # Hero selection screen
-│   │   └── game_over.py
+│   │   ├── game_over.py
+│   │   ├── settings_menu.py # Volume sliders, fullscreen toggle
+│   │   └── stats_menu.py    # Meta-progression stats viewer
 │   │
 │   └── utils/
 │       ├── __init__.py
-│       ├── vector2.py       # Math helpers (or use pygame.math.Vector2)
-│       ├── spritesheet.py   # Sprite sheet parser
-│       ├── timer.py         # Reusable countdown/interval timer
-│       └── resource_loader.py # Centralized asset loading
+│       ├── spritesheet.py        # Sprite sheet parser
+│       ├── timer.py              # Reusable countdown/interval timer
+│       ├── resource_loader.py    # Centralized asset loading with fallback placeholders
+│       ├── audio_manager.py      # Singleton audio with silent fallback
+│       └── placeholder_assets.py # Generates placeholder PNGs and WAVs
 ```
 
 ---
@@ -165,7 +174,7 @@ mystic_siege/
 | Flame Whip | Cone | Sweeping fire arc in front of movement direction |
 | Spectral Blade | Orbit | 2–4 swords orbit player and pass through enemies |
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
-| Lightning Chain | Chain | Bolt jumps between up to 5 enemies |
+| Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
 
 Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 
@@ -176,13 +185,12 @@ Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 | Enemy | HP | Speed | Behavior |
 |---|---|---|---|
 | Skeleton Grunt | 30 | Slow | Walks toward player |
-| Skeleton Archer | 25 | Slow | Stops at range, fires arrows |
-| Dark Goblin | 20 | Fast | Swarms in groups of 5 |
-| Wraith | 40 | Medium | Phases through walls |
-| Plague Bat | 15 | Very Fast | Swoops in arcs |
-| Stone Golem | 200 | Very Slow | Tanky, knockback |
-| Cursed Knight | 80 | Medium | Has a shield (damage from sides/back) |
-| Lich Familiar | 35 | Medium | Floats, fires slow magic orbs |
+| Dark Goblin | 20 | Fast | Swarms in groups of 3–5 |
+| Wraith | 40 | Medium | Phases through walls, periodic lunge |
+| Plague Bat | 15 | Very Fast | Swoops in arcs, splits on death |
+| Stone Golem | 500 | Very Slow | One-time mini-boss, high HP |
+| Cursed Knight | 80 | Medium | Frontal shield blocks 80% damage |
+| Lich Familiar | 35 | Medium | Orbits player, fires slow magic orbs |
 
 ---
 
@@ -211,14 +219,14 @@ Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 
 | Time | Event |
 |---|---|
-| 0:00 | Skeleton Grunts only, slow trickle |
+| 0:00 | Skeleton Grunts only |
 | 1:00 | Add Dark Goblins |
-| 2:00 | Archer variants appear |
-| 5:00 | Wraiths + Plague Bats added |
-| 8:00 | Mini-boss: Stone Golem (first appearance) |
-| 10:00 | All base enemies, increased spawn rate |
-| 15:00 | Elite variants (more HP/damage) |
-| 20:00 | Boss Wave |
+| 2:00 | Add Wraiths |
+| 5:00 | Add Plague Bats — "BATS INCOMING!" warning |
+| 8:00 | Mini-boss: Stone Golem (one-time) — "GOLEM APPROACHES!" warning |
+| 10:00 | Add Cursed Knights + Lich Familiars |
+| 15:00 | Elite mode (1.5× HP/damage) — "ELITE ENEMIES ARISE!" warning |
+| 20:00 | Final assault (fastest spawn rate) — "FINAL ASSAULT!" warning |
 | 30:00 | Victory condition |
 
 ---

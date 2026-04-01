@@ -72,7 +72,8 @@ mystic_siege/
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
-│   │   └── settings_menu.py       # Volume sliders, fullscreen toggle, reset
+│   │   ├── settings_menu.py       # Volume sliders, fullscreen toggle, reset
+│   │   └── stats_menu.py          # Meta-progression stats viewer
 │   └── utils/
 │       ├── timer.py               # Reusable countdown/interval timer
 │       ├── resource_loader.py     # Singleton asset loader with fallback placeholders
@@ -280,14 +281,14 @@ python src/utils/placeholder_assets.py
 
 Track progress here as phases are completed:
 
-- [ ] Phase 1 — Project scaffold (settings, main, utils)
-- [ ] Phase 2 — Core entities (player, enemy, projectile, xp orb)
-- [ ] Phase 3 — Weapons (all 6)
-- [ ] Phase 4 — Systems (waves, xp, upgrades, camera, collision)
-- [ ] Phase 5 — UI (hud, menus, upgrade cards)
-- [ ] Phase 6 — Integration (game scene, scene wiring, run_check)
-- [ ] Phase 7 — Audio & placeholder assets
-- [ ] Phase 8 — Additional enemies & effects
-- [ ] Phase 9 — Polish & meta (save system, settings menu)
+- [x] Phase 1 — Project scaffold (settings, main, utils)
+- [x] Phase 2 — Core entities (player, enemy, projectile, xp orb)
+- [x] Phase 3 — Weapons (all 6)
+- [x] Phase 4 — Systems (waves, xp, upgrades, camera, collision)
+- [x] Phase 5 — UI (hud, menus, upgrade cards)
+- [x] Phase 6 — Integration (game scene, scene wiring, run_check)
+- [x] Phase 7 — Audio & placeholder assets
+- [x] Phase 8 — Additional enemies & effects
+- [x] Phase 9 — Polish & meta (save system, settings menu)
 
 Update the checkboxes as you complete each phase.

@@ -75,7 +75,7 @@ class ArcaneBolt(BaseWeapon):
                 angle_offset = (i - (self.bolt_count - 1) / 2) * 10
                 direction = base_direction.rotate(angle_offset)
 
-            delay = i * 0.05  # 0s, 0.05s, 0.10s — stagger each bolt
+            delay = i * 0.25  # 0s, 0.25s, 0.5s — stagger each bolt
 
             if delay == 0:
                 self._spawn_bolt(direction, nearest_enemy)
