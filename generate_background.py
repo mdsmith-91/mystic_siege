@@ -5,21 +5,22 @@ Usage:
     GEMINI_API_KEY=your_key_here python generate_background.py
 
 Requirements:
-    pip install google-generativeai pillow
+    pip install -U google-genai pillow
 """
 
 import os
 import sys
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
 except ImportError:
-    sys.exit("Missing dependency: run  pip install google-generativeai")
+    sys.exit("Missing dependency: run: pip install -U google-genai")
 
 try:
     from PIL import Image
 except ImportError:
-    sys.exit("Missing dependency: run  pip install pillow")
+    sys.exit("Missing dependency: run: pip install pillow")
 
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -36,22 +37,29 @@ PROMPT = (
 
 
 def main():
-    genai.configure(api_key=API_KEY)
-    model = genai.ImageGenerationModel("imagen-3.0-generate-002")
+    client = genai.Client(api_key=API_KEY)
 
-    print("Generating background tile with Imagen 3...")
-    response = model.generate_images(
+    print("Generating background tile with Imagen 4...")
+    response = client.models.generate_images(
+        model="imagen-4.0-generate-001",
         prompt=PROMPT,
-        number_of_images=1,
-        aspect_ratio="1:1",
-        safety_filter_level="block_low_and_above",
-        person_generation="dont_allow",
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="block_low_and_above",
+            person_generation="dont_allow",
+        ),
     )
 
+    if not response.generated_images:
+        sys.exit("No image was returned by the API.")
+
     img: Image.Image = response.generated_images[0].image
+
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     img.save(OUTPUT_PATH)
-    print(f"Saved: {OUTPUT_PATH}  ({img.size[0]}x{img.size[1]} px)")
+
+    print(f"Saved: {OUTPUT_PATH} ({img.size[0]}x{img.size[1]} px)")
     print("Launch the game to see it in action.")
 
 
