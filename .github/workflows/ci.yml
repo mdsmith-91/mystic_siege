@@ -22,4 +22,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run import checks
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
         run: python run_check.py
