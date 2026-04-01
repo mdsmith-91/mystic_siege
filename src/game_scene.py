@@ -1,7 +1,10 @@
 import os
 import pygame
 from pygame.math import Vector2
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT
+from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
+                       STATE_MENU, STATE_CLASS_SELECT,
+                       PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
+                       PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR)
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader
 from src.entities.player import Player
@@ -116,16 +119,45 @@ class GameScene:
             scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
             self.background.blit(scaled_pattern, (0, 0))
 
+    def _pause_button_rects(self):
+        """Return (resume_rect, restart_rect, menu_rect) for the pause menu buttons."""
+        cx = SCREEN_WIDTH // 2
+        # Title sits at cy - 80; buttons start below it
+        top = SCREEN_HEIGHT // 2 - 30
+        step = PAUSE_BUTTON_HEIGHT + PAUSE_BUTTON_SPACING
+        make = lambda row: pygame.Rect(
+            cx - PAUSE_BUTTON_WIDTH // 2,
+            top + row * step,
+            PAUSE_BUTTON_WIDTH,
+            PAUSE_BUTTON_HEIGHT,
+        )
+        return make(0), make(1), make(2)
+
     def handle_events(self, events):
         """Handle user input events."""
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    # ESC: toggle paused
+                    # ESC: toggle paused (also acts as resume when paused)
                     self.paused = not self.paused
+                elif event.key == pygame.K_r and self.paused:
+                    # R: resume from pause
+                    self.paused = False
+                elif event.key == pygame.K_m and self.paused:
+                    # M: return to main menu from pause
+                    self.next_scene = STATE_MENU
                 elif event.key == pygame.K_F3:
                     # F3: toggle show_fps
                     self.show_fps = not self.show_fps
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.paused:
+                # Click on pause menu buttons
+                resume_rect, restart_rect, menu_rect = self._pause_button_rects()
+                if resume_rect.collidepoint(event.pos):
+                    self.paused = False
+                elif restart_rect.collidepoint(event.pos):
+                    self.next_scene = STATE_CLASS_SELECT
+                elif menu_rect.collidepoint(event.pos):
+                    self.next_scene = STATE_MENU
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -170,6 +202,7 @@ class GameScene:
             self.next_scene = "gameover"
             self.next_scene_kwargs = {"victory": True, "stats": {
                 "time_str": self.wave_manager.get_elapsed_str(),
+                "time_survived": self.wave_manager.elapsed,
                 "kills": self.player.kill_count,
                 "level": self.xp_system.current_level,
                 "weapons": [w.name for w in self.player.weapons]
@@ -181,6 +214,7 @@ class GameScene:
             self.next_scene = "gameover"
             self.next_scene_kwargs = {"victory": False, "stats": {
                 "time_str": self.wave_manager.get_elapsed_str(),
+                "time_survived": self.wave_manager.elapsed,
                 "kills": self.player.kill_count,
                 "level": self.xp_system.current_level,
                 "weapons": [w.name for w in self.player.weapons]
@@ -239,14 +273,40 @@ class GameScene:
         if self.upgrade_menu:
             self.upgrade_menu.draw(screen)
 
-        # 6. If paused: draw "PAUSED" centered in large text with semi-transparent overlay
+        # 6. If paused: draw pause overlay with interactive buttons
         if self.paused:
-            # Semi-transparent overlay
-            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 160))
-            screen.blit(overlay, (0, 0))
+            self._draw_pause_overlay(screen)
 
-            # "PAUSED" text
-            font = pygame.font.SysFont("serif", 72)
-            paused_text = font.render("PAUSED", True, (255, 255, 255))
-            screen.blit(paused_text, (SCREEN_WIDTH // 2 - paused_text.get_width() // 2, SCREEN_HEIGHT // 2 - paused_text.get_height() // 2))
+    def _draw_pause_overlay(self, screen):
+        """Draw the pause menu: overlay, title, and three interactive buttons."""
+        # Semi-transparent darkening overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        screen.blit(overlay, (0, 0))
+
+        title_font = pygame.font.SysFont("serif", 72)
+        btn_font = pygame.font.SysFont("serif", 28)
+        hint_font = pygame.font.SysFont("serif", 18)
+
+        # "PAUSED" title above the buttons
+        title_surf = title_font.render("PAUSED", True, (255, 255, 255))
+        cx = SCREEN_WIDTH // 2
+        title_y = SCREEN_HEIGHT // 2 - 30 - title_surf.get_height() - 20
+        screen.blit(title_surf, (cx - title_surf.get_width() // 2, title_y))
+
+        mouse_pos = pygame.mouse.get_pos()
+        resume_rect, restart_rect, menu_rect = self._pause_button_rects()
+        labels = [("RESUME", resume_rect), ("RESTART", restart_rect), ("MAIN MENU", menu_rect)]
+
+        for label, rect in labels:
+            color = PAUSE_BUTTON_HOVER_COLOR if rect.collidepoint(mouse_pos) else PAUSE_BUTTON_COLOR
+            pygame.draw.rect(screen, color, rect, border_radius=6)
+            pygame.draw.rect(screen, (120, 90, 180), rect, width=2, border_radius=6)
+            text_surf = btn_font.render(label, True, PAUSE_BUTTON_TEXT_COLOR)
+            screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
+                                    rect.centery - text_surf.get_height() // 2))
+
+        # Keyboard hint below the buttons
+        _, _, last_rect = self._pause_button_rects()
+        hint_surf = hint_font.render("ESC or R to resume  •  M for main menu", True, (180, 180, 180))
+        screen.blit(hint_surf, (cx - hint_surf.get_width() // 2, last_rect.bottom + 16))

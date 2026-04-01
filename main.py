@@ -9,7 +9,9 @@ if __name__ == "__main__":
 
     # Set display to SCREEN_WIDTH x SCREEN_HEIGHT with TITLE
     from settings import SCREEN_WIDTH, SCREEN_HEIGHT, TITLE
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    from src.systems.save_system import SaveSystem
+    flags = pygame.FULLSCREEN if SaveSystem().get_setting("fullscreen") else 0
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags)
     pygame.display.set_caption(TITLE)
 
     # Create pygame.time.Clock

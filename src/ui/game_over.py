@@ -1,12 +1,20 @@
 import pygame
 import math
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, HP_LOW_COLOR, TITLE_FONT_SIZE
+from src.systems.save_system import SaveSystem
 
 class GameOver:
     def __init__(self, victory: bool, stats: dict):
         self.next_scene = None
         self.victory = victory
         self.stats = stats
+
+        # Persist run stats to save file
+        SaveSystem().update_after_run({
+            "kills": stats["kills"],
+            "time_survived": stats["time_survived"],
+            "level": stats["level"],
+        })
 
     def handle_events(self, events):
         """Handle user input events."""
