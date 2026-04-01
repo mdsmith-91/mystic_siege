@@ -33,6 +33,7 @@ XP_SCALE_FACTOR = 1.12
 # WEAPONS
 MAX_WEAPON_SLOTS = 6
 ARCANE_BOLT_RANGE = 350  # max distance to target an enemy
+LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
 
 # SPAWNING
 INITIAL_SPAWN_RATE = 3.0

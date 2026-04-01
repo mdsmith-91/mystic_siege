@@ -6,7 +6,7 @@ from src.utils.audio_manager import AudioManager
 
 class FlameWhip(BaseWeapon):
     name = "Flame Whip"
-    description = "Lashes a cone of fire in your facing direction."
+    description = "Lashes a cone of fire toward the nearest enemy."
     base_damage = 30.0
     base_cooldown = 1.5
     cone_range = 120
@@ -21,7 +21,7 @@ class FlameWhip(BaseWeapon):
         self.upgrade_levels = [
             {},  # Level 1 (no upgrade)
             {"base_damage": 15},  # L2: +15 damage
-            {"cone_range": 40},  # L3: +40 range
+            {"cone_range": 40},   # L3: +40 range
             {"burn_duration": 1.5},  # L4: +1.5 burn duration
             {"cone_angle": 30, "base_damage": 20}  # L5: wider cone, more damage
         ]
@@ -29,53 +29,61 @@ class FlameWhip(BaseWeapon):
         # Track burning enemies: dict {enemy_id: remaining_burn_time}
         self.burning_enemies = {}
 
-        # Store a swing_timer float
+        # Swing timer counts down after firing — cone is visible while > 0
         self.swing_timer = 0.0
 
+        # Direction the cone was last fired toward (for draw_effect)
+        self.fire_direction: Vector2 = Vector2(1, 0)
+
     def fire(self):
-        """Lash a cone of fire in the player's facing direction."""
-        AudioManager.instance().play_sfx(AudioManager.WEAPON_WHIP)
-        # Get owner.facing direction
-        facing = self.owner.facing
+        """Lash a cone of fire toward the nearest enemy."""
+        if not self.enemy_group:
+            return
 
-        # For each enemy in enemy_group:
+        # Find nearest enemy to aim the cone at
+        nearest_enemy = None
+        nearest_distance = float('inf')
         for enemy in self.enemy_group:
-            # dist = distance from owner.pos to enemy.pos
-            dist = (enemy.pos - self.owner.pos).length()
+            distance = (enemy.pos - self.owner.pos).length()
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest_enemy = enemy
 
-            # if dist > cone_range: skip
+        if not nearest_enemy:
+            return
+
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_WHIP)
+
+        # Aim the cone center at the nearest enemy
+        self.fire_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+
+        # Hit every enemy within cone_range that falls inside the cone arc
+        for enemy in self.enemy_group:
+            dist = (enemy.pos - self.owner.pos).length()
             if dist > self.cone_range:
                 continue
 
-            # angle_to_enemy = angle between owner.facing and direction to enemy
             direction_to_enemy = (enemy.pos - self.owner.pos).normalize()
-            angle_to_enemy = facing.angle_to(direction_to_enemy)
+            angle_to_enemy = self.fire_direction.angle_to(direction_to_enemy)
 
-            # if angle_to_enemy <= cone_angle/2: hit the enemy
             if abs(angle_to_enemy) <= self.cone_angle / 2:
-                # deal base_damage * owner.damage_multiplier
                 damage = self.base_damage * self.owner.damage_multiplier
                 enemy.take_damage(damage)
-
-                # apply burn (add to burn dict)
                 self.burning_enemies[enemy.sprite_id] = self.burn_duration
 
-        # Set swing timer to 0.2s (visible for 0.2s after firing)
+        # Show swing visual for 0.2s
         self.swing_timer = 0.2
 
     def update(self, dt):
         """Update the flame whip effect."""
-        # Update cooldown timer
         super().update(dt)
 
-        # Tick down swing timer
         self.swing_timer = max(0, self.swing_timer - dt)
 
-        # Tick down burn timers and apply burn damage
+        # Tick burn timers and apply burn damage each frame
         for enemy_id in list(self.burning_enemies.keys()):
             self.burning_enemies[enemy_id] -= dt
             if self.burning_enemies[enemy_id] > 0:
-                # Apply burn damage
                 enemy = None
                 for e in self.enemy_group:
                     if e.sprite_id == enemy_id:
@@ -84,33 +92,29 @@ class FlameWhip(BaseWeapon):
                 if enemy:
                     enemy.take_damage(self.burn_damage * dt)
             else:
-                # Remove expired burn
                 del self.burning_enemies[enemy_id]
 
     def draw_effect(self, surface, camera_offset):
         """Draw a transparent orange fan shape for the duration of the swing."""
-        if self.swing_timer > 0:
-            # Draw a fan shape representing the flame whip
-            center = self.owner.pos
-            facing = self.owner.facing
+        if self.swing_timer <= 0:
+            return
 
-            # Calculate the start and end angles for the cone
-            start_angle = facing.angle_to(Vector2(1, 0)) - self.cone_angle / 2
-            end_angle = facing.angle_to(Vector2(1, 0)) + self.cone_angle / 2
+        center = self.owner.pos
 
-            # Create points for the fan shape
-            points = [center]
+        # Build the cone arc using the stored fire_direction
+        base_angle = math.degrees(math.atan2(-self.fire_direction.y, self.fire_direction.x))
+        start_angle = base_angle - self.cone_angle / 2
+        end_angle = base_angle + self.cone_angle / 2
 
-            # Add points along the arc
-            num_points = 10
-            for i in range(num_points + 1):
-                angle = start_angle + (end_angle - start_angle) * i / num_points
-                point = center + Vector2(1, 0).rotate(angle) * self.cone_range
-                points.append(point)
+        points = [center]
+        num_points = 10
+        for i in range(num_points + 1):
+            angle = start_angle + (end_angle - start_angle) * i / num_points
+            point = center + Vector2(math.cos(math.radians(angle)), -math.sin(math.radians(angle))) * self.cone_range
+            points.append(point)
 
-            # Draw the fan shape with transparency
-            if len(points) >= 3:
-                alpha = int(100 * (self.swing_timer / 0.2))  # Fade out as timer decreases
-                color = (255, 100, 0, alpha)  # Orange with alpha
-                pygame.draw.polygon(surface, color,
-                                  [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points])
+        if len(points) >= 3:
+            alpha = int(100 * (self.swing_timer / 0.2))  # fade out as timer decreases
+            color = (255, 100, 0, alpha)
+            pygame.draw.polygon(surface, color,
+                                [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points])

@@ -3,6 +3,7 @@ from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import random
 from src.utils.audio_manager import AudioManager
+from settings import LIGHTNING_CHAIN_RANGE
 
 class LightningChain(BaseWeapon):
     name = "Lightning Chain"
@@ -48,6 +49,9 @@ class LightningChain(BaseWeapon):
         if not nearest_enemy:
             return
 
+        if nearest_distance > LIGHTNING_CHAIN_RANGE:
+            return
+
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN)
 
         # Build chain: start with nearest, find next closest enemy within chain_range
@@ -90,7 +94,12 @@ class LightningChain(BaseWeapon):
                 enemy.speed = 0
                 enemy.freeze_timer = self.stun_duration
 
-        # Store arc positions for drawing
+        # Store arc positions for drawing — first arc runs from player to initial target
+        self.lightning_arcs.append({
+            "start": Vector2(self.owner.pos),
+            "end": Vector2(chain[0].pos),
+            "timer": 0.12
+        })
         for i in range(len(chain) - 1):
             start = chain[i].pos
             end = chain[i + 1].pos

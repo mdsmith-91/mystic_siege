@@ -19,6 +19,10 @@ class ArcaneBolt(BaseWeapon):
 
         self.pierce = 0
 
+        # Bolts queued to fire after a short stagger delay
+        # Each entry: {"delay": float, "direction": Vector2, "target": enemy}
+        self.pending_bolts: list[dict] = []
+
         # Define upgrade levels
         self.upgrade_levels = [
             {},  # Level 1 (no upgrade)
@@ -28,9 +32,24 @@ class ArcaneBolt(BaseWeapon):
             {"bolt_count": 1, "base_damage": 15}  # L5: 3 bolts, more damage
         ]
 
+    def _spawn_bolt(self, direction: Vector2, target) -> None:
+        """Spawn a single projectile in the given direction."""
+        damage = self.base_damage * self.owner.damage_multiplier
+        Projectile(
+            pos=self.owner.pos,
+            direction=direction,
+            speed=400,
+            damage=damage,
+            groups=self.projectile_group,
+            enemy_group_ref=self.enemy_group,
+            pierce=self.pierce,
+            homing=self.homing,
+            color=self.projectile_color,
+            target_enemy=target
+        )
+
     def fire(self):
         """Fire homing bolts at the nearest enemy."""
-        # Find nearest enemy in enemy_group
         if not self.enemy_group:
             return
 
@@ -48,29 +67,35 @@ class ArcaneBolt(BaseWeapon):
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_ARCANE)
 
-        # Spawn bolt_count Projectiles at owner.pos, aimed at nearest enemy
-        # (if bolt_count > 1, spread them ±10 degrees apart)
+        base_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+
         for i in range(self.bolt_count):
-            # Calculate direction with slight spread for multiple bolts
-            direction = (nearest_enemy.pos - self.owner.pos).normalize()
-
+            direction = base_direction
             if self.bolt_count > 1:
-                # Spread bolts ±10 degrees apart
                 angle_offset = (i - (self.bolt_count - 1) / 2) * 10
-                direction = direction.rotate(angle_offset)
+                direction = base_direction.rotate(angle_offset)
 
-            # All bolts use current damage * owner.damage_multiplier
-            damage = self.base_damage * self.owner.damage_multiplier
+            delay = i * 0.05  # 0s, 0.05s, 0.10s — stagger each bolt
 
-            projectile = Projectile(
-                pos=self.owner.pos,
-                direction=direction,
-                speed=400,  # Speed of the bolt
-                damage=damage,
-                groups=self.projectile_group,
-                enemy_group_ref=self.enemy_group,
-                pierce=self.pierce,
-                homing=self.homing,
-                color=self.projectile_color,
-                target_enemy=nearest_enemy
-            )
+            if delay == 0:
+                self._spawn_bolt(direction, nearest_enemy)
+            else:
+                self.pending_bolts.append({
+                    "delay": delay,
+                    "direction": direction,
+                    "target": nearest_enemy
+                })
+
+    def update(self, dt: float):
+        """Update cooldown and fire any staggered pending bolts."""
+        super().update(dt)
+
+        i = 0
+        while i < len(self.pending_bolts):
+            bolt = self.pending_bolts[i]
+            bolt["delay"] -= dt
+            if bolt["delay"] <= 0:
+                self._spawn_bolt(bolt["direction"], bolt["target"])
+                self.pending_bolts.pop(i)
+            else:
+                i += 1
