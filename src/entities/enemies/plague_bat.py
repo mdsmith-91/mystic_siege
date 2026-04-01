@@ -2,7 +2,6 @@ import pygame
 from pygame.math import Vector2
 import random
 from src.entities.enemy import Enemy
-from src.entities.enemies.mini_bat import MiniBat
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class PlagueBat(Enemy):
