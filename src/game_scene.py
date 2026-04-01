@@ -1,7 +1,9 @@
+import os
 import pygame
 from pygame.math import Vector2
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT
 from src.systems.save_system import SaveSystem
+from src.utils.resource_loader import ResourceLoader
 from src.entities.player import Player
 from src.systems.camera import Camera
 from src.systems.wave_manager import WaveManager
@@ -92,22 +94,27 @@ class GameScene:
         self.show_fps = save_system.get_setting("show_fps")
         self._fps_clock = pygame.time.Clock()
 
-        # 14. background = generate a 3000x3000 surface tiled with 32x32 dark gray/green rects
-        #     (checkerboard of (30,35,25) and (25,30,20) to suggest ground tiles)
-        #     Do this efficiently: draw a small tile pattern then scale — NOT 3000*3000 loops
+        # 14. background — use Gemini-generated image if available, else procedural tiles
+        bg_path = "assets/backgrounds/game_bg.png"
         self.background = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT))
 
-        # Create a small tile pattern
-        tile_size = 32
-        tile_pattern = pygame.Surface((tile_size * 2, tile_size * 2))
-        pygame.draw.rect(tile_pattern, (30, 35, 25), (0, 0, tile_size, tile_size))
-        pygame.draw.rect(tile_pattern, (25, 30, 20), (tile_size, 0, tile_size, tile_size))
-        pygame.draw.rect(tile_pattern, (25, 30, 20), (0, tile_size, tile_size, tile_size))
-        pygame.draw.rect(tile_pattern, (30, 35, 25), (tile_size, tile_size, tile_size, tile_size))
-
-        # Scale the pattern to fill the background
-        scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
-        self.background.blit(scaled_pattern, (0, 0))
+        if os.path.exists(bg_path):
+            # Tile the generated image across the world surface
+            tile = ResourceLoader.instance().load_image(bg_path)
+            tile_w, tile_h = tile.get_size()
+            for y in range(0, WORLD_HEIGHT, tile_h):
+                for x in range(0, WORLD_WIDTH, tile_w):
+                    self.background.blit(tile, (x, y))
+        else:
+            # Procedural checkerboard fallback
+            tile_size = 32
+            tile_pattern = pygame.Surface((tile_size * 2, tile_size * 2))
+            pygame.draw.rect(tile_pattern, (30, 35, 25), (0, 0, tile_size, tile_size))
+            pygame.draw.rect(tile_pattern, (25, 30, 20), (tile_size, 0, tile_size, tile_size))
+            pygame.draw.rect(tile_pattern, (25, 30, 20), (0, tile_size, tile_size, tile_size))
+            pygame.draw.rect(tile_pattern, (30, 35, 25), (tile_size, tile_size, tile_size, tile_size))
+            scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
+            self.background.blit(scaled_pattern, (0, 0))
 
     def handle_events(self, events):
         """Handle user input events."""

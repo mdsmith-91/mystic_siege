@@ -31,6 +31,14 @@ build/
 dist/
 *.spec
 
+# Environment variables / secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+secrets.*
+
 # Dev debug/test scripts
 test_debug.py
 test_xp_orbs.py
