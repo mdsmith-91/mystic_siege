@@ -163,7 +163,7 @@ class HUD:
         #    First letter of weapon name centered in slot
         #    Slot color = weapon's projectile_color or a default per weapon type
         weapon_slots_x = SCREEN_WIDTH - 250
-        weapon_slots_y = SCREEN_HEIGHT - 60
+        weapon_slots_y = SCREEN_HEIGHT - 75
 
         for i, weapon in enumerate(player.weapons):
             slot_rect = pygame.Rect(weapon_slots_x + i * 45, weapon_slots_y, 40, 40)
@@ -193,10 +193,10 @@ class HUD:
             screen.blit(warning_shadow, (SCREEN_WIDTH // 2 - warning_surface.get_width() // 2 + 3, 200))
             screen.blit(warning_surface, (SCREEN_WIDTH // 2 - warning_surface.get_width() // 2, 200))
 
-        # 7. FPS counter (top-left corner, small, if show_fps): f"FPS: {fps:.0f}"
+        # 7. FPS counter (bottom-left, above LVL field, if show_fps): f"FPS: {fps:.0f}"
         if show_fps:
             font = pygame.font.SysFont("serif", 16)
             fps_text = f"FPS: {fps:.0f}"
             text = font.render(fps_text, True, (255, 255, 255))
-            screen.blit(text, (10, SCREEN_HEIGHT - 30))
+            screen.blit(text, (10, SCREEN_HEIGHT - 55))
 
