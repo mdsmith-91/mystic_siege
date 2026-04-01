@@ -1,6 +1,7 @@
 import pygame
 from pygame.math import Vector2
 import random
+import math
 from src.entities.enemy import Enemy
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
@@ -44,18 +45,14 @@ class PlagueBat(Enemy):
             if direction.length() > 0:
                 direction = direction.normalize()
 
-                # Calculate wave offset
-                wave_offset = 50 * (2 * 3.14159 * self._t * 4)  # sin(elapsed * 4) * 50
-                wave_offset = 50 * (2 * 3.14159 * self._t * 4)  # sin(elapsed * 4) * 50
-
-                # Normalize wave offset for consistent effect
-                wave_offset_normalized = 1.0  # This is a simplification
-
                 # Perpendicular direction (rotated 90 degrees)
                 perpendicular = Vector2(-direction.y, direction.x)
 
+                # Sine wave offset perpendicular to travel direction
+                wave_offset = math.sin(self._t * 4)  # -1 to 1
+
                 # Effective direction with wave offset
-                effective_dir = direction + perpendicular * (wave_offset_normalized * 0.1)  # Scale down for visual effect
+                effective_dir = direction + perpendicular * (wave_offset * 0.5)
 
                 # Apply movement
                 self.vel = effective_dir * self.speed

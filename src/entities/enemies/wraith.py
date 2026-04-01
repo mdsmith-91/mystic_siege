@@ -25,7 +25,7 @@ class Wraith(Enemy):
 
         # lunge_timer: float — every 3 seconds, briefly triple speed for 0.4s
         # (lunge_active: bool, lunge_duration countdown)
-        self.lunge_timer = 0.0
+        self.lunge_timer = 3.0
         self.lunge_active = False
         self.lunge_duration = 0.0
 

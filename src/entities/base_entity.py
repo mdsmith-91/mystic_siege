@@ -10,6 +10,7 @@ class BaseEntity(pygame.sprite.Sprite):
         self.hp = 0
         self.max_hp = 0
         self.speed = 0
+        self.sprite_id = id(self)
 
         # image and rect must be set by subclasses before calling super().__init__
         # This is a placeholder - subclasses should set these before calling super().__init__()

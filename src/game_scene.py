@@ -59,14 +59,14 @@ class GameScene:
         # 3. camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        # 4. wave_manager = WaveManager(player, all_sprites, enemy_group, xp_orb_group)
-        self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group)
+        # 4. wave_manager = WaveManager(player, all_sprites, enemy_group, xp_orb_group, projectile_group)
+        self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group, self.projectile_group)
 
         # 5. xp_system = XPSystem()
         self.xp_system = XPSystem()
 
         # 6. upgrade_system = UpgradeSystem()
-        self.upgrade_system = UpgradeSystem()
+        self.upgrade_system = UpgradeSystem(self.projectile_group, self.enemy_group)
 
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()
@@ -116,20 +116,12 @@ class GameScene:
                 elif event.key == pygame.K_F3:
                     # F3: toggle show_fps
                     self.show_fps = not self.show_fps
-                elif event.key == pygame.K_1 or event.key == pygame.K_2 or event.key == pygame.K_3:
-                    # Handle keyboard input for upgrade menu
-                    if self.upgrade_menu and not self.upgrade_menu.done:
-                        # Pass events to upgrade_menu (handled in upgrade_menu itself)
-                        pass
-
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and self.upgrade_menu and not self.upgrade_menu.done:
-                    # Handle mouse clicks for upgrade menu
-                    pass
-
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 return
+
+        if self.upgrade_menu and not self.upgrade_menu.done:
+            self.upgrade_menu.handle_events(events)
 
     def update(self, dt):
         """Update the game scene."""
@@ -179,11 +171,8 @@ class GameScene:
                 "weapons": [w.name for w in self.player.weapons]
             }}
 
-        # Handle upgrade menu completion
+        # Handle upgrade menu completion (apply already happened inside upgrade_menu)
         if self.upgrade_menu and self.upgrade_menu.done:
-            # upgrade_system.apply_choice(choice, player)
-            # then set upgrade_menu = None, xp_system.consume_levelup()
-            self.upgrade_system.apply_choice(self.upgrade_menu.choices[self.upgrade_menu.selected], self.player)
             self.upgrade_menu = None
             self.xp_system.consume_levelup()
 

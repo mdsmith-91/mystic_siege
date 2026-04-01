@@ -1,6 +1,7 @@
 import pygame
 from pygame.math import Vector2
 import random
+import math
 
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, pos, amount: float, groups, is_player_damage=False):
@@ -74,7 +75,8 @@ class HitSpark(pygame.sprite.Sprite):
                 "pos": Vector2(pos),
                 "vel": vel,
                 "radius": random.uniform(2, 5),
-                "lifetime": 0.25
+                "lifetime": 0.25,
+                "color": color
             })
 
         # image: transparent surface sized to contain all particles
@@ -125,6 +127,7 @@ class DeathExplosion(pygame.sprite.Sprite):
 
         # lifetime = 0.4s
         self.lifetime = 0.4
+        self.color = color
 
         # image: transparent surface
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
@@ -187,8 +190,8 @@ class LevelUpEffect(pygame.sprite.Sprite):
             particle["distance"] += particle["speed"] * dt
 
             # Update position
-            particle["pos"].x = self.pos.x + particle["distance"] * 3.14159 * particle["angle"]
-            particle["pos"].y = self.pos.y + particle["distance"] * 3.14159 * particle["angle"]
+            particle["pos"].x = self.pos.x + particle["distance"] * math.cos(particle["angle"])
+            particle["pos"].y = self.pos.y + particle["distance"] * math.sin(particle["angle"])
 
             # Fade (decrease lifetime)
             particle["lifetime"] -= dt

@@ -5,7 +5,7 @@ from src.entities.projectile import Projectile
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class LichFamiliar(Enemy):
-    def __init__(self, pos, target, all_groups: tuple):
+    def __init__(self, pos, target, all_groups: tuple, projectile_group=None):
         # enemy_data = {name:"Lich", hp:35, speed:90, damage:12, xp_value:12, behavior:"ranged"}
         enemy_data = {
             "name": "Lich",
@@ -25,6 +25,8 @@ class LichFamiliar(Enemy):
 
         # - fire_timer: float — fires a slow magic orb every 2.5s at player
         #   Orb: Projectile(pos, direction_to_player, speed=120, damage=12, pierce=0, homing=False, color=(200,60,255))
+
+        self.projectile_group = projectile_group
 
         self.orbit_angle = 0.0
         self.orbit_radius = 200
@@ -63,22 +65,19 @@ class LichFamiliar(Enemy):
             # Orb: Projectile(pos, direction_to_player, speed=120, damage=12, pierce=0, homing=False, color=(200,60,255))
             direction_to_player = (self.target.pos - self.pos).normalize()
 
-            # Create projectile
+            # Create projectile — add to projectile_group so collision works
+            proj_groups = [self.projectile_group] if self.projectile_group else []
             projectile = Projectile(
                 pos=self.pos,
                 direction=direction_to_player,
                 speed=120,
                 damage=12,
-                groups=self.groups(),
-                enemy_group_ref=None,  # This is a ranged enemy, so no enemy group reference needed
+                groups=proj_groups,
+                enemy_group_ref=None,
                 pierce=0,
                 homing=False,
                 color=(200, 60, 255)
             )
-
-            # Add projectile to groups
-            for group in self.groups():
-                projectile.add(group)
 
             # Reset fire timer
             self.fire_timer = self.fire_interval

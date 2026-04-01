@@ -35,8 +35,8 @@ class XPSystem:
         # player.orbs_collected += 1
         player.orbs_collected += 1
 
-        # Check Friar passive: if player has "WanderingFriar" class and orbs_collected % 10 == 0:
-        if player.__class__.__name__ == "WanderingFriar" and player.orbs_collected % 10 == 0:
+        # Check Friar passive: heal 1 HP every 10 orbs collected
+        if player.hero_class == "Wandering Friar" and player.orbs_collected % 10 == 0:
             player.heal(1)
 
         # check_levelup()

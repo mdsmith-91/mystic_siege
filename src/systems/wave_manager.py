@@ -21,11 +21,12 @@ KNIGHT_DATA = {"name":"Knight", "hp":80, "speed":110, "damage":20, "xp_value":15
 LICH_DATA = {"name":"Lich", "hp":35, "speed":90, "damage":12, "xp_value":12, "behavior":"ranged"}
 
 class WaveManager:
-    def __init__(self, player, all_sprites, enemy_group, xp_orb_group):
+    def __init__(self, player, all_sprites, enemy_group, xp_orb_group, projectile_group=None):
         self.player = player
         self.all_sprites = all_sprites
         self.enemy_group = enemy_group
         self.xp_orb_group = xp_orb_group
+        self.projectile_group = projectile_group
 
         # elapsed: float = 0.0
         self.elapsed = 0.0
@@ -172,13 +173,23 @@ class WaveManager:
             pos = self._get_spawn_pos()
 
             # Import correct class based on data["name"]
+            groups = (self.all_sprites, self.enemy_group)
             if data["name"] == "Skeleton":
-                enemy = Skeleton(pos, self.player, (self.all_sprites, self.enemy_group))
+                enemy = Skeleton(pos, self.player, groups)
             elif data["name"] == "Goblin":
-                enemy = DarkGoblin(pos, self.player, (self.all_sprites, self.enemy_group))
+                enemy = DarkGoblin(pos, self.player, groups)
+            elif data["name"] == "Wraith":
+                enemy = Wraith(pos, self.player, groups)
+            elif data["name"] == "Bat":
+                enemy = PlagueBat(pos, self.player, groups)
+            elif data["name"] == "Golem":
+                enemy = StoneGolem(pos, self.player, groups)
+            elif data["name"] == "Knight":
+                enemy = CursedKnight(pos, self.player, groups)
+            elif data["name"] == "Lich":
+                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group)
             else:
-                # Use base Enemy class for other enemies
-                enemy = Enemy(pos, self.player, (self.all_sprites, self.enemy_group), data)
+                enemy = Enemy(pos, self.player, groups, data)
 
             # If elite_mode: multiply hp and damage by 1.5
             if self.elite_mode:

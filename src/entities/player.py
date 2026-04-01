@@ -7,6 +7,9 @@ class Player(BaseEntity):
     def __init__(self, pos, hero_class_data: dict, groups):
         super().__init__(pos, groups)
 
+        # Store hero class name for passive checks
+        self.hero_class = hero_class_data.get("name", "")
+
         # Read hp, speed, armor from hero_class_data
         self.max_hp = hero_class_data["hp"]
         self.hp = self.max_hp
