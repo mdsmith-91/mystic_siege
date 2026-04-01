@@ -5,6 +5,86 @@ class HUD:
     def __init__(self):
         pass
 
+    def draw_threat_arrows(self, screen, player, enemy_group, camera):
+        """Draw arrows pointing to enemies that are offscreen."""
+        # Get screen boundaries
+        screen_left = camera.x
+        screen_right = camera.x + SCREEN_WIDTH
+        screen_top = camera.y
+        screen_bottom = camera.y + SCREEN_HEIGHT
+
+        # Track how many arrows we've drawn
+        arrows_drawn = 0
+
+        # For each enemy, check if it's offscreen
+        for enemy in enemy_group:
+            if arrows_drawn >= 8:  # Max 8 arrows
+                break
+
+            # Get enemy position relative to screen
+            enemy_left = enemy.rect.left
+            enemy_right = enemy.rect.right
+            enemy_top = enemy.rect.top
+            enemy_bottom = enemy.rect.bottom
+
+            # Check if enemy is offscreen
+            offscreen_left = enemy_right < screen_left
+            offscreen_right = enemy_left > screen_right
+            offscreen_top = enemy_bottom < screen_top
+            offscreen_bottom = enemy_top > screen_bottom
+
+            # Only draw arrow if enemy is more than 400px offscreen
+            if (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
+                # Calculate center of enemy
+                enemy_center_x = (enemy_left + enemy_right) / 2
+                enemy_center_y = (enemy_top + enemy_bottom) / 2
+
+                # Calculate screen edge where arrow should point
+                arrow_x, arrow_y = 0, 0
+                arrow_color = (255, 0, 0)  # Default to red
+
+                # Determine which edge the arrow should point to
+                if offscreen_left:
+                    arrow_x = 0
+                    arrow_y = enemy_center_y - camera.y
+                    # Adjust to screen edge
+                    if arrow_y < 0:
+                        arrow_y = 0
+                    elif arrow_y > SCREEN_HEIGHT:
+                        arrow_y = SCREEN_HEIGHT
+                elif offscreen_right:
+                    arrow_x = SCREEN_WIDTH
+                    arrow_y = enemy_center_y - camera.y
+                    # Adjust to screen edge
+                    if arrow_y < 0:
+                        arrow_y = 0
+                    elif arrow_y > SCREEN_HEIGHT:
+                        arrow_y = SCREEN_HEIGHT
+                elif offscreen_top:
+                    arrow_x = enemy_center_x - camera.x
+                    arrow_y = 0
+                    # Adjust to screen edge
+                    if arrow_x < 0:
+                        arrow_x = 0
+                    elif arrow_x > SCREEN_WIDTH:
+                        arrow_x = SCREEN_WIDTH
+                elif offscreen_bottom:
+                    arrow_x = enemy_center_x - camera.x
+                    arrow_y = SCREEN_HEIGHT
+                    # Adjust to screen edge
+                    if arrow_x < 0:
+                        arrow_x = 0
+                    elif arrow_x > SCREEN_WIDTH:
+                        arrow_x = SCREEN_WIDTH
+
+                # Draw arrow
+                pygame.draw.polygon(screen, arrow_color, [
+                    (arrow_x, arrow_y),
+                    (arrow_x - 10, arrow_y - 5),
+                    (arrow_x - 10, arrow_y + 5)
+                ])
+                arrows_drawn += 1
+
     def draw(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
         """Draw all in-game overlay UI in screen space (no camera offset)."""
 
@@ -119,3 +199,6 @@ class HUD:
             fps_text = f"FPS: {fps:.0f}"
             text = font.render(fps_text, True, (255, 255, 255))
             screen.blit(text, (10, SCREEN_HEIGHT - 30))
+
+        # 8. Draw threat arrows
+        self.draw_threat_arrows(screen, player, enemy_group, camera)

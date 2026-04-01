@@ -37,6 +37,7 @@ class Player(BaseEntity):
 
         # iframes: float = 0.0  (countdown timer for invincibility frames)
         self.iframes = 0.0
+        self.flash_timer = 0.0
 
         # facing: Vector2 = Vector2(1, 0)  (updated each frame from movement)
         self.facing = Vector2(1, 0)
@@ -46,6 +47,10 @@ class Player(BaseEntity):
 
         # orbs_collected: int = 0  (for Friar passive)
         self.orbs_collected = 0
+
+        # Death state
+        self.dying = False
+        self.death_timer = 0.0
 
     def update(self, dt):
         # Read WASD/arrow input, build direction vector, normalize if non-zero
@@ -80,9 +85,38 @@ class Player(BaseEntity):
         # Iframe countdown: iframes = max(0, iframes - dt)
         self.iframes = max(0, self.iframes - dt)
 
+        # Flash effect during iframes
+        if self.iframes > 0:
+            self.flash_timer += dt
+            if self.flash_timer >= 0.1:  # Flash every 0.1 seconds
+                self.flash_timer = 0
+                # Toggle alpha between 255 and 80
+                if self.image.get_alpha() == 255:
+                    self.image.set_alpha(80)
+                else:
+                    self.image.set_alpha(255)
+
         # Update all weapons: for w in weapons: w.update(dt)
         for weapon in self.weapons:
             weapon.update(dt)
+
+        # Handle death fade
+        if self.hp <= 0 and not self.dying:
+            self.dying = True
+            self.death_timer = 1.0
+            # Set initial alpha to 255
+            self.image.set_alpha(255)
+
+        if self.dying:
+            self.death_timer -= dt
+            if self.death_timer > 0:
+                # Fade out
+                alpha = int(255 * self.death_timer)
+                self.image.set_alpha(alpha)
+            else:
+                # Death complete
+                super().kill()
+                self.is_alive = False
 
         # Sync rect
         self.rect.center = self.pos
