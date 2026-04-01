@@ -42,7 +42,7 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 
 | Component | Tool |
 |---|---|
-| Language | Python 3.11+ |
+| Language | Python 3.12.13 |
 | Game Framework | Pygame-CE (community edition) |
 | Asset Gen | DALL-E / Stable Diffusion / Kenney.nl / OpenGameArt |
 | AI Coding | Ollama + Claude (claude-sonnet) |
@@ -51,9 +51,9 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 
 **Dependencies (requirements.txt):**
 ```
-pygame-ce>=2.4.0
+pygame-ce>=2.5.0
 pytmx>=3.32
-numpy>=1.24
+numpy>=1.26
 ```
 
 ---
