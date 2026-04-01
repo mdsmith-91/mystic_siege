@@ -1,6 +1,7 @@
 import pygame
 from pygame.math import Vector2
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT
+from src.systems.save_system import SaveSystem
 from src.entities.player import Player
 from src.systems.camera import Camera
 from src.systems.wave_manager import WaveManager
@@ -86,8 +87,10 @@ class GameScene:
         # 12. next_scene_kwargs: dict = {}
         self.next_scene_kwargs = {}
 
-        # 13. show_fps = False
-        self.show_fps = False
+        # 13. show_fps — read from saved settings so the settings menu toggle takes effect
+        save_system = SaveSystem()
+        self.show_fps = save_system.get_setting("show_fps")
+        self._fps_clock = pygame.time.Clock()
 
         # 14. background = generate a 3000x3000 surface tiled with 32x32 dark gray/green rects
         #     (checkerboard of (30,35,25) and (25,30,20) to suggest ground tiles)
@@ -128,6 +131,8 @@ class GameScene:
         # If paused or upgrade_menu is open (and not yet dismissed): return
         if self.paused or (self.upgrade_menu and not self.upgrade_menu.done):
             return
+
+        self._fps_clock.tick()
 
         # all_sprites.update(dt)  — this updates player, enemies, projectiles, orbs
         self.all_sprites.update(dt)
@@ -216,8 +221,7 @@ class GameScene:
                 weapon.draw_effect(screen, self.camera.offset)
 
         # 4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
-        # We don't have clock_fps here, so we'll pass 0 for FPS
-        self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, 0)
+        self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, self._fps_clock.get_fps())
 
         # 5. If upgrade_menu: upgrade_menu.draw(screen)
         if self.upgrade_menu:

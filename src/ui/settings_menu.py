@@ -176,10 +176,11 @@ class SettingsMenu:
                             self.buttons[button_name]["value"] = new_value
                             self.buttons[button_name]["text"] = button_name.capitalize() + ": " + ("ON" if new_value else "OFF")
 
-                            # Save immediately
+                            # Save and apply immediately
                             if button_name == "fullscreen":
                                 self.fullscreen = new_value
                                 self.save_system.set_setting("fullscreen", new_value)
+                                pygame.display.toggle_fullscreen()
                             elif button_name == "show_fps":
                                 self.show_fps = new_value
                                 self.save_system.set_setting("show_fps", new_value)
