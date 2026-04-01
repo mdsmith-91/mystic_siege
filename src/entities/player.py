@@ -15,6 +15,7 @@ class Player(BaseEntity):
         self.max_hp = hero_class_data["hp"]
         self.hp = self.max_hp
         self.speed = hero_class_data["speed"]
+        self.base_speed = self.speed
         self.armor = hero_class_data["armor"]
 
         # Placeholder image: 32x32 surface filled with hero_class_data["color"], label "P" centered

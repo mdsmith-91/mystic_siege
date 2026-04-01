@@ -1,5 +1,9 @@
 import pygame
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR, MAX_WEAPON_SLOTS
+from settings import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR, MAX_WEAPON_SLOTS,
+    WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
+    WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
+)
 
 class HUD:
     def __init__(self):
@@ -120,7 +124,7 @@ class HUD:
         #     Always show Speed and Armor; show others only when non-default
         stat_font = pygame.font.SysFont("serif", 14)
         stat_lines = [
-            (f"SPD  {int(player.speed)}", (200, 200, 200)),
+            (f"SPD  {int(player.speed / player.base_speed * 100)}%", (200, 200, 200)),
             (f"ARM  {int(player.armor)}%", (200, 200, 200)),
         ]
         if player.cooldown_reduction > 0:
@@ -196,6 +200,15 @@ class HUD:
                 letter = weapon_name[0] if weapon_name else "?"
                 text = font.render(letter, True, (255, 255, 255))
                 screen.blit(text, text.get_rect(center=slot_rect.center))
+                # Level pip dots: filled pips up to weapon.level, empty pips beyond
+                weapon_level = player.weapons[i].level
+                total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * WEAPON_SLOT_PIP_SPACING
+                pip_start_x = slot_rect.centerx - total_pip_width // 2
+                pip_y = slot_rect.bottom - WEAPON_SLOT_PIP_Y_OFFSET - WEAPON_SLOT_PIP_RADIUS
+                for p in range(WEAPON_SLOT_PIP_COUNT):
+                    pip_x = pip_start_x + p * WEAPON_SLOT_PIP_SPACING
+                    color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon_level else WEAPON_SLOT_PIP_EMPTY_COLOR
+                    pygame.draw.circle(screen, color, (pip_x, pip_y), WEAPON_SLOT_PIP_RADIUS)
             else:
                 # Empty slot: dim border only
                 pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1)

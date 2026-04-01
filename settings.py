@@ -29,6 +29,7 @@ PICKUP_RADIUS = 80
 # XP
 BASE_XP_REQUIRED = 50
 XP_SCALE_FACTOR = 1.12
+FRIAR_HEAL_PER_XP = 0.1  # HP healed per XP point collected
 
 # WEAPONS
 MAX_WEAPON_SLOTS = 6
@@ -43,6 +44,12 @@ MIN_SPAWN_RATE = 0.3
 HUD_FONT_SIZE = 24
 SMALL_FONT_SIZE = 16
 TITLE_FONT_SIZE = 72
+WEAPON_SLOT_PIP_COUNT = 5
+WEAPON_SLOT_PIP_RADIUS = 3
+WEAPON_SLOT_PIP_SPACING = 7
+WEAPON_SLOT_PIP_Y_OFFSET = 6
+WEAPON_SLOT_PIP_FILLED_COLOR = (255, 215, 0)
+WEAPON_SLOT_PIP_EMPTY_COLOR = (80, 80, 80)
 
 # PAUSE MENU BUTTONS
 PAUSE_BUTTON_WIDTH = 240
@@ -88,7 +95,7 @@ HERO_CLASSES = [
         "hp": 110,
         "speed": 210,
         "armor": 5,
-        "passive_desc": "Heals 1 HP per 10 XP orbs collected.",
+        "passive_desc": "Heals 1 HP per 10 XP gained.",
         "starting_weapon": "HolyNova",
         "color": (200, 180, 120)
     }
