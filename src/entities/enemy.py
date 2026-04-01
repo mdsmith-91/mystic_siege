@@ -92,4 +92,5 @@ class Enemy(BaseEntity):
 
     def on_death(self, xp_orb_group):
         """Handle enemy death by spawning an XP orb."""
-        XPOrb(self.pos, self.xp_value, xp_orb_group)
+        all_sprites = self.all_groups[0]
+        XPOrb(self.pos, self.xp_value, (all_sprites, xp_orb_group))
