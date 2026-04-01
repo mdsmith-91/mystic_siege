@@ -20,7 +20,8 @@ class CollisionSystem:
             if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
                 player.take_damage(enemy.damage)
                 player.iframes = IFRAME_DURATION
-                knockback_dir = (player.pos - enemy.pos).normalize()
+                diff = player.pos - enemy.pos
+                knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                 player.vel = knockback_dir * 300  # brief knockback
                 # (vel decays: add player velocity decay in Player.update — vel *= max(0, 1 - 8*dt))
 
