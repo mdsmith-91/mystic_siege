@@ -1,5 +1,7 @@
 import pygame
 from src.systems.save_system import SaveSystem
+from src.utils.audio_manager import AudioManager
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 # Constants
 BACKGROUND_COLOR = (25, 15, 35)
@@ -98,8 +100,8 @@ class SettingsMenu:
         dialog_height = 150
         self.confirm_dialog = {
             "rect": pygame.Rect(
-                (800 - dialog_width) // 2,
-                (600 - dialog_height) // 2,
+                (SCREEN_WIDTH - dialog_width) // 2,
+                (SCREEN_HEIGHT - dialog_height) // 2,
                 dialog_width,
                 dialog_height
             ),
@@ -107,8 +109,8 @@ class SettingsMenu:
             "buttons": {
                 "yes": {
                     "rect": pygame.Rect(
-                        (800 - dialog_width) // 2 + 20,
-                        (600 - dialog_height) // 2 + 90,
+                        (SCREEN_WIDTH - dialog_width) // 2 + 20,
+                        (SCREEN_HEIGHT - dialog_height) // 2 + 90,
                         100,
                         40
                     ),
@@ -116,8 +118,8 @@ class SettingsMenu:
                 },
                 "cancel": {
                     "rect": pygame.Rect(
-                        (800 - dialog_width) // 2 + 180,
-                        (600 - dialog_height) // 2 + 90,
+                        (SCREEN_WIDTH - dialog_width) // 2 + 180,
+                        (SCREEN_HEIGHT - dialog_height) // 2 + 90,
                         100,
                         40
                     ),
@@ -174,7 +176,8 @@ class SettingsMenu:
                             # Toggle the setting
                             new_value = not button_data["value"]
                             self.buttons[button_name]["value"] = new_value
-                            self.buttons[button_name]["text"] = button_name.capitalize() + ": " + ("ON" if new_value else "OFF")
+                            _button_labels = {"fullscreen": "Fullscreen", "show_fps": "Show FPS"}
+                            self.buttons[button_name]["text"] = _button_labels[button_name] + ": " + ("ON" if new_value else "OFF")
 
                             # Save and apply immediately
                             if button_name == "fullscreen":
@@ -204,13 +207,15 @@ class SettingsMenu:
                     slider["handle_rect"].x = new_x - slider["handle_rect"].width // 2
                     slider["value"] = new_value
 
-                    # Save the new volume value
+                    # Save and apply the new volume value
                     if self.dragging_slider == "music_volume":
                         self.music_volume = new_value
                         self.save_system.set_setting("music_volume", new_value)
+                        AudioManager.instance().set_music_volume(new_value)
                     elif self.dragging_slider == "sfx_volume":
                         self.sfx_volume = new_value
                         self.save_system.set_setting("sfx_volume", new_value)
+                        AudioManager.instance().set_sfx_volume(new_value)
 
     def update(self, dt: float):
         # No update logic needed for this menu

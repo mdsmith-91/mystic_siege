@@ -8,10 +8,10 @@ class HUD:
     def draw_threat_arrows(self, screen, player, enemy_group, camera):
         """Draw arrows pointing to enemies that are offscreen."""
         # Get screen boundaries
-        screen_left = camera.x
-        screen_right = camera.x + SCREEN_WIDTH
-        screen_top = camera.y
-        screen_bottom = camera.y + SCREEN_HEIGHT
+        screen_left = camera.offset.x
+        screen_right = camera.offset.x + SCREEN_WIDTH
+        screen_top = camera.offset.y
+        screen_bottom = camera.offset.y + SCREEN_HEIGHT
 
         # Track how many arrows we've drawn
         arrows_drawn = 0
@@ -46,7 +46,7 @@ class HUD:
                 # Determine which edge the arrow should point to
                 if offscreen_left:
                     arrow_x = 0
-                    arrow_y = enemy_center_y - camera.y
+                    arrow_y = enemy_center_y - camera.offset.y
                     # Adjust to screen edge
                     if arrow_y < 0:
                         arrow_y = 0
@@ -54,14 +54,14 @@ class HUD:
                         arrow_y = SCREEN_HEIGHT
                 elif offscreen_right:
                     arrow_x = SCREEN_WIDTH
-                    arrow_y = enemy_center_y - camera.y
+                    arrow_y = enemy_center_y - camera.offset.y
                     # Adjust to screen edge
                     if arrow_y < 0:
                         arrow_y = 0
                     elif arrow_y > SCREEN_HEIGHT:
                         arrow_y = SCREEN_HEIGHT
                 elif offscreen_top:
-                    arrow_x = enemy_center_x - camera.x
+                    arrow_x = enemy_center_x - camera.offset.x
                     arrow_y = 0
                     # Adjust to screen edge
                     if arrow_x < 0:
@@ -69,7 +69,7 @@ class HUD:
                     elif arrow_x > SCREEN_WIDTH:
                         arrow_x = SCREEN_WIDTH
                 elif offscreen_bottom:
-                    arrow_x = enemy_center_x - camera.x
+                    arrow_x = enemy_center_x - camera.offset.x
                     arrow_y = SCREEN_HEIGHT
                     # Adjust to screen edge
                     if arrow_x < 0:

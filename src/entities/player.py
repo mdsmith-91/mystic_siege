@@ -86,6 +86,7 @@ class Player(BaseEntity):
         self.heal(self.regen_rate * dt)
 
         # Iframe countdown: iframes = max(0, iframes - dt)
+        prev_iframes = self.iframes
         self.iframes = max(0, self.iframes - dt)
 
         # Flash effect during iframes
@@ -98,6 +99,10 @@ class Player(BaseEntity):
                     self.image.set_alpha(80)
                 else:
                     self.image.set_alpha(255)
+        elif prev_iframes > 0:
+            # Iframes just expired — restore full opacity and reset flash timer
+            self.image.set_alpha(255)
+            self.flash_timer = 0
 
         # Update all weapons: for w in weapons: w.update(dt)
         for weapon in self.weapons:

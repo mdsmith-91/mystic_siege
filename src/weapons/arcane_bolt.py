@@ -15,6 +15,8 @@ class ArcaneBolt(BaseWeapon):
     def __init__(self, owner, projectile_group, enemy_group):
         super().__init__(owner, projectile_group, enemy_group)
 
+        self.pierce = 0
+
         # Define upgrade levels
         self.upgrade_levels = [
             {},  # Level 1 (no upgrade)
@@ -63,7 +65,7 @@ class ArcaneBolt(BaseWeapon):
                 damage=damage,
                 groups=self.projectile_group,
                 enemy_group_ref=self.enemy_group,
-                pierce=self.pierce if hasattr(self, 'pierce') else 0,
+                pierce=self.pierce,
                 homing=self.homing,
                 color=self.projectile_color
             )

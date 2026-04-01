@@ -39,6 +39,9 @@ class Enemy(BaseEntity):
         # attack_cooldown: float = 1.0
         self.attack_cooldown = 1.0
 
+        # Guard against on_death being triggered twice by simultaneous projectile hits
+        self._death_handled = False
+
         # knockback_vel: Vector2 = Vector2(0,0)  (decays each frame)
         self.knockback_vel = Vector2(0, 0)
 
@@ -72,18 +75,19 @@ class Enemy(BaseEntity):
         # Update position
         super().update(dt)
 
-        # Attack timer counts down; when 0 and overlapping target: deal damage, always reset
+        # Attack timer counts down; contact damage is handled by CollisionSystem (which
+        # enforces iframes), so the timer here is kept as a hook for ranged subclasses.
         self.attack_timer -= dt
         if self.attack_timer <= 0:
-            if self.rect.colliderect(self.target.rect):
-                self.target.take_damage(self.damage)
             self.attack_timer = self.attack_cooldown
 
     def take_damage(self, amount):
         """Override to trigger on_death after the entity is killed."""
+        if self._death_handled:
+            return
         super().take_damage(amount)
-        # Check if the entity is now dead (hp <= 0) and was not already dead
         if self.hp <= 0 and self.xp_orb_group is not None:
+            self._death_handled = True
             self.on_death(self.xp_orb_group)
 
     def apply_knockback(self, direction: Vector2, force: float):
