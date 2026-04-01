@@ -1,0 +1,26 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pyenv
+.python-version
+
+# Saves (optional — remove this line if you want to track save files)
+saves/
+
+# Screenshots
+screenshot_*.png
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# IDE folders
+.vscode/
+.idea/

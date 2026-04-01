@@ -1,0 +1,80 @@
+# Mystic Siege — Game Constants
+# All values defined here, never hardcode anywhere else
+
+# SCREEN
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+FPS = 60
+TITLE = "Mystic Siege"
+TILE_SIZE = 32
+WORLD_WIDTH = 3000
+WORLD_HEIGHT = 3000
+
+# COLORS (as RGB tuples)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GOLD = (212, 175, 55)
+DARK_PURPLE = (45, 0, 75)
+UI_BG = (20, 15, 30, 180)  # RGBA for semi-transparent panels
+XP_COLOR = (80, 220, 255)
+HP_COLOR = (60, 200, 80)
+HP_LOW_COLOR = (220, 60, 60)
+
+# PLAYER BASE STATS
+BASE_HP = 100
+BASE_SPEED = 200
+PICKUP_RADIUS = 80
+
+# XP
+BASE_XP_REQUIRED = 50
+XP_SCALE_FACTOR = 1.12
+
+# SPAWNING
+INITIAL_SPAWN_RATE = 3.0
+MIN_SPAWN_RATE = 0.3
+
+# UI
+HUD_FONT_SIZE = 24
+SMALL_FONT_SIZE = 16
+TITLE_FONT_SIZE = 72
+
+# GAME STATES (string constants)
+STATE_MENU = "menu"
+STATE_CLASS_SELECT = "class_select"
+STATE_PLAYING = "playing"
+STATE_PAUSED = "paused"
+STATE_GAMEOVER = "gameover"
+STATE_VICTORY = "victory"
+
+# HERO_CLASSES list of 3 dicts, each with keys:
+# name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
+HERO_CLASSES = [
+    {
+        "name": "Knight of the Burning Crown",
+        "hp": 150,
+        "speed": 180,
+        "armor": 15,
+        "passive_desc": "Takes 15% less damage. Immune to knockback.",
+        "starting_weapon": "SpectralBlade",
+        "color": (180, 140, 60)
+    },
+    {
+        "name": "Witch of the Hollow Marsh",
+        "hp": 80,
+        "speed": 240,
+        "armor": 0,
+        "passive_desc": "Spells deal 20% more damage. +10% crit chance.",
+        "starting_weapon": "ArcaneBolt",
+        "color": (160, 60, 220)
+    },
+    {
+        "name": "Wandering Friar",
+        "hp": 110,
+        "speed": 210,
+        "armor": 5,
+        "passive_desc": "Heals 1 HP per 10 XP orbs collected.",
+        "starting_weapon": "HolyNova",
+        "color": (200, 180, 120)
+    }
+]
