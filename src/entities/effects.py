@@ -1,0 +1,213 @@
+import pygame
+from pygame.math import Vector2
+import random
+
+class DamageNumber(pygame.sprite.Sprite):
+    def __init__(self, pos, amount: float, groups, is_player_damage=False):
+        super().__init__(groups)
+
+        # Text: str(int(amount))
+        self.text = str(int(amount))
+
+        # Color: (255,80,80) if is_player_damage, (255,220,60) if amount > 40, else WHITE
+        if is_player_damage:
+            self.color = (255, 80, 80)
+        elif amount > 40:
+            self.color = (255, 220, 60)
+        else:
+            self.color = (255, 255, 255)
+
+        # Font size: 18 + min(int(amount/10), 14)  (bigger hits = bigger text)
+        font_size = 18 + min(int(amount / 10), 14)
+        self.font = pygame.font.SysFont(None, font_size)
+
+        # Text surface
+        self.text_surface = self.font.render(self.text, True, self.color)
+        self.image = self.text_surface
+        self.rect = self.image.get_rect(center=pos)
+
+        # Velocity: Vector2(random -20 to 20, -80)
+        self.vel = Vector2(random.uniform(-20, 20), -80)
+
+        # lifetime = 0.8
+        self.lifetime = 0.8
+
+        # Store original position for updating
+        self.pos = Vector2(pos)
+
+    def update(self, dt):
+        # pos += vel*dt
+        self.pos += self.vel * dt
+
+        # vel.y += 40*dt (gravity)
+        self.vel.y += 40 * dt
+
+        # lifetime -= dt
+        self.lifetime -= dt
+
+        # Update position
+        self.rect.center = self.pos
+
+        # Alpha fades out in last 0.3s
+        if self.lifetime < 0.3:
+            alpha = int(255 * (self.lifetime / 0.3))
+            self.image = self.text_surface.copy()
+            self.image.set_alpha(alpha)
+
+        # kill() when done
+        if self.lifetime <= 0:
+            self.kill()
+
+class HitSpark(pygame.sprite.Sprite):
+    def __init__(self, pos, color: tuple, groups):
+        super().__init__(groups)
+
+        # 6 particles: list of dicts {pos, vel (random outward), radius, lifetime}
+        self.particles = []
+        for _ in range(6):
+            angle = random.uniform(0, 2 * 3.14159)
+            distance = random.uniform(5, 15)
+            vel = Vector2(distance * 30 * 3.14159, 0)
+            vel.rotate_ip(angle)
+
+            self.particles.append({
+                "pos": Vector2(pos),
+                "vel": vel,
+                "radius": random.uniform(2, 5),
+                "lifetime": 0.25
+            })
+
+        # image: transparent surface sized to contain all particles
+        self.image = pygame.Surface((50, 50), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(center=pos)
+
+        # Store original position
+        self.pos = Vector2(pos)
+
+    def update(self, dt):
+        # Move particles, shrink radius, fade
+        for particle in self.particles:
+            # Move particle
+            particle["pos"] += particle["vel"] * dt
+
+            # Shrink radius
+            particle["radius"] = max(0, particle["radius"] - 0.5 * dt)
+
+            # Fade (decrease lifetime)
+            particle["lifetime"] -= dt
+
+            # Update position
+            self.rect.center = self.pos
+
+        # Remove dead particles and update image
+        self.particles = [p for p in self.particles if p["lifetime"] > 0]
+
+        # Redraw image
+        self.image.fill((0, 0, 0, 0))  # Clear surface
+        for particle in self.particles:
+            alpha = int(255 * (particle["lifetime"] / 0.25))
+            pygame.draw.circle(self.image, (*particle["color"], alpha),
+                             (particle["pos"].x - self.rect.x + 25,
+                              particle["pos"].y - self.rect.y + 25),
+                             particle["radius"])
+
+class DeathExplosion(pygame.sprite.Sprite):
+    def __init__(self, pos, radius: int, color: tuple, groups):
+        super().__init__(groups)
+
+        # Expanding circle, starts at radius/4, expands to radius over 0.4s
+        self.radius = radius / 4
+        self.target_radius = radius
+        self.expansion_speed = (radius - radius / 4) / 0.4  # pixels per second
+
+        # Alpha fades from 200 to 0
+        self.alpha = 200
+
+        # lifetime = 0.4s
+        self.lifetime = 0.4
+
+        # image: transparent surface
+        self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(center=pos)
+
+        # Store original position
+        self.pos = Vector2(pos)
+
+    def update(self, dt):
+        # Expand, fade, kill when done
+        # Expand
+        self.radius += self.expansion_speed * dt
+
+        # Fade
+        self.lifetime -= dt
+        self.alpha = max(0, 200 - (200 * (0.4 - self.lifetime) / 0.4))
+
+        # Update image
+        self.image.fill((0, 0, 0, 0))  # Clear surface
+        pygame.draw.circle(self.image, (*self.color, self.alpha),
+                         (self.rect.width // 2, self.rect.height // 2),
+                         int(self.radius))
+
+        # Kill when done
+        if self.lifetime <= 0:
+            self.kill()
+
+class LevelUpEffect(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+
+        # Ring of 12 gold particles orbiting outward
+        self.particles = []
+        for i in range(12):
+            angle = i * (2 * 3.14159 / 12)
+            distance = 0
+            self.particles.append({
+                "pos": Vector2(pos),
+                "angle": angle,
+                "distance": distance,
+                "speed": 100,  # pixels per second
+                "lifetime": 1.5,
+                "radius": 3
+            })
+
+        # lifetime = 1.5s
+        self.lifetime = 1.5
+
+        # image: transparent surface
+        self.image = pygame.Surface((200, 200), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(center=pos)
+
+        # Store original position
+        self.pos = Vector2(pos)
+
+    def update(self, dt):
+        # Move particles outward, then fade
+        for particle in self.particles:
+            # Move outward
+            particle["distance"] += particle["speed"] * dt
+
+            # Update position
+            particle["pos"].x = self.pos.x + particle["distance"] * 3.14159 * particle["angle"]
+            particle["pos"].y = self.pos.y + particle["distance"] * 3.14159 * particle["angle"]
+
+            # Fade (decrease lifetime)
+            particle["lifetime"] -= dt
+
+            # Update radius (fade out)
+            particle["radius"] = max(0, 3 - (3 * (1.5 - particle["lifetime"]) / 1.5))
+
+        # Remove dead particles
+        self.particles = [p for p in self.particles if p["lifetime"] > 0]
+
+        # Update image
+        self.image.fill((0, 0, 0, 0))  # Clear surface
+        for particle in self.particles:
+            alpha = int(255 * (particle["lifetime"] / 1.5))
+            pygame.draw.circle(self.image, (212, 175, 55, alpha),
+                             (particle["pos"].x - self.rect.x + 100,
+                              particle["pos"].y - self.rect.y + 100),
+                             particle["radius"])
+
+        # Kill when done
+        if self.lifetime <= 0:
+            self.kill()
