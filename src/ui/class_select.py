@@ -5,6 +5,7 @@ from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
 class ClassSelect:
     def __init__(self):
         self.next_scene = None
+        self.next_scene_kwargs = {}
         self.selected_class = None
         self.hovered_card = None
 

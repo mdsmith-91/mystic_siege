@@ -5,7 +5,7 @@ from src.entities.projectile import Projectile
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class LichFamiliar(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, projectile_group=None):
+    def __init__(self, pos, target, all_groups: tuple, projectile_group=None, xp_orb_group=None):
         # enemy_data = {name:"Lich", hp:35, speed:90, damage:12, xp_value:12, behavior:"ranged"}
         enemy_data = {
             "name": "Lich",
@@ -15,7 +15,7 @@ class LichFamiliar(Enemy):
             "xp_value": 12,
             "behavior": "ranged"
         }
-        super().__init__(pos, target, all_groups, enemy_data)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
 
         # Behavior:
         # - Maintains orbit distance of ~200px from player

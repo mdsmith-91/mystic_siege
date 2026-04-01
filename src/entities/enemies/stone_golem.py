@@ -4,8 +4,7 @@ from src.entities.enemy import Enemy
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class StoneGolem(Enemy):
-    def __init__(self, pos, target, all_groups: tuple):
-        # enemy_data = {name:"Golem", hp:500, speed:40, damage:40, xp_value:80, behavior:"chase"}
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
         enemy_data = {
             "name": "Golem",
             "hp": 500,
@@ -14,7 +13,7 @@ class StoneGolem(Enemy):
             "xp_value": 80,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
 
         # Override image: 48x48 dark gray rect
         self.image = pygame.Surface((48, 48), pygame.SRCALPHA)

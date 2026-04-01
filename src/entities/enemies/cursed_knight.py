@@ -4,8 +4,7 @@ from src.entities.enemy import Enemy
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class CursedKnight(Enemy):
-    def __init__(self, pos, target, all_groups: tuple):
-        # enemy_data = {name:"Knight", hp:80, speed:110, damage:20, xp_value:15, behavior:"chase"}
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
         enemy_data = {
             "name": "Knight",
             "hp": 80,
@@ -14,7 +13,7 @@ class CursedKnight(Enemy):
             "xp_value": 15,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
 
         # Shield mechanic
         self.shield_facing = Vector2(1, 0)  # Points toward player each frame

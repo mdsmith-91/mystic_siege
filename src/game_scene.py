@@ -125,8 +125,8 @@ class GameScene:
 
     def update(self, dt):
         """Update the game scene."""
-        # If paused or upgrade_menu: return
-        if self.paused or self.upgrade_menu:
+        # If paused or upgrade_menu is open (and not yet dismissed): return
+        if self.paused or (self.upgrade_menu and not self.upgrade_menu.done):
             return
 
         # all_sprites.update(dt)  — this updates player, enemies, projectiles, orbs

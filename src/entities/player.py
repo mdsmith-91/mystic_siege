@@ -117,9 +117,8 @@ class Player(BaseEntity):
                 alpha = int(255 * self.death_timer)
                 self.image.set_alpha(alpha)
             else:
-                # Death complete
+                # Death complete — kill() removes from groups; is_alive property returns False automatically
                 super().kill()
-                self.is_alive = False
 
         # Sync rect
         self.rect.center = self.pos

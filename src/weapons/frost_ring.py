@@ -81,11 +81,11 @@ class FrostRing(BaseWeapon):
                         damage = self.base_damage * self.owner.damage_multiplier
                         enemy.take_damage(damage)
 
-                        # Freeze enemy
+                        # Freeze enemy — only save max_speed if not already frozen
                         self.frozen_enemies[enemy.sprite_id] = self.freeze_duration
-                        # Store original speed
-                        enemy.max_speed = enemy.speed
-                        enemy.speed = 0  # Freeze enemy
+                        if enemy.speed > 0:
+                            enemy.max_speed = enemy.speed
+                        enemy.speed = 0
 
                         # Add to done set
                         ring["damage_done"].add(enemy.sprite_id)

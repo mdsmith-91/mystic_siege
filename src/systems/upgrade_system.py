@@ -139,40 +139,32 @@ class UpgradeSystem:
     def apply_choice(self, choice: dict, player):
         """Apply the chosen upgrade."""
         if "weapon_class" in choice:
-            # If choice has "weapon_class" key:
-            # Import and instantiate the weapon, call player.add_weapon(weapon)
-            # Or if it's an upgrade: player.upgrade_weapon(choice["weapon_class"])
             weapon_class_name = choice["weapon_class"]
 
-            # Import the weapon class
-            if weapon_class_name == "ArcaneBolt":
-                from src.weapons.arcane_bolt import ArcaneBolt
-                weapon = ArcaneBolt(player, self.projectile_group, self.enemy_group)
-            elif weapon_class_name == "HolyNova":
-                from src.weapons.holy_nova import HolyNova
-                weapon = HolyNova(player, self.projectile_group, self.enemy_group)
-            elif weapon_class_name == "SpectralBlade":
-                from src.weapons.spectral_blade import SpectralBlade
-                weapon = SpectralBlade(player, self.projectile_group, self.enemy_group)
-            elif weapon_class_name == "FlameWhip":
-                from src.weapons.flame_whip import FlameWhip
-                weapon = FlameWhip(player, self.projectile_group, self.enemy_group)
-            elif weapon_class_name == "FrostRing":
-                from src.weapons.frost_ring import FrostRing
-                weapon = FrostRing(player, self.projectile_group, self.enemy_group)
-            elif weapon_class_name == "LightningChain":
-                from src.weapons.lightning_chain import LightningChain
-                weapon = LightningChain(player, self.projectile_group, self.enemy_group)
-            else:
-                return  # Unknown weapon class
-
-            # Check if it's an upgrade or new weapon
             if choice["type"] == "upgrade":
                 player.upgrade_weapon(weapon_class_name)
             else:
-                # For new weapons, we need to set up the proper groups
-                # This is a simplified approach - in a real implementation, the weapon
-                # would be created with the correct groups when added to the player
+                # Construct and add new weapon only when actually needed
+                if weapon_class_name == "ArcaneBolt":
+                    from src.weapons.arcane_bolt import ArcaneBolt
+                    weapon = ArcaneBolt(player, self.projectile_group, self.enemy_group)
+                elif weapon_class_name == "HolyNova":
+                    from src.weapons.holy_nova import HolyNova
+                    weapon = HolyNova(player, self.projectile_group, self.enemy_group)
+                elif weapon_class_name == "SpectralBlade":
+                    from src.weapons.spectral_blade import SpectralBlade
+                    weapon = SpectralBlade(player, self.projectile_group, self.enemy_group)
+                elif weapon_class_name == "FlameWhip":
+                    from src.weapons.flame_whip import FlameWhip
+                    weapon = FlameWhip(player, self.projectile_group, self.enemy_group)
+                elif weapon_class_name == "FrostRing":
+                    from src.weapons.frost_ring import FrostRing
+                    weapon = FrostRing(player, self.projectile_group, self.enemy_group)
+                elif weapon_class_name == "LightningChain":
+                    from src.weapons.lightning_chain import LightningChain
+                    weapon = LightningChain(player, self.projectile_group, self.enemy_group)
+                else:
+                    return
                 player.add_weapon(weapon)
         else:
             # If choice has "stat" key: call _apply_passive(choice, player)

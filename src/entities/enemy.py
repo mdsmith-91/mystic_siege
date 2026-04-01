@@ -5,8 +5,10 @@ from src.entities.xp_orb import XPOrb
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class Enemy(BaseEntity):
-    def __init__(self, pos, target, all_groups: tuple, enemy_data: dict):
+    def __init__(self, pos, target, all_groups: tuple, enemy_data: dict, xp_orb_group=None):
         super().__init__(pos, all_groups)
+        self.all_groups = all_groups
+        self.xp_orb_group = xp_orb_group
 
         # target = player reference
         self.target = target
@@ -70,12 +72,19 @@ class Enemy(BaseEntity):
         # Update position
         super().update(dt)
 
-        # Attack timer counts down; when 0 and overlapping target: target.take_damage(damage), reset timer
+        # Attack timer counts down; when 0 and overlapping target: deal damage, always reset
         self.attack_timer -= dt
         if self.attack_timer <= 0:
             if self.rect.colliderect(self.target.rect):
                 self.target.take_damage(self.damage)
-                self.attack_timer = self.attack_cooldown
+            self.attack_timer = self.attack_cooldown
+
+    def take_damage(self, amount):
+        """Override to trigger on_death after the entity is killed."""
+        was_alive = self.hp > 0
+        super().take_damage(amount)
+        if was_alive and self.hp <= 0 and self.xp_orb_group:
+            self.on_death(self.xp_orb_group)
 
     def apply_knockback(self, direction: Vector2, force: float):
         """Apply knockback to the enemy."""
@@ -83,6 +92,4 @@ class Enemy(BaseEntity):
 
     def on_death(self, xp_orb_group):
         """Handle enemy death by spawning an XP orb."""
-        # Spawn XPOrb at self.pos with self.xp_value
-        orb = XPOrb(self.pos, self.xp_value, xp_orb_group)
-        orb.add(xp_orb_group)
+        XPOrb(self.pos, self.xp_value, xp_orb_group)

@@ -4,8 +4,7 @@ from src.entities.enemy import Enemy
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
 class Wraith(Enemy):
-    def __init__(self, pos, target, all_groups: tuple):
-        # enemy_data = {name:"Wraith", hp:40, speed:120, damage:15, xp_value:10, behavior:"chase"}
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
         enemy_data = {
             "name": "Wraith",
             "hp": 40,
@@ -14,7 +13,7 @@ class Wraith(Enemy):
             "xp_value": 10,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
 
         # Override image: 28x28 semi-transparent blue-gray surface (alpha=180)
         self.image = pygame.Surface((28, 28), pygame.SRCALPHA)

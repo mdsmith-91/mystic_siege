@@ -172,34 +172,29 @@ class WaveManager:
         for _ in range(count):
             pos = self._get_spawn_pos()
 
-            # Import correct class based on data["name"]
             groups = (self.all_sprites, self.enemy_group)
             if data["name"] == "Skeleton":
-                enemy = Skeleton(pos, self.player, groups)
+                enemy = Skeleton(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Goblin":
-                enemy = DarkGoblin(pos, self.player, groups)
+                enemy = DarkGoblin(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Wraith":
-                enemy = Wraith(pos, self.player, groups)
+                enemy = Wraith(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Bat":
-                enemy = PlagueBat(pos, self.player, groups)
+                enemy = PlagueBat(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Golem":
-                enemy = StoneGolem(pos, self.player, groups)
+                enemy = StoneGolem(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Knight":
-                enemy = CursedKnight(pos, self.player, groups)
+                enemy = CursedKnight(pos, self.player, groups, self.xp_orb_group)
             elif data["name"] == "Lich":
-                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group)
+                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group, self.xp_orb_group)
             else:
-                enemy = Enemy(pos, self.player, groups, data)
+                enemy = Enemy(pos, self.player, groups, data, self.xp_orb_group)
 
             # If elite_mode: multiply hp and damage by 1.5
             if self.elite_mode:
                 enemy.max_hp = int(enemy.max_hp * 1.5)
                 enemy.hp = enemy.max_hp
                 enemy.damage = int(enemy.damage * 1.5)
-
-            # Add to all_sprites and enemy_group
-            enemy.add(self.all_sprites)
-            enemy.add(self.enemy_group)
 
     def _get_spawn_pos(self) -> Vector2:
         """Get a random point on one of 4 world edges, 100px outside screen view."""

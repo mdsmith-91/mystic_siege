@@ -81,10 +81,10 @@ class LightningChain(BaseWeapon):
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
             if random.random() < self.stun_chance:
-                # Freeze enemy
-                enemy.max_speed = enemy.speed
+                # Only save max_speed if not already frozen (speed > 0)
+                if enemy.speed > 0:
+                    enemy.max_speed = enemy.speed
                 enemy.speed = 0
-                # Store freeze timer (we'll handle this in update)
                 enemy.freeze_timer = self.stun_duration
 
         # Store arc positions for drawing
@@ -99,7 +99,6 @@ class LightningChain(BaseWeapon):
 
     def update(self, dt):
         """Update the lightning chain effect."""
-        # Update cooldown timer
         super().update(dt)
 
         # Tick lightning arc timers, remove expired arcs
@@ -110,6 +109,15 @@ class LightningChain(BaseWeapon):
                 self.lightning_arcs.pop(i)
             else:
                 i += 1
+
+        # Tick stun timers on all enemies and restore speed when stun expires
+        for enemy in self.enemy_group:
+            if getattr(enemy, 'freeze_timer', 0) > 0:
+                enemy.freeze_timer -= dt
+                if enemy.freeze_timer <= 0:
+                    enemy.freeze_timer = 0
+                    if hasattr(enemy, 'max_speed'):
+                        enemy.speed = enemy.max_speed
 
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs."""
