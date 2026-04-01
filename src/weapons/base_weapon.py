@@ -10,11 +10,7 @@ class BaseWeapon(ABC):
         self.enemy_group = enemy_group
         self.upgrade_levels = []  # Defined by subclasses
 
-        # Subclasses must set: name, description, base_damage, base_cooldown
-        self.name = ""
-        self.description = ""
-        self.base_damage = 0.0
-        self.base_cooldown = 0.0
+        # Subclasses define name, description, base_damage, base_cooldown as class attributes
 
     def update(self, dt: float):
         """Update the weapon's cooldown timer."""

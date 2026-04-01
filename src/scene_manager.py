@@ -3,7 +3,8 @@ from src.ui.main_menu import MainMenu
 from src.ui.class_select import ClassSelect
 from src.game_scene import GameScene
 from src.ui.game_over import GameOver
-from settings import STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER
+from src.ui.settings_menu import SettingsMenu
+from settings import STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER, STATE_SETTINGS
 
 class SceneManager:
     def __init__(self):
@@ -11,7 +12,8 @@ class SceneManager:
             STATE_MENU: None,
             STATE_CLASS_SELECT: None,
             STATE_PLAYING: None,
-            STATE_GAMEOVER: None
+            STATE_GAMEOVER: None,
+            STATE_SETTINGS: None,
         }
         self.current_scene = None
         self._switch_to(STATE_MENU)
@@ -21,6 +23,10 @@ class SceneManager:
         if scene_name not in self.scenes:
             raise ValueError(f"Unknown scene: {scene_name}")
 
+        # GameScene and GameOver are always created fresh (never reuse old run state)
+        if scene_name in (STATE_PLAYING, STATE_GAMEOVER):
+            self.scenes[scene_name] = None
+
         # Create the scene if it doesn't exist
         if self.scenes[scene_name] is None:
             if scene_name == STATE_MENU:
@@ -28,10 +34,11 @@ class SceneManager:
             elif scene_name == STATE_CLASS_SELECT:
                 self.scenes[scene_name] = ClassSelect()
             elif scene_name == STATE_PLAYING:
-                # GameScene is created fresh each time to get fresh state
                 self.scenes[scene_name] = GameScene(**kwargs)
             elif scene_name == STATE_GAMEOVER:
                 self.scenes[scene_name] = GameOver(**kwargs)
+            elif scene_name == STATE_SETTINGS:
+                self.scenes[scene_name] = SettingsMenu()
 
         self.current_scene = self.scenes[scene_name]
 

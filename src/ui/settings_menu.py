@@ -1,10 +1,5 @@
 import pygame
-import sys
-from typing import Optional
-
-from src.scene_manager import SceneManager
 from src.systems.save_system import SaveSystem
-from src.ui.main_menu import MainMenu
 
 # Constants
 BACKGROUND_COLOR = (25, 15, 35)
@@ -19,11 +14,10 @@ CONFIRM_BG = (40, 30, 60)
 CONFIRM_BORDER = (120, 100, 160)
 
 class SettingsMenu:
-    def __init__(self, scene_manager: SceneManager):
-        self.scene_manager = scene_manager
+    def __init__(self):
         self.save_system = SaveSystem()
 
-        self.next_scene: Optional[str] = None
+        self.next_scene: str | None = None
         self.next_scene_kwargs: dict = {}
 
         # Initialize settings
@@ -91,6 +85,14 @@ class SettingsMenu:
             "value": None
         }
 
+        # Back button
+        button_y += 70
+        self.buttons["back"] = {
+            "rect": pygame.Rect(150, button_y, button_width, button_height),
+            "text": "Back",
+            "value": None
+        }
+
         # Confirm dialog
         dialog_width = 300
         dialog_height = 150
@@ -124,7 +126,11 @@ class SettingsMenu:
             }
         }
 
-    def handle_event(self, event):
+    def handle_events(self, events):
+        for event in events:
+            self._handle_event(event)
+
+    def _handle_event(self, event):
         if self.confirm_dialog_open:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
@@ -144,6 +150,10 @@ class SettingsMenu:
                 elif self.confirm_dialog["buttons"]["cancel"]["rect"].collidepoint(mouse_pos):
                     self.confirm_dialog_open = False
         else:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.next_scene = "menu"
+                return
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
 
@@ -158,6 +168,8 @@ class SettingsMenu:
                     if button_data["rect"].collidepoint(mouse_pos):
                         if button_name == "reset":
                             self.confirm_dialog_open = True
+                        elif button_name == "back":
+                            self.next_scene = "menu"
                         elif button_name in ["fullscreen", "show_fps"]:
                             # Toggle the setting
                             new_value = not button_data["value"]
@@ -233,8 +245,8 @@ class SettingsMenu:
 
         # Draw toggle buttons
         for button_name, button_data in self.buttons.items():
-            if button_name == "reset":
-                continue  # Skip reset button for now, we'll draw it separately
+            if button_name in ("reset", "back"):
+                continue  # drawn separately below
 
             rect = button_data["rect"]
             text = button_data["text"]
@@ -249,20 +261,17 @@ class SettingsMenu:
             text_surf = font.render(text, True, TEXT_COLOR)
             screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2, rect.centery - text_surf.get_height() // 2))
 
-        # Draw reset progress button separately
-        reset_button = self.buttons["reset"]
-        rect = reset_button["rect"]
-        text = reset_button["text"]
-
-        # Draw button
-        color = BUTTON_HIGHLIGHT if rect.collidepoint(pygame.mouse.get_pos()) else BUTTON_COLOR
-        pygame.draw.rect(screen, color, rect, border_radius=10)
-        pygame.draw.rect(screen, UI_HIGHLIGHT, rect, 2, border_radius=10)
-
-        # Draw text
+        # Draw reset and back buttons separately
         font = pygame.font.SysFont(None, 24)
-        text_surf = font.render(text, True, TEXT_COLOR)
-        screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2, rect.centery - text_surf.get_height() // 2))
+        mouse_pos = pygame.mouse.get_pos()
+        for key in ("reset", "back"):
+            btn = self.buttons[key]
+            rect = btn["rect"]
+            color = BUTTON_HIGHLIGHT if rect.collidepoint(mouse_pos) else BUTTON_COLOR
+            pygame.draw.rect(screen, color, rect, border_radius=10)
+            pygame.draw.rect(screen, UI_HIGHLIGHT, rect, 2, border_radius=10)
+            text_surf = font.render(btn["text"], True, TEXT_COLOR)
+            screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2, rect.centery - text_surf.get_height() // 2))
 
         # Draw confirm dialog if open
         if self.confirm_dialog_open:

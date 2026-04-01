@@ -32,11 +32,15 @@ class MainMenu:
                         self.next_scene = "class_select"
                         return
 
+                    # Check if "Settings" button was clicked
+                    settings_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+                    if settings_rect.collidepoint(mouse_pos):
+                        self.next_scene = "settings"
+                        return
+
                     # Check if "Quit" button was clicked
-                    quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+                    quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 520, 240, 50)
                     if quit_rect.collidepoint(mouse_pos):
-                        # Exit the game by directly calling pygame.quit and sys.exit
-                        # This should be the same as the original behavior but now it works
                         pygame.quit()
                         sys.exit()
 
@@ -105,17 +109,24 @@ class MainMenu:
         new_run_hover = new_run_rect.collidepoint(mouse_pos)
         button_color = (40, 30, 20) if new_run_hover else (30, 20, 10)
         pygame.draw.rect(screen, button_color, new_run_rect)
-        pygame.draw.rect(screen, GOLD, new_run_rect, 2)  # Gold border
-
+        pygame.draw.rect(screen, GOLD, new_run_rect, 2)
         new_run_text = subtitle_font.render("NEW RUN", True, (255, 255, 255))
         screen.blit(new_run_text, (SCREEN_WIDTH // 2 - new_run_text.get_width() // 2, 395))
 
+        # SETTINGS button
+        settings_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+        settings_hover = settings_rect.collidepoint(mouse_pos)
+        button_color = (40, 30, 20) if settings_hover else (30, 20, 10)
+        pygame.draw.rect(screen, button_color, settings_rect)
+        pygame.draw.rect(screen, GOLD, settings_rect, 2)
+        settings_text = subtitle_font.render("SETTINGS", True, (255, 255, 255))
+        screen.blit(settings_text, (SCREEN_WIDTH // 2 - settings_text.get_width() // 2, 465))
+
         # QUIT button
-        quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 450, 240, 50)
+        quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 520, 240, 50)
         quit_hover = quit_rect.collidepoint(mouse_pos)
         button_color = (40, 30, 20) if quit_hover else (30, 20, 10)
         pygame.draw.rect(screen, button_color, quit_rect)
-        pygame.draw.rect(screen, GOLD, quit_rect, 2)  # Gold border
-
+        pygame.draw.rect(screen, GOLD, quit_rect, 2)
         quit_text = subtitle_font.render("QUIT", True, (255, 255, 255))
-        screen.blit(quit_text, (SCREEN_WIDTH // 2 - quit_text.get_width() // 2, 465))
+        screen.blit(quit_text, (SCREEN_WIDTH // 2 - quit_text.get_width() // 2, 535))

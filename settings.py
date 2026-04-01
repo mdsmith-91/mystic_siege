@@ -46,6 +46,7 @@ STATE_PLAYING = "playing"
 STATE_PAUSED = "paused"
 STATE_GAMEOVER = "gameover"
 STATE_VICTORY = "victory"
+STATE_SETTINGS = "settings"
 
 # HERO_CLASSES list of 3 dicts, each with keys:
 # name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
