@@ -81,9 +81,9 @@ class Enemy(BaseEntity):
 
     def take_damage(self, amount):
         """Override to trigger on_death after the entity is killed."""
-        was_alive = self.hp > 0
         super().take_damage(amount)
-        if was_alive and self.hp <= 0 and self.xp_orb_group:
+        # Check if the entity is now dead (hp <= 0) and was not already dead
+        if self.hp <= 0 and self.xp_orb_group is not None:
             self.on_death(self.xp_orb_group)
 
     def apply_knockback(self, direction: Vector2, force: float):
