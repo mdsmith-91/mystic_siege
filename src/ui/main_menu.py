@@ -17,7 +17,7 @@ class MainMenu:
                 "size": random.randint(1, 3),
                 "alpha": random.randint(50, 255),
                 "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50))  # Ember colors
-            }
+            })
 
     def handle_events(self, events):
         """Handle user input events."""
