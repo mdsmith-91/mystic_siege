@@ -97,42 +97,30 @@ Install or update **App Installer** from the Microsoft Store, then reopen PowerS
 
 Run:
 
-    ```powershell
     winget install --id Git.Git -e --source winget
-    ```
 
 Then verify:
 
-    ```powershell
     git --version
-    ```
 
 #### Configure Git identity
 
 Run:
 
-    ```powershell
     git config --global user.name "Your Name"
-
-    ```
 
 Then:
 
-    ```powershell
     git config --global user.email "your-email@example.com"
-    ```
 
 Then verify:
 
-    ```powershell
     git config --global user.name
-    ```
 
 And:
 
-    ```powershell
     git config --global user.email
-    ```
+    
 
 #### What this does
 
