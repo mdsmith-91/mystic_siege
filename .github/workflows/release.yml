@@ -7,6 +7,10 @@ on:
     types: [completed]
     branches: [main]
 
+concurrency:
+  group: release
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -37,7 +41,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.12.13'
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
@@ -73,6 +77,7 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.binary_dst }}
+          retention-days: 1
 
   release:
     needs: [build]
@@ -86,11 +91,15 @@ jobs:
 
       - name: Compute version
         run: |
-          MAJOR_MINOR=$(cat version.txt)
+          MAJOR_MINOR=$(cat version.txt | tr -d '[:space:]')
           # Find the commit where version.txt was last changed, then count
           # all commits made after it — this resets to 0 on every version bump
           SINCE=$(git log --format="%H" -- version.txt | head -1)
-          PATCH=$(git rev-list --count ${SINCE}..HEAD)
+          if [ -z "$SINCE" ]; then
+            PATCH=$(git rev-list --count HEAD)
+          else
+            PATCH=$(git rev-list --count ${SINCE}..HEAD)
+          fi
           echo "VERSION=${MAJOR_MINOR}.${PATCH}" >> $GITHUB_ENV
 
       - uses: actions/download-artifact@v4

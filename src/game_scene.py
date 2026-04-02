@@ -6,7 +6,7 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR)
 from src.systems.save_system import SaveSystem
-from src.utils.resource_loader import ResourceLoader
+from src.utils.resource_loader import ResourceLoader, _get_base_path
 from src.entities.player import Player
 from src.systems.camera import Camera
 from src.systems.wave_manager import WaveManager
@@ -120,7 +120,7 @@ class GameScene:
         bg_path = "assets/backgrounds/game_bg.png"
         self.background = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT))
 
-        if os.path.exists(bg_path):
+        if os.path.exists(os.path.join(_get_base_path(), bg_path)):
             # Tile the generated image across the world surface
             tile = ResourceLoader.instance().load_image(bg_path)
             tile_w, tile_h = tile.get_size()

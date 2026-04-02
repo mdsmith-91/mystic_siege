@@ -1,5 +1,6 @@
 import pygame
 import os
+from src.utils.resource_loader import ResourceLoader, _get_base_path
 
 class AudioManager:
     _instance = None
@@ -42,12 +43,9 @@ class AudioManager:
             if pygame.mixer.get_init() is None:
                 return
 
-            # Check if file exists
-            if not os.path.exists(path):
-                return
-
-            sound = pygame.mixer.Sound(path)
-            self._sfx_cache[name] = sound
+            sound = ResourceLoader.instance().load_sound(path)
+            if sound is not None:
+                self._sfx_cache[name] = sound
         except Exception:
             # Fail silently as requested
             pass
@@ -58,11 +56,11 @@ class AudioManager:
             if pygame.mixer.get_init() is None:
                 return
 
-            # Check if file exists
-            if not os.path.exists(path):
+            full_path = os.path.join(_get_base_path(), path)
+            if not os.path.exists(full_path):
                 return
 
-            pygame.mixer.music.load(path)
+            pygame.mixer.music.load(full_path)
         except Exception:
             # Fail silently as requested
             pass
@@ -88,15 +86,15 @@ class AudioManager:
             if pygame.mixer.get_init() is None:
                 return
 
-            # Check if file exists
-            if not os.path.exists(path):
+            full_path = os.path.join(_get_base_path(), path)
+            if not os.path.exists(full_path):
                 return
 
             # Stop any currently playing music
             pygame.mixer.music.stop()
 
             # Load and play the music
-            pygame.mixer.music.load(path)
+            pygame.mixer.music.load(full_path)
             pygame.mixer.music.set_volume(self._music_volume)
             pygame.mixer.music.play(-1 if loop else 0, fade_ms=fade_ms)
             self._music_playing = True
