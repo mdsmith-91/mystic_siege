@@ -2,7 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from src.entities.projectile import Projectile
 from pygame.math import Vector2
-from settings import ARCANE_BOLT_RANGE, ARCANE_BOLT_SPREAD, ARCANE_BOLT_STAGGER
+from settings import ARCANE_BOLT_RANGE, ARCANE_BOLT_SPREAD, ARCANE_BOLT_STAGGER, CRIT_MULTIPLIER
 from src.utils.audio_manager import AudioManager
 
 class ArcaneBolt(BaseWeapon):
@@ -45,7 +45,8 @@ class ArcaneBolt(BaseWeapon):
             pierce=self.pierce,
             homing=self.homing,
             color=self.projectile_color,
-            target_enemy=target
+            target_enemy=target,
+            owner_crit_chance=self.owner.crit_chance
         )
 
     def fire(self):

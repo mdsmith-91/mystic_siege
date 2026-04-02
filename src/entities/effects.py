@@ -4,23 +4,25 @@ import random
 import math
 
 class DamageNumber(pygame.sprite.Sprite):
-    def __init__(self, pos, amount: float, groups, is_player_damage=False):
+    def __init__(self, pos, amount: float, groups, is_player_damage=False, is_crit=False):
         super().__init__(groups)
 
         # Text: str(int(amount))
         self.text = str(int(amount))
 
-        # Color: (255,80,80) if is_player_damage, (255,220,60) if amount > 40, else WHITE
+        # Color: red for player damage, gold for crits, white for regular hits
         if is_player_damage:
             self.color = (255, 80, 80)
-        elif amount > 40:
+        elif is_crit:
             self.color = (255, 220, 60)
         else:
             self.color = (255, 255, 255)
 
-        # Font size: 18 + min(int(amount/10), 14)  (bigger hits = bigger text)
+        # Font size: 18 + min(int(amount/10), 14); crits are 1.5x larger and bold
         font_size = 18 + min(int(amount / 10), 14)
-        self.font = pygame.font.SysFont(None, font_size)
+        if is_crit:
+            font_size = int(font_size * 1.5)
+        self.font = pygame.font.SysFont(None, font_size, bold=is_crit)
 
         # Text surface
         self.text_surface = self.font.render(self.text, True, self.color)

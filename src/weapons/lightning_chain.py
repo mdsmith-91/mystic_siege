@@ -3,7 +3,7 @@ from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import random
 from src.utils.audio_manager import AudioManager
-from settings import LIGHTNING_CHAIN_RANGE
+from settings import LIGHTNING_CHAIN_RANGE, CRIT_MULTIPLIER
 
 class LightningChain(BaseWeapon):
     name = "Lightning Chain"
@@ -81,16 +81,17 @@ class LightningChain(BaseWeapon):
         # For each enemy in chain: deal base_damage * owner.damage_multiplier (diminish by 10% per hop)
         # Chance to stun: if random() < stun_chance: freeze enemy briefly
         for i, enemy in enumerate(chain):
-            # Diminish damage by 10% per hop
+            # Diminish damage by 10% per hop, then roll crit independently per enemy
             damage_multiplier = 0.9 ** i
-            damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier
+            is_crit = random.random() < self.owner.crit_chance
+            damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
             hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
             enemy.take_damage(damage, hit_direction=hit_dir)
             if self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
-                DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                 HitSpark(enemy.pos, (255, 255, 100), [self.effect_group])
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly

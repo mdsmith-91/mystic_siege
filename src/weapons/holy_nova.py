@@ -2,7 +2,9 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+import random
 from src.utils.audio_manager import AudioManager
+from settings import CRIT_MULTIPLIER
 
 class HolyNova(BaseWeapon):
     name = "Holy Nova"
@@ -65,13 +67,15 @@ class HolyNova(BaseWeapon):
                     # Check if this enemy has already been damaged by this ring
                     if enemy.sprite_id not in ring["enemies_hit"]:
                         # Deal damage once per enemy per ring
+                        is_crit = random.random() < self.owner.crit_chance
+                        damage = ring["damage"] * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = self.owner.pos - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        enemy.take_damage(ring["damage"], hit_direction=hit_dir)
+                        enemy.take_damage(damage, hit_direction=hit_dir)
                         ring["enemies_hit"].add(enemy.sprite_id)
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
-                            DamageNumber(enemy.pos - Vector2(0, 20), ring["damage"], [self.effect_group])
+                            DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                             HitSpark(enemy.pos, (255, 230, 100), [self.effect_group])
 
             # Remove rings that exceed max_radius

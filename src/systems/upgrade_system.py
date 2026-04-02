@@ -51,6 +51,13 @@ PASSIVE_UPGRADES = [
         "stat": "cooldown_reduction",
         "value": 0.05,
         "icon_color": (255, 140, 60)
+    },
+    {
+        "name": "+5% Crit Chance",
+        "description": "Increase critical hit chance by 5%",
+        "stat": "crit_chance",
+        "value": 0.05,
+        "icon_color": (255, 220, 60)
     }
 ]
 
@@ -257,3 +264,5 @@ class UpgradeSystem:
             player.xp_multiplier *= (1 + value)
         elif stat == "cooldown_reduction":
             player.cooldown_reduction = min(0.9, player.cooldown_reduction + value)
+        elif stat == "crit_chance":
+            player.crit_chance += value

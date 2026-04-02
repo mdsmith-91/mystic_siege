@@ -26,6 +26,10 @@ BASE_HP = 100
 BASE_SPEED = 200
 PICKUP_RADIUS = 80
 
+# CRITICAL HITS
+CRIT_CHANCE_BASE = 0.05   # 5% base crit chance for all heroes
+CRIT_MULTIPLIER = 2.0     # crits deal 2x damage
+
 # XP
 BASE_XP_REQUIRED = 50
 XP_SCALE_FACTOR = 1.12

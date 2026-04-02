@@ -1,13 +1,14 @@
 import pygame
 from pygame.math import Vector2
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+import random
+from settings import WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER
 import math
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
                  color: tuple = (200, 100, 255), target_enemy=None,
-                 is_enemy_projectile: bool = False):
+                 is_enemy_projectile: bool = False, owner_crit_chance: float = 0.0):
         super().__init__(groups)
 
         # image: 10x10 circle surface with given color
@@ -38,6 +39,8 @@ class Projectile(pygame.sprite.Sprite):
 
         # True for projectiles fired by enemies (hit player, not enemies)
         self.is_enemy_projectile = is_enemy_projectile
+
+        self.owner_crit_chance = owner_crit_chance
 
     def update(self, dt):
         # Home toward original target only while it's still alive — fly straight once it dies
@@ -77,12 +80,15 @@ class Projectile(pygame.sprite.Sprite):
 
         self.enemies_hit.add(enemy.sprite_id)
 
+        is_crit = random.random() < self.owner_crit_chance
+        actual_damage = self.damage * (CRIT_MULTIPLIER if is_crit else 1.0)
+
         # hit_direction: from enemy back toward the projectile source, for shield checks
-        enemy.take_damage(self.damage, hit_direction=-self.direction)
+        enemy.take_damage(actual_damage, hit_direction=-self.direction)
 
         if effect_group is not None:
             from src.entities.effects import DamageNumber, HitSpark
-            DamageNumber(enemy.pos - Vector2(0, 20), self.damage, [effect_group])
+            DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [effect_group], is_crit=is_crit)
             HitSpark(enemy.pos, (255, 200, 50), [effect_group])
 
         if self.pierce <= 0:

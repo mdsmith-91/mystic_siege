@@ -2,7 +2,9 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+import random
 from src.utils.audio_manager import AudioManager
+from settings import CRIT_MULTIPLIER
 
 class FrostRing(BaseWeapon):
     name = "Frost Ring"
@@ -82,13 +84,14 @@ class FrostRing(BaseWeapon):
                     # Check if this enemy has already been damaged by this ring
                     if enemy.sprite_id not in ring["damage_done"]:
                         # Deal damage
-                        damage = self.base_damage * self.owner.damage_multiplier
+                        is_crit = random.random() < self.owner.crit_chance
+                        damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir)
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
-                            DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                            DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                             HitSpark(enemy.pos, (0, 200, 255), [self.effect_group])
 
                         # Freeze enemy — only save max_speed if not already frozen

@@ -2,7 +2,9 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import math
+import random
 from src.utils.audio_manager import AudioManager
+from settings import CRIT_MULTIPLIER
 
 class FlameWhip(BaseWeapon):
     name = "Flame Whip"
@@ -67,12 +69,13 @@ class FlameWhip(BaseWeapon):
             angle_to_enemy = self.fire_direction.angle_to(direction_to_enemy)
 
             if abs(angle_to_enemy) <= self.cone_angle / 2:
-                damage = self.base_damage * self.owner.damage_multiplier
+                is_crit = random.random() < self.owner.crit_chance
+                damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy)
                 self.burning_enemies[enemy.sprite_id] = self.burn_duration
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
-                    DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                    DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                     HitSpark(enemy.pos, (255, 100, 0), [self.effect_group])
 
         # Show swing visual for 0.2s
