@@ -4,7 +4,7 @@ from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 
-# Column indices matching direction order in knight_meta.json
+# Column indices matching direction order in knight_enemy_meta.json
 _DIR_DOWN  = 0
 _DIR_LEFT  = 1
 _DIR_RIGHT = 2
@@ -26,7 +26,7 @@ class CursedKnight(Enemy):
         self.shield_facing = Vector2(1, 0)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
-        sheet = Spritesheet("assets/sprites/enemies/knight.png", 32, 32)
+        sheet = Spritesheet("assets/sprites/enemies/knight_enemy.png", 32, 32)
         self._frames = {
             _DIR_DOWN:  sheet.get_frame(0, 0),
             _DIR_LEFT:  sheet.get_frame(1, 0),

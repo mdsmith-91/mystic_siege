@@ -67,7 +67,7 @@ def generate_enemy_assets():
         ("wraith.png", (100, 100, 180), "W"),
         ("bat.png", (80, 40, 80), "B"),
         ("golem.png", (120, 100, 80), "G"),
-        ("knight_e.png", (100, 100, 140), "K"),
+        ("knight_enemy.png", (100, 100, 140), "K"),
         ("lich.png", (140, 60, 160), "L")
     ]
 
