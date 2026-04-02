@@ -250,8 +250,6 @@ class GameScene:
         if self.xp_system.levelup_count > 0 and self.upgrade_menu is None:
             choices = self.upgrade_system.get_random_choices(self.player)
             self.upgrade_menu = UpgradeMenu(choices, self.upgrade_system, self.player)
-            from src.entities.effects import LevelUpEffect
-            LevelUpEffect(self.player.pos, [self.effect_group])
 
         # Check win: if wave_manager.victory_flag: transition to game_over with victory=True
         if self.wave_manager.victory_flag:
@@ -278,6 +276,8 @@ class GameScene:
 
         # Handle upgrade menu completion (apply already happened inside upgrade_menu)
         if self.upgrade_menu and self.upgrade_menu.done:
+            from src.entities.effects import LevelUpEffect
+            LevelUpEffect(self.player.pos, [self.effect_group])
             self.upgrade_menu = None
             self.xp_system.consume_levelup()
 

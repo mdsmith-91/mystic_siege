@@ -95,8 +95,8 @@ class PlagueBat(Enemy):
 class MiniBat(PlagueBat):
     """Mini bat spawned on PlagueBat death."""
 
-    def __init__(self, pos, target, groups, xp_orb_group=None):
-        super().__init__(pos, target, groups, xp_orb_group)
+    def __init__(self, pos, target, groups, xp_orb_group=None, effect_group=None):
+        super().__init__(pos, target, groups, xp_orb_group, effect_group)
         self.is_mini = True
 
         # Override with mini bat stats
