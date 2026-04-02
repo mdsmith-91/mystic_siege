@@ -13,8 +13,8 @@ class FrostRing(BaseWeapon):
     max_radius = 200
     freeze_duration = 1.5
 
-    def __init__(self, owner, projectile_group, enemy_group):
-        super().__init__(owner, projectile_group, enemy_group)
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
+        super().__init__(owner, projectile_group, enemy_group, effect_group)
 
         # Define upgrade levels
         self.upgrade_levels = [
@@ -86,6 +86,10 @@ class FrostRing(BaseWeapon):
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir)
+                        if self.effect_group is not None:
+                            from src.entities.effects import DamageNumber, HitSpark
+                            DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                            HitSpark(enemy.pos, (0, 200, 255), [self.effect_group])
 
                         # Freeze enemy — only save max_speed if not already frozen
                         self.frozen_enemies[enemy.sprite_id] = self.freeze_duration

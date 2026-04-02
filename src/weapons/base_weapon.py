@@ -2,12 +2,13 @@ import pygame
 from abc import ABC, abstractmethod
 
 class BaseWeapon(ABC):
-    def __init__(self, owner, projectile_group, enemy_group):
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         self.owner = owner
         self.level = 1
         self.cooldown_timer = 0.0
         self.projectile_group = projectile_group
         self.enemy_group = enemy_group
+        self.effect_group = effect_group
         self.upgrade_levels = []  # Defined by subclasses
 
         # Subclasses define name, description, base_damage, base_cooldown as class attributes

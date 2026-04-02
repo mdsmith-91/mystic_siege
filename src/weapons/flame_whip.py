@@ -14,8 +14,8 @@ class FlameWhip(BaseWeapon):
     burn_damage = 5.0  # per second
     burn_duration = 2.0  # seconds
 
-    def __init__(self, owner, projectile_group, enemy_group):
-        super().__init__(owner, projectile_group, enemy_group)
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
+        super().__init__(owner, projectile_group, enemy_group, effect_group)
 
         # Define upgrade levels
         self.upgrade_levels = [
@@ -70,6 +70,10 @@ class FlameWhip(BaseWeapon):
                 damage = self.base_damage * self.owner.damage_multiplier
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy)
                 self.burning_enemies[enemy.sprite_id] = self.burn_duration
+                if self.effect_group is not None:
+                    from src.entities.effects import DamageNumber, HitSpark
+                    DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                    HitSpark(enemy.pos, (255, 100, 0), [self.effect_group])
 
         # Show swing visual for 0.2s
         self.swing_timer = 0.2

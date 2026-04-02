@@ -14,8 +14,8 @@ class ArcaneBolt(BaseWeapon):
     homing = True
     projectile_color = (160, 80, 255)
 
-    def __init__(self, owner, projectile_group, enemy_group):
-        super().__init__(owner, projectile_group, enemy_group)
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
+        super().__init__(owner, projectile_group, enemy_group, effect_group)
 
         self.pierce = 0
 

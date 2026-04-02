@@ -110,9 +110,10 @@ WEAPON_META = {
 }
 
 class UpgradeSystem:
-    def __init__(self, projectile_group, enemy_group):
+    def __init__(self, projectile_group, enemy_group, effect_group=None):
         self.projectile_group = projectile_group
         self.enemy_group = enemy_group
+        self.effect_group = effect_group
 
     def get_random_choices(self, player) -> list[dict]:
         """Get 3 random upgrade choices for the player."""
@@ -212,22 +213,22 @@ class UpgradeSystem:
                 # Construct and add new weapon only when actually needed
                 if weapon_class_name == "ArcaneBolt":
                     from src.weapons.arcane_bolt import ArcaneBolt
-                    weapon = ArcaneBolt(player, self.projectile_group, self.enemy_group)
+                    weapon = ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
                 elif weapon_class_name == "HolyNova":
                     from src.weapons.holy_nova import HolyNova
-                    weapon = HolyNova(player, self.projectile_group, self.enemy_group)
+                    weapon = HolyNova(player, self.projectile_group, self.enemy_group, self.effect_group)
                 elif weapon_class_name == "SpectralBlade":
                     from src.weapons.spectral_blade import SpectralBlade
-                    weapon = SpectralBlade(player, self.projectile_group, self.enemy_group)
+                    weapon = SpectralBlade(player, self.projectile_group, self.enemy_group, self.effect_group)
                 elif weapon_class_name == "FlameWhip":
                     from src.weapons.flame_whip import FlameWhip
-                    weapon = FlameWhip(player, self.projectile_group, self.enemy_group)
+                    weapon = FlameWhip(player, self.projectile_group, self.enemy_group, self.effect_group)
                 elif weapon_class_name == "FrostRing":
                     from src.weapons.frost_ring import FrostRing
-                    weapon = FrostRing(player, self.projectile_group, self.enemy_group)
+                    weapon = FrostRing(player, self.projectile_group, self.enemy_group, self.effect_group)
                 elif weapon_class_name == "LightningChain":
                     from src.weapons.lightning_chain import LightningChain
-                    weapon = LightningChain(player, self.projectile_group, self.enemy_group)
+                    weapon = LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
                 else:
                     return
                 player.add_weapon(weapon)

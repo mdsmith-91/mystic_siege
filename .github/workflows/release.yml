@@ -21,10 +21,12 @@ jobs:
             artifact_name: MysticSiege-linux
             binary_src: dist/MysticSiege
             binary_dst: dist/MysticSiege-linux
+            add_data: "assets:assets"
           - os: windows-latest
             artifact_name: MysticSiege-windows.exe
             binary_src: dist/MysticSiege.exe
             binary_dst: dist/MysticSiege-windows.exe
+            add_data: "assets;assets"
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -52,12 +54,15 @@ jobs:
         run: python src/utils/placeholder_assets.py
 
       - name: Build with PyInstaller
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
         run: >
           pyinstaller
           --onefile
           --windowed
           --name MysticSiege
-          --add-data "assets:assets"
+          --add-data "${{ matrix.add_data }}"
           main.py
 
       - name: Rename binary to include platform

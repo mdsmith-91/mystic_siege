@@ -15,8 +15,8 @@ class SpectralBlade(BaseWeapon):
     blade_size = (24, 8)
     orbit_angle = 0.0  # current rotation, increments each frame
 
-    def __init__(self, owner, projectile_group, enemy_group):
-        super().__init__(owner, projectile_group, enemy_group)
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
+        super().__init__(owner, projectile_group, enemy_group, effect_group)
 
         # Define upgrade levels
         self.upgrade_levels = [
@@ -62,6 +62,10 @@ class SpectralBlade(BaseWeapon):
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir)
                         AudioManager.instance().play_sfx(AudioManager.WEAPON_BLADE)
+                        if self.effect_group is not None:
+                            from src.entities.effects import DamageNumber, HitSpark
+                            DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group])
+                            HitSpark(enemy.pos, (100, 150, 255), [self.effect_group])
 
                         # Start 0.5s cooldown for that enemy
                         self.enemy_cooldowns[enemy.sprite_id] = 0.5

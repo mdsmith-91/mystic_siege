@@ -40,26 +40,26 @@ class GameScene:
         starting_weapon = hero["starting_weapon"]
         if starting_weapon == "ArcaneBolt":
             from src.weapons.arcane_bolt import ArcaneBolt
-            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group)
+            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         elif starting_weapon == "HolyNova":
             from src.weapons.holy_nova import HolyNova
-            weapon = HolyNova(self.player, self.projectile_group, self.enemy_group)
+            weapon = HolyNova(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         elif starting_weapon == "SpectralBlade":
             from src.weapons.spectral_blade import SpectralBlade
-            weapon = SpectralBlade(self.player, self.projectile_group, self.enemy_group)
+            weapon = SpectralBlade(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         elif starting_weapon == "FlameWhip":
             from src.weapons.flame_whip import FlameWhip
-            weapon = FlameWhip(self.player, self.projectile_group, self.enemy_group)
+            weapon = FlameWhip(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         elif starting_weapon == "FrostRing":
             from src.weapons.frost_ring import FrostRing
-            weapon = FrostRing(self.player, self.projectile_group, self.enemy_group)
+            weapon = FrostRing(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         elif starting_weapon == "LightningChain":
             from src.weapons.lightning_chain import LightningChain
-            weapon = LightningChain(self.player, self.projectile_group, self.enemy_group)
+            weapon = LightningChain(self.player, self.projectile_group, self.enemy_group, self.effect_group)
         else:
             # Default to ArcaneBolt if unknown
             from src.weapons.arcane_bolt import ArcaneBolt
-            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group)
+            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group, self.effect_group)
 
         self.player.add_weapon(weapon)
 
@@ -73,7 +73,7 @@ class GameScene:
         self.xp_system = XPSystem()
 
         # 6. upgrade_system = UpgradeSystem()
-        self.upgrade_system = UpgradeSystem(self.projectile_group, self.enemy_group)
+        self.upgrade_system = UpgradeSystem(self.projectile_group, self.enemy_group, self.effect_group)
 
         # Load all SFX into AudioManager cache
         _am = AudioManager.instance()

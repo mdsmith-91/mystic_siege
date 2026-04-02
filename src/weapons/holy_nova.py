@@ -13,8 +13,8 @@ class HolyNova(BaseWeapon):
     expand_speed = 200  # px per second
     ring_width = 8
 
-    def __init__(self, owner, projectile_group, enemy_group):
-        super().__init__(owner, projectile_group, enemy_group)
+    def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
+        super().__init__(owner, projectile_group, enemy_group, effect_group)
 
         # Define upgrade levels
         self.upgrade_levels = [
@@ -69,6 +69,10 @@ class HolyNova(BaseWeapon):
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(ring["damage"], hit_direction=hit_dir)
                         ring["enemies_hit"].add(enemy.sprite_id)
+                        if self.effect_group is not None:
+                            from src.entities.effects import DamageNumber, HitSpark
+                            DamageNumber(enemy.pos - Vector2(0, 20), ring["damage"], [self.effect_group])
+                            HitSpark(enemy.pos, (255, 230, 100), [self.effect_group])
 
             # Remove rings that exceed max_radius
             if ring["radius"] > ring["max_radius"]:
