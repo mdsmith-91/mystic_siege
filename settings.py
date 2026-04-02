@@ -38,6 +38,8 @@ ARCANE_BOLT_SPREAD = 20         # degrees between each bolt in a multi-bolt burs
 ARCANE_BOLT_STAGGER = 0.3       # seconds between each bolt in a burst
 LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
 
+ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
+
 # SPAWNING
 INITIAL_SPAWN_RATE = 3.0
 MIN_SPAWN_RATE = 0.3
