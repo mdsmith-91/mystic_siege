@@ -159,6 +159,11 @@ Inside WSL, run:
 
 ```bash
 sudo apt update
+```
+
+Then run:
+
+```bash
 sudo apt upgrade -y
 ```
 
@@ -205,6 +210,10 @@ Inside WSL, run:
 
 ```bash
 mkdir -p ~/dev
+```
+Then:
+
+```bash
 cd ~/dev
 ```
 
@@ -219,6 +228,11 @@ Run:
 
 ```bash
 git clone https://github.com/mdsmith-91/mystic_siege.git
+```
+
+Then:
+
+```bash
 cd mystic_siege
 ```
 
@@ -274,6 +288,11 @@ Run:
 
 ```bash
 python -m pip install -r requirements.txt
+```
+
+Then:
+
+```bash
 python -m pip install -r requirements-dev.txt
 ```
 
