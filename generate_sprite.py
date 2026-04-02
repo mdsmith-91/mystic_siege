@@ -7,6 +7,13 @@ Usage:
         --name skeleton_warrior \
         --subject "skeletal warrior with rusty sword and round shield"
 
+    # 4-direction spritesheet (cols: down, left, right, up) at 32x32 per frame (128x32 output):
+    OPENAI_API_KEY=your_key_here python generate_sprite.py \
+        --category enemies \
+        --name skeleton \
+        --subject "skeletal warrior with rusty sword and round shield" \
+        --directions
+
     # 4-frame walk animation spritesheet at 32x32 per frame (128x32 output):
     OPENAI_API_KEY=your_key_here python generate_sprite.py \
         --category heroes \
@@ -43,6 +50,8 @@ import os
 import sys
 from pathlib import Path
 
+import numpy as np
+
 try:
     from openai import OpenAI
 except ImportError:
@@ -57,13 +66,37 @@ except ImportError:
 VALID_CATEGORIES = {"heroes", "enemies", "projectiles", "effects", "ui"}
 DEFAULT_MODEL = "gpt-image-1"
 DEFAULT_SIZE = "1024x1024"
-DEFAULT_QUALITY = "medium"
+DEFAULT_QUALITY = "high"
 DEFAULT_FRAME_SIZE = 32
 DEFAULT_FRAMES = 1
 
+# Ordered columns in a 4-direction spritesheet: col 0=down, 1=left, 2=right, 3=up
+DIRECTION_ORDER = ["down", "left", "right", "up"]
+
+_DIRECTION_FACING: dict[str, str] = {
+    "down":  (
+        "facing directly toward the viewer, full front view, "
+        "weapon and shield visible on correct sides, neutral stance"
+    ),
+    "left":  (
+        "facing directly to the left, strict side profile, "
+        "character walking left, weapon arm leading"
+    ),
+    "right": (
+        "facing directly to the right, strict side profile, "
+        "character walking right, weapon arm leading"
+    ),
+    "up":    (
+        "facing directly away from the viewer, full back view, "
+        "back of armor/cape visible, no face shown"
+    ),
+}
+
 _GAME_CONTEXT = (
     "top-down medieval fantasy survivor game in the style of Vampire Survivors and Brotato, "
-    "stylized 2D painted game art, chunky pixel-art influenced"
+    "stylized 2D painted game art, chunky pixel-art influenced. "
+    "The game background is a dark stone dungeon floor, so sprites must use bright, "
+    "saturated, high-contrast colors to stand out clearly — no dark or muddy tones"
 )
 
 _NEGATIVE = (
@@ -71,7 +104,9 @@ _NEGATIVE = (
     "no shadows outside the subject, no cast shadows, no drop shadows, "
     "no ambient occlusion on floor, no perspective ground plane, "
     "no text, no letters, no numbers, no watermark, no border, no frame, "
-    "no UI mockup, no multiple subjects."
+    "no UI mockup, no multiple subjects, "
+    "no dark color palette, no muddy browns or blacks as dominant colors, "
+    "no underexposed or shadowy rendering."
 )
 
 
@@ -81,6 +116,7 @@ def build_prompt(
     style: str | None,
     frame_idx: int = 0,
     total_frames: int = 1,
+    direction: str | None = None,
 ) -> str:
     category_guidance: dict[str, str] = {
         "heroes": (
@@ -107,7 +143,19 @@ def build_prompt(
         ),
     }[category]
 
-    style_text = style.strip() if style else "stylized 2D painted game art, chunky pixel-art influenced"
+    style_text = style.strip() if style else (
+        "stylized 2D painted game art, chunky pixel-art influenced, "
+        "bright vivid colors, well-lit, high contrast"
+    )
+
+    direction_suffix = ""
+    if direction is not None:
+        facing = _DIRECTION_FACING[direction]
+        direction_suffix = (
+            f" The character must be {facing}. "
+            "This is one frame of a 4-direction sheet; keep the style, color palette, "
+            "and character design identical across all directions."
+        )
 
     frame_suffix = ""
     if total_frames > 1:
@@ -123,8 +171,62 @@ def build_prompt(
         f"Visual style: {style_text}. "
         f"Transparent background. {_NEGATIVE} "
         "Keep the subject fully inside the canvas with some padding. "
-        f"The result must look like a clean standalone game sprite asset.{frame_suffix}"
+        f"The result must look like a clean standalone game sprite asset.{direction_suffix}{frame_suffix}"
     )
+
+
+def build_directions_prompt(category: str, subject: str, style: str | None) -> str:
+    """Build a single prompt that requests all 4 directions in a 2x2 grid image.
+
+    Grid layout (matches slice_2x2_into_frames extraction order):
+        top-left  = front (down)  |  top-right = left profile
+        bot-left  = right profile |  bot-right = back (up)
+    """
+    style_text = style.strip() if style else (
+        "stylized 2D painted game art, chunky pixel-art influenced, "
+        "bright vivid colors, well-lit, high contrast"
+    )
+    return (
+        f"Create a 2x2 character reference sheet showing a {subject} "
+        f"for a {_GAME_CONTEXT}. "
+        "The canvas is split into exactly 4 equal square panels arranged in a 2-column by 2-row grid "
+        "with NO borders, gaps, labels, or dividers between panels. "
+        "Panel positions: "
+        "TOP-LEFT panel: character facing directly toward the viewer, full front view, "
+        "weapon held visibly in hand in front of the body; "
+        "TOP-RIGHT panel: character facing directly to their left, strict side profile facing left, "
+        "weapon extended forward; "
+        "BOTTOM-LEFT panel: character facing directly to their right, strict side profile facing right, "
+        "weapon extended forward; "
+        "BOTTOM-RIGHT panel: character facing directly away from the viewer, full back view, "
+        "weapon visible held at side or over shoulder. "
+        "All 4 panels show the EXACT SAME character design — identical weapon, colors, proportions, and style. "
+        "The weapon must appear in ALL 4 panels. "
+        "Each character is fully inside its panel, centered, with padding on all sides — "
+        "no limbs or weapons clipped by panel edges. "
+        f"Visual style: {style_text}. "
+        "Completely transparent background — no ground, no floor, no environment, no color fill behind the character. "
+        f"{_NEGATIVE} "
+        "No dividers, no labels, no text, no grid lines between panels."
+    )
+
+
+def remove_background(img: PILImage.Image, tolerance: int = 40) -> PILImage.Image:
+    """Flood-fill from all 4 corners to erase the solid background color.
+
+    Uses PIL floodfill (C-speed) to mark background pixels, then numpy to
+    replace them with full transparency. Safe for sprites because it only
+    removes pixels connected to the image edges.
+    """
+    from PIL import ImageDraw
+    img = img.convert("RGBA")
+    marker = (1, 2, 3, 255)  # sentinel value unlikely to appear in sprite art
+    for seed in [(0, 0), (img.width - 1, 0), (0, img.height - 1), (img.width - 1, img.height - 1)]:
+        ImageDraw.floodfill(img, seed, marker, thresh=tolerance)
+    arr = np.array(img)
+    mask = np.all(arr == [1, 2, 3, 255], axis=2)
+    arr[mask] = [0, 0, 0, 0]
+    return PILImage.fromarray(arr)
 
 
 def resize_frame(image_bytes: bytes, size: int) -> PILImage.Image:
@@ -132,6 +234,51 @@ def resize_frame(image_bytes: bytes, size: int) -> PILImage.Image:
     img = PILImage.open(io.BytesIO(image_bytes))
     img = img.convert("RGBA")
     return img.resize((size, size), PILImage.Resampling.LANCZOS)
+
+
+def slice_into_frames(sheet: PILImage.Image, n_cols: int, frame_size: int) -> list[PILImage.Image]:
+    """Slice a wide image into n_cols equal columns and resize each to frame_size×frame_size.
+
+    Crops to the content bounding box first to remove transparent padding the model
+    adds around the full image, which would otherwise shift the slice boundaries.
+    """
+    bbox = sheet.getbbox()
+    if bbox:
+        sheet = sheet.crop(bbox)
+    col_w = sheet.width // n_cols
+    frames = []
+    for i in range(n_cols):
+        box = (i * col_w, 0, (i + 1) * col_w, sheet.height)
+        col = sheet.crop(box).convert("RGBA")
+        frames.append(col.resize((frame_size, frame_size), PILImage.Resampling.LANCZOS))
+    return frames
+
+
+def slice_2x2_into_frames(sheet: PILImage.Image, frame_size: int) -> list[PILImage.Image]:
+    """Slice a 2x2 grid image into 4 frames in [down, left, right, up] order.
+
+    Expected grid layout from build_directions_prompt:
+        top-left  = front/down   |  top-right = left profile
+        bot-left  = right profile|  bot-right = back/up
+
+    Crops to content bounding box first to strip any outer transparent padding.
+    """
+    bbox = sheet.getbbox()
+    if bbox:
+        sheet = sheet.crop(bbox)
+    half_w = sheet.width // 2
+    half_h = sheet.height // 2
+    quadrants = [
+        (0,      0,      half_w,       half_h),        # top-left  → down
+        (half_w, 0,      sheet.width,  half_h),        # top-right → left
+        (0,      half_h, half_w,       sheet.height),  # bot-left  → right
+        (half_w, half_h, sheet.width,  sheet.height),  # bot-right → up
+    ]
+    frames = []
+    for box in quadrants:
+        frame = sheet.crop(box).convert("RGBA")
+        frames.append(frame.resize((frame_size, frame_size), PILImage.Resampling.LANCZOS))
+    return frames
 
 
 def composite_spritesheet(frames: list[PILImage.Image], frame_size: int) -> PILImage.Image:
@@ -203,6 +350,16 @@ def parse_args() -> argparse.Namespace:
         help="Number of candidates to generate (1-10, default: 1). Cannot be > 1 with --frames > 1.",
     )
     parser.add_argument(
+        "--directions",
+        action="store_true",
+        default=False,
+        help=(
+            "Generate a 4-direction spritesheet with frames for down, left, right, up "
+            "(cols 0-3). Each direction gets a tailored prompt. "
+            "Mutually exclusive with --frames > 1 and --n > 1."
+        ),
+    )
+    parser.add_argument(
         "--project-root",
         default=".",
         help="Path to your mystic_siege project root (default: current directory)",
@@ -229,6 +386,10 @@ def main() -> None:
         sys.exit("--frame-size must be between 4 and 256")
     if args.frames > 1 and args.n > 1:
         sys.exit("--frames and --n > 1 are mutually exclusive; use --n 1 when generating spritesheets")
+    if args.directions and args.frames > 1:
+        sys.exit("--directions and --frames > 1 are mutually exclusive")
+    if args.directions and args.n > 1:
+        sys.exit("--directions and --n > 1 are mutually exclusive")
 
     is_spritesheet = args.frames > 1
 
@@ -238,15 +399,60 @@ def main() -> None:
 
     safe_name = args.name.strip().lower().replace(" ", "_")
 
-    # Log the base prompt (frame 0)
-    prompt = build_prompt(args.category, args.subject, args.style, frame_idx=0, total_frames=args.frames)
+    # Log the prompt that will be used
+    if args.directions:
+        prompt = build_directions_prompt(args.category, args.subject, args.style)
+    else:
+        prompt = build_prompt(args.category, args.subject, args.style, frame_idx=0, total_frames=args.frames)
     prompt_log_path = output_dir / f"{safe_name}_prompt.txt"
     prompt_log_path.write_text(prompt + "\n", encoding="utf-8")
 
     client = OpenAI()
     saved_paths: list[Path] = []
 
-    if is_spritesheet:
+    if args.directions:
+        # Single API call: all 4 directions in one image, then slice for style consistency
+        dir_prompt = build_directions_prompt(args.category, args.subject, args.style)
+        print(f"Generating 4-direction sheet in one call with {args.model}...")
+        response = client.images.generate(
+            model=args.model,
+            prompt=dir_prompt,
+            size="1024x1024",
+            quality=args.quality,
+            background="transparent",
+            output_format="png",
+            n=1,
+        )
+        if not getattr(response, "data", None) or not getattr(response.data[0], "b64_json", None):
+            sys.exit("No image data returned for directions sheet.")
+        raw_bytes = base64.b64decode(response.data[0].b64_json)
+        full_sheet = remove_background(PILImage.open(io.BytesIO(raw_bytes)))
+
+        # Save the raw unsliced (but background-removed) sheet for inspection
+        raw_path = output_dir / f"{safe_name}_raw.png"
+        raw_path.write_bytes(pil_to_png_bytes(full_sheet))
+        print(f"Raw unsliced sheet: {raw_path}")
+
+        frames = slice_2x2_into_frames(full_sheet, args.frame_size)
+
+        strip = composite_spritesheet(frames, args.frame_size)
+        output_path = output_dir / f"{safe_name}.png"
+        output_path.write_bytes(pil_to_png_bytes(strip))
+        saved_paths.append(output_path)
+
+        meta = {
+            "frame_w": args.frame_size,
+            "frame_h": args.frame_size,
+            "frame_count": len(DIRECTION_ORDER),
+            "cols": len(DIRECTION_ORDER),
+            "rows": 1,
+            "directions": DIRECTION_ORDER,
+        }
+        meta_path = output_dir / f"{safe_name}_meta.json"
+        meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+        print(f"Spritesheet metadata: {meta_path}")
+
+    elif is_spritesheet:
         # Generate N frames individually and composite into a horizontal strip
         frames: list[PILImage.Image] = []
         for frame_idx in range(args.frames):
