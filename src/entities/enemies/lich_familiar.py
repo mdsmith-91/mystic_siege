@@ -3,7 +3,7 @@ from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.entities.projectile import Projectile
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import WORLD_WIDTH, WORLD_HEIGHT, LICH_FIRE_RANGE
 
 # Column indices matching direction order in lich_meta.json
 _DIR_DOWN  = 0
@@ -68,23 +68,24 @@ class LichFamiliar(Enemy):
         self.image = self._frame_for_velocity()
         self.rect = self.image.get_rect(center=self.pos)
 
-        # Fire a slow magic orb at player every 2.5s
+        # Fire a slow magic orb at player every 2.5s, but only when close enough for
+        # the projectile (speed=120, lifetime=4s, range=480px) to actually reach them
         self.fire_timer -= dt
         if self.fire_timer <= 0:
-            direction_to_player = (self.target.pos - self.pos).normalize()
-
-            proj_groups = [self.projectile_group] if self.projectile_group else []
-            Projectile(
-                pos=self.pos,
-                direction=direction_to_player,
-                speed=120,
-                damage=12,
-                groups=proj_groups,
-                enemy_group_ref=None,
-                pierce=0,
-                homing=False,
-                color=(200, 60, 255),
-                is_enemy_projectile=True
-            )
-
+            dist = (self.target.pos - self.pos).length()
+            if 0 < dist < LICH_FIRE_RANGE:
+                direction_to_player = (self.target.pos - self.pos) / dist
+                proj_groups = [self.projectile_group] if self.projectile_group else []
+                Projectile(
+                    pos=self.pos,
+                    direction=direction_to_player,
+                    speed=120,
+                    damage=12,
+                    groups=proj_groups,
+                    enemy_group_ref=None,
+                    pierce=0,
+                    homing=False,
+                    color=(200, 60, 255),
+                    is_enemy_projectile=True
+                )
             self.fire_timer = self.fire_interval

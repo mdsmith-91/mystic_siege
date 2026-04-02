@@ -40,6 +40,7 @@ LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chai
 
 ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit
+LICH_FIRE_RANGE = 450           # pixels — lich only fires when within this distance of the player
 
 # SPAWNING
 INITIAL_SPAWN_RATE = 3.0
