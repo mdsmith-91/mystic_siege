@@ -206,10 +206,23 @@ Run:
 
 ```powershell
 mkdir C:\dev
+```
+
+Then:
+
+```powershell
 cd C:\dev
 ```
+
+Run:
+
 ```powershell
 git clone https://github.com/mdsmith-91/mystic_siege.git
+```
+
+Then:
+
+```powershell
 cd mystic_siege
 ```
 
@@ -247,6 +260,8 @@ Run:
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
+
+Then:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
