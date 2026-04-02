@@ -89,10 +89,18 @@ class MainMenu:
             if random.random() < 0.02:  # 2% chance per frame
                 self.particles.append({
                     "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), -10),
-                    "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 100)),
-                    "size": random.randint(1, 3),
-                    "alpha": random.randint(50, 255),
+                    "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 200)),
+                    "size": random.randint(1, 2),
+                    "alpha": random.randint(10, 100),
                     "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50))  # Ember colors
+                })
+            if random.random() < 0.02:  # 2% chance per frame
+                self.particles.append({
+                    "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), 730),
+                    "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-50, -200)),
+                    "size": random.randint(1, 2),
+                    "alpha": random.randint(10, 100),
+                    "color": (random.randint(0, 50), random.randint(50, 150), random.randint(200, 255))  # Mist colors
                 })
 
         # Remove particles that are off-screen or have alpha <= 0
