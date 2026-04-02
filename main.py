@@ -23,6 +23,10 @@ if __name__ == "__main__":
     if refresh_rate <= 0:
         refresh_rate = 60
 
+    # Initialize controller support — scan for already-connected devices
+    from src.utils.input_manager import InputManager
+    InputManager.instance().scan()
+
     # Instantiate Game from src/game.py
     game = Game(screen, clock, refresh_rate)
 

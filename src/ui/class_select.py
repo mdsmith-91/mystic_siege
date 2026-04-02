@@ -133,7 +133,7 @@ class ClassSelect:
                 screen.blit(line_surface, (x + card_width // 2 - line_surface.get_width() // 2, y + 50 + j * 24))
 
             # Stats grid: HP / SPD / ARM values
-            stats_y = y + 100
+            stats_y = y + 120
             stats = [
                 f"HP: {hero['hp']}",
                 f"SPD: {hero['speed']}",
@@ -144,17 +144,17 @@ class ClassSelect:
                 stat_surface = font_medium.render(stat, True, (255, 255, 255))
                 screen.blit(stat_surface, (x + 20, stats_y + j * 30))
 
-            # Passive ability text (wrapped to card width)
-            passive_y = y + 190
+            # Passive ability text (wrapped to card width, 20px right padding)
+            passive_y = y + 230
             passive_text = hero["passive_desc"]
-            wrapped_text = textwrap.wrap(passive_text, width=30)
+            wrapped_text = textwrap.wrap(passive_text, width=26)
 
             for j, line in enumerate(wrapped_text):
                 line_surface = font_small.render(line, True, (200, 200, 200))
                 screen.blit(line_surface, (x + 20, passive_y + j * 20))
 
             # Starting weapon name wrapped to fit card width
-            weapon_y = y + 250
+            weapon_y = y + 305
             weapon_lines = textwrap.wrap(f"Starts with: {hero['starting_weapon']}", width=26)
             for j, line in enumerate(weapon_lines):
                 weapon_surface = font_small.render(line, True, (255, 255, 255))

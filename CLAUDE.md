@@ -79,6 +79,7 @@ mystic_siege/
 │       ├── resource_loader.py     # Singleton asset loader with fallback placeholders
 │       ├── spritesheet.py         # Spritesheet frame/animation extractor
 │       ├── audio_manager.py       # Singleton audio with silent fallback
+│       ├── input_manager.py       # Singleton controller input — synthetic key events + analog movement
 │       └── placeholder_assets.py  # Generates colored rect PNGs and sine-wave WAVs for all assets
 └── assets/
     ├── sprites/heroes|enemies|projectiles|effects|ui/
@@ -209,6 +210,31 @@ AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
 All audio methods fail silently if files are missing or mixer isn't initialized.
+
+---
+
+## Controller / Input Pattern
+
+Always use `InputManager` for controller state — never read `pygame.joystick` directly:
+```python
+from src.utils.input_manager import InputManager
+# Analog movement vector (deadzone applied), returns (0.0, 0.0) if no controller
+ax, ay = InputManager.instance().get_movement()
+```
+Controller button/D-pad presses are automatically translated into synthetic
+`pygame.KEYDOWN` events and posted to the pygame event queue, so all menus work
+with a controller without any extra code in the UI layer.
+
+Call `InputManager.instance().scan()` once after `pygame.init()` to register
+already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
+
+Default button mapping (Xbox / PlayStation / Switch Pro):
+- Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
+- A / Cross (btn 0) → confirm (K_RETURN)
+- B / Circle (btn 1), Start / Options (btn 7/9) → back / pause (K_ESCAPE)
+
+Tune deadzone and repeat timing in `settings.py`:
+`CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`
 
 ---
 

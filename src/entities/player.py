@@ -3,6 +3,7 @@ from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS
 from src.utils.audio_manager import AudioManager
+from src.utils.input_manager import InputManager
 
 class Player(BaseEntity):
     def __init__(self, pos, hero_class_data: dict, groups):
@@ -61,7 +62,7 @@ class Player(BaseEntity):
         self.death_timer = 0.0
 
     def update(self, dt):
-        # Read WASD/arrow input, build direction vector, normalize if non-zero
+        # Read WASD/arrow keys and merge with analog stick input
         direction = Vector2(0, 0)
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
@@ -72,6 +73,11 @@ class Player(BaseEntity):
             direction.y -= 1
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             direction.y += 1
+
+        # Add analog stick contribution (deadzone already applied in InputManager)
+        ax, ay = InputManager.instance().get_movement()
+        direction.x += ax
+        direction.y += ay
 
         # Normalize direction if moving
         if direction.length() > 0:

@@ -56,6 +56,8 @@ python main.py
 
 ## Controls
 
+### Keyboard & Mouse
+
 | Action | Key |
 |--------|-----|
 | Move | WASD or Arrow keys |
@@ -64,6 +66,17 @@ python main.py
 | Toggle Fullscreen | F11 |
 | Toggle FPS Counter | F3 |
 | Take Screenshot | F12 |
+
+### Controller (Xbox / PlayStation / Switch Pro)
+
+Controllers are detected automatically at startup and on hot-plug.
+
+| Action | Input |
+|--------|-------|
+| Move | Left stick or D-pad |
+| Confirm / Select | A / Cross |
+| Back / Cancel / Pause | B / Circle or Start / Options |
+| Navigate menus | Left stick or D-pad (with key-repeat) |
 
 ---
 

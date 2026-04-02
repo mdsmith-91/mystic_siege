@@ -78,8 +78,14 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Read version from version.txt
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Compute version
+        run: |
+          MAJOR_MINOR=$(cat version.txt)
+          # Find the commit where version.txt was last changed, then count
+          # all commits made after it — this resets to 0 on every version bump
+          SINCE=$(git log --format="%H" -- version.txt | head -1)
+          PATCH=$(git rev-list --count ${SINCE}..HEAD)
+          echo "VERSION=${MAJOR_MINOR}.${PATCH}" >> $GITHUB_ENV
 
       - uses: actions/download-artifact@v4
         with:
@@ -87,8 +93,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}.${{ github.run_number }}
-          name: v${{ env.VERSION }}.${{ github.run_number }}
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
           body: |
             Automated build — commit ${{ github.event.workflow_run.head_sha }}
 

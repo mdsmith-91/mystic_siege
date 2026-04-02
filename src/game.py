@@ -1,5 +1,6 @@
 import pygame
 from src.scene_manager import SceneManager
+from src.utils.input_manager import InputManager
 from settings import STATE_MENU
 from datetime import datetime, timezone
 
@@ -33,6 +34,9 @@ class Game:
             dt = self.clock.tick(self.refresh_rate) / 1000.0
             if dt > 0.05:
                 dt = 0.05
+
+            # Translate controller state into synthetic keyboard events before scenes process them
+            InputManager.instance().update(dt, events)
 
             # Update and draw — pass the already-collected events so the queue isn't drained twice
             self.scene_manager.update(dt, events)
