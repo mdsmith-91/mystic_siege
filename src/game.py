@@ -1,6 +1,7 @@
 import pygame
 from src.scene_manager import SceneManager
 from src.utils.input_manager import InputManager
+from src.ui.settings_menu import _get_window_display_index
 from settings import STATE_MENU, MOUSE_HIDE_DELAY
 from datetime import datetime, timezone
 
@@ -31,7 +32,14 @@ class Game:
                         from settings import SCREEN_WIDTH, SCREEN_HEIGHT
                         is_fs = bool(pygame.display.get_surface().get_flags() & pygame.FULLSCREEN)
                         flags = 0 if is_fs else (pygame.FULLSCREEN | pygame.SCALED)
-                        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+                        if flags:
+                            pygame.display.set_mode(
+                                (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
+                                display=_get_window_display_index(),
+                            )
+                        else:
+                            pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+                        pygame.event.pump()
                     elif event.key == pygame.K_F12:
                         # Take screenshot
                         filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
@@ -60,7 +68,7 @@ class Game:
 
             # Update and draw — pass the already-collected events so the queue isn't drained twice
             self.scene_manager.update(dt, events)
-            self.scene_manager.draw(self.screen)
+            self.scene_manager.draw(pygame.display.get_surface() or self.screen)
 
             # Update display
             pygame.display.flip()

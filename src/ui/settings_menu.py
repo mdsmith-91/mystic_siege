@@ -3,6 +3,73 @@ from src.systems.save_system import SaveSystem
 from src.utils.audio_manager import AudioManager
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD
 
+
+def _sdl_display_bounds() -> list[tuple[int, int, int, int]]:
+    """Return (x, y, w, h) for every SDL display via ctypes. Returns [] on failure."""
+    import sys
+    import ctypes
+    from ctypes.util import find_library
+    try:
+        lib = find_library("SDL2")
+        if not lib:
+            lib = {"win32": "SDL2.dll", "darwin": "libSDL2.dylib"}.get(
+                sys.platform, "libSDL2-2.0.so.0"
+            )
+        sdl2 = ctypes.CDLL(lib)
+
+        class _Rect(ctypes.Structure):
+            _fields_ = [("x", ctypes.c_int), ("y", ctypes.c_int),
+                        ("w", ctypes.c_int), ("h", ctypes.c_int)]
+
+        sdl2.SDL_GetNumVideoDisplays.restype = ctypes.c_int
+        sdl2.SDL_GetDisplayBounds.restype = ctypes.c_int
+        sdl2.SDL_GetDisplayBounds.argtypes = [ctypes.c_int, ctypes.POINTER(_Rect)]
+
+        result = []
+        for i in range(sdl2.SDL_GetNumVideoDisplays()):
+            r = _Rect()
+            if sdl2.SDL_GetDisplayBounds(i, ctypes.byref(r)) == 0:
+                result.append((r.x, r.y, r.w, r.h))
+        return result
+    except Exception:
+        return []
+
+
+def _get_window_display_index() -> int:
+    """Detect which SDL display index the current window is on.
+
+    Tries three strategies in order of reliability, falling back to 0.
+    """
+    try:
+        wx, wy = pygame.display.get_window_position()
+        ww, wh = pygame.display.get_window_size()
+        cx, cy = wx + ww // 2, wy + wh // 2  # window centre point
+
+        # Strategy 1: pygame-ce internal SDL2 Window wrapper (most direct)
+        try:
+            from pygame._sdl2.video import Window  # type: ignore[import]
+            return Window.from_display_module().display_index
+        except Exception:
+            pass
+
+        # Strategy 2: ctypes SDL_GetDisplayBounds — works for any monitor layout
+        bounds = _sdl_display_bounds()
+        if bounds:
+            for i, (dx, dy, dw, dh) in enumerate(bounds):
+                if dx <= cx < dx + dw and dy <= cy < dy + dh:
+                    return i
+
+        # Strategy 3: left-to-right accumulation heuristic (common dual-monitor layout)
+        x_cursor = 0
+        for i, (w, _h) in enumerate(pygame.display.get_desktop_sizes()):
+            if x_cursor <= wx < x_cursor + w:
+                return i
+            x_cursor += w
+
+    except Exception:
+        pass
+    return 0
+
 BACKGROUND_COLOR    = (15, 10, 25)
 TEXT_COLOR          = (255, 255, 255)
 LABEL_COLOR         = (180, 160, 140)
@@ -33,6 +100,7 @@ class SettingsMenu:
         self.dragging_slider = None
         self.sliders = {}
         self.buttons = {}
+        self._pending_fullscreen: int | None = None
 
         self._init_ui_elements()
 
@@ -110,8 +178,8 @@ class SettingsMenu:
             if button_name == "fullscreen":
                 self.fullscreen = new_value
                 self.save_system.set_setting("fullscreen", new_value)
-                flags = (pygame.FULLSCREEN | pygame.SCALED) if new_value else 0
-                pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+                # Defer mode change to update() so it happens after all events are processed
+                self._pending_fullscreen = (pygame.FULLSCREEN | pygame.SCALED) if new_value else 0
             elif button_name == "show_fps":
                 self.show_fps = new_value
                 self.save_system.set_setting("show_fps", new_value)
@@ -190,7 +258,18 @@ class SettingsMenu:
                     AudioManager.instance().set_sfx_volume(new_value)
 
     def update(self, dt: float):
-        pass
+        if self._pending_fullscreen is not None:
+            flags = self._pending_fullscreen
+            self._pending_fullscreen = None
+            if flags:
+                # Fullscreen: target the display the window is currently on
+                pygame.display.set_mode(
+                    (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
+                    display=_get_window_display_index(),
+                )
+            else:
+                pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+            pygame.event.pump()
 
     def draw(self, screen):
         screen.fill(BACKGROUND_COLOR)
