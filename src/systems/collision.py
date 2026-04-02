@@ -20,7 +20,7 @@ class CollisionSystem:
             if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
                 player.take_damage(enemy.damage)
                 player.iframes = IFRAME_DURATION
-                if player.hero_class != "Knight of the Burning Crown":
+                if player.hero_class != "Knight":
                     diff = player.pos - enemy.pos
                     knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                     player.knockback_vel = knockback_dir * 300

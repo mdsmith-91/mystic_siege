@@ -83,30 +83,33 @@ STATE_STATS = "stats"
 # name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
 HERO_CLASSES = [
     {
-        "name": "Knight of the Burning Crown",
+        "name": "Knight",
         "hp": 150,
         "speed": 180,
         "armor": 15,
         "passive_desc": "Takes 15% less damage. Immune to knockback.",
         "starting_weapon": "SpectralBlade",
-        "color": (180, 140, 60)
+        "color": (180, 140, 60),
+        "sprite": "assets/sprites/heroes/knight.png"
     },
     {
-        "name": "Witch of the Hollow Marsh",
+        "name": "Wizard",
         "hp": 80,
         "speed": 240,
         "armor": 0,
         "passive_desc": "Spells deal 20% more damage. +10% crit chance.",
         "starting_weapon": "ArcaneBolt",
-        "color": (160, 60, 220)
+        "color": (160, 60, 220),
+        "sprite": "assets/sprites/heroes/wizard.png"
     },
     {
-        "name": "Wandering Friar",
+        "name": "Friar",
         "hp": 110,
         "speed": 210,
         "armor": 5,
         "passive_desc": "Heals 1 HP per 10 XP gained.",
         "starting_weapon": "HolyNova",
-        "color": (200, 180, 120)
+        "color": (200, 180, 120),
+        "sprite": "assets/sprites/heroes/friar.png"
     }
 ]

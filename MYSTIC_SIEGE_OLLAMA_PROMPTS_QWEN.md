@@ -215,17 +215,17 @@ GAME STATES (string constants):
 HERO_CLASSES list of 3 dicts, each with keys:
   name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
 
-  Hero 1 — "Knight of the Burning Crown":
+  Hero 1 — "Knight":
     hp=150, speed=180, armor=15, color=(180,140,60)
     passive_desc="Takes 15% less damage. Immune to knockback."
     starting_weapon="SpectralBlade"
 
-  Hero 2 — "Witch of the Hollow Marsh":
+  Hero 2 — "Wizard":
     hp=80, speed=240, armor=0, color=(160,60,220)
     passive_desc="Spells deal 20% more damage. +10% crit chance."
     starting_weapon="ArcaneBolt"
 
-  Hero 3 — "Wandering Friar":
+  Hero 3 — "Friar":
     hp=110, speed=210, armor=5, color=(200,180,120)
     passive_desc="Heals 1 HP per 10 XP orbs collected."
     starting_weapon="HolyNova"
@@ -753,7 +753,7 @@ collect_orb(self, orb, player):
 - gained = orb.value * player.xp_multiplier
 - current_xp += gained
 - player.orbs_collected += 1
-- Check Friar passive: if player has "WanderingFriar" class and orbs_collected % 10 == 0:
+- Check Friar passive: if player has "Friar" class and orbs_collected % 10 == 0:
     player.heal(1)
 - check_levelup()
 
@@ -1217,7 +1217,7 @@ When run (python src/utils/placeholder_assets.py):
 
 Heroes (32x32):
   knight.png   — (180,140,60) filled rect, "K" label
-  witch.png    — (160,60,220) filled rect, "W" label
+  wizard.png   — (160,60,220) filled rect, "W" label
   friar.png    — (200,180,120) filled rect, "F" label
 
 Enemies (32x32):
@@ -1392,7 +1392,7 @@ DEFAULT_SAVE = {
   "total_time_played": 0.0,
   "highest_level": 1,
   "best_time_survived": 0.0,
-  "unlocked_heroes": ["Knight of the Burning Crown"],
+  "unlocked_heroes": ["Knight"],
   "settings": {
     "music_volume": 0.5,
     "sfx_volume": 0.8,

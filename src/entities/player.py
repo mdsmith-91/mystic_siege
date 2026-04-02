@@ -4,6 +4,13 @@ from src.entities.base_entity import BaseEntity
 from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
+from src.utils.spritesheet import Spritesheet
+
+# Column indices matching DIRECTION_ORDER in generate_sprite.py
+_DIR_DOWN  = 0
+_DIR_LEFT  = 1
+_DIR_RIGHT = 2
+_DIR_UP    = 3
 
 class Player(BaseEntity):
     def __init__(self, pos, hero_class_data: dict, groups):
@@ -19,15 +26,19 @@ class Player(BaseEntity):
         self.base_speed = self.speed
         self.armor = hero_class_data["armor"]
 
-        # Placeholder image: 32x32 surface filled with hero_class_data["color"], label "P" centered
-        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
-        self.image.fill(hero_class_data["color"])
-        # Draw "P" label
-        font = pygame.font.SysFont(None, 24)
-        text = font.render("P", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(16, 16))
-        self.image.blit(text, text_rect)
+        # Load 4-direction spritesheet: cols = [down, left, right, up]
+        sheet = Spritesheet(hero_class_data["sprite"], 32, 32)
+        self._frames = {
+            _DIR_DOWN:  sheet.get_frame(0, 0),
+            _DIR_LEFT:  sheet.get_frame(1, 0),
+            _DIR_RIGHT: sheet.get_frame(2, 0),
+            _DIR_UP:    sheet.get_frame(3, 0),
+        }
 
+        # Track desired alpha separately so it survives frame swaps each update
+        self._alpha = 255
+
+        self.image = self._frames[_DIR_DOWN]
         self.rect = self.image.get_rect(center=pos)
 
         # Active weapons list (max 6 slots)
@@ -97,26 +108,22 @@ class Player(BaseEntity):
         # Regen tick: heal(regen_rate * dt)
         self.heal(self.regen_rate * dt)
 
-        # Iframe countdown: iframes = max(0, iframes - dt)
+        # Iframe countdown
         prev_iframes = self.iframes
         self.iframes = max(0, self.iframes - dt)
 
-        # Flash effect during iframes
+        # Flash effect during iframes — track desired alpha, apply after frame swap
         if self.iframes > 0:
             self.flash_timer += dt
-            if self.flash_timer >= 0.1:  # Flash every 0.1 seconds
+            if self.flash_timer >= 0.1:
                 self.flash_timer = 0
-                # Toggle alpha between 255 and 80
-                if self.image.get_alpha() == 255:
-                    self.image.set_alpha(80)
-                else:
-                    self.image.set_alpha(255)
+                self._alpha = 80 if self._alpha == 255 else 255
         elif prev_iframes > 0:
-            # Iframes just expired — restore full opacity and reset flash timer
-            self.image.set_alpha(255)
+            # Iframes just expired — restore full opacity
+            self._alpha = 255
             self.flash_timer = 0
 
-        # Update all weapons: for w in weapons: w.update(dt)
+        # Update all weapons
         for weapon in self.weapons:
             weapon.update(dt)
 
@@ -124,21 +131,29 @@ class Player(BaseEntity):
         if self.hp <= 0 and not self.dying:
             self.dying = True
             self.death_timer = 1.0
-            self.image.set_alpha(255)
+            self._alpha = 255
             AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
 
         if self.dying:
             self.death_timer -= dt
             if self.death_timer > 0:
-                # Fade out
-                alpha = int(255 * self.death_timer)
-                self.image.set_alpha(alpha)
+                self._alpha = int(255 * self.death_timer)
             else:
                 # Death complete — kill() removes from groups; is_alive property returns False automatically
                 super().kill()
 
+        # Select directional frame then apply current alpha
+        self.image = self._frame_for_facing()
+        self.image.set_alpha(self._alpha)
+
         # Sync rect
         self.rect.center = self.pos
+
+    def _frame_for_facing(self) -> pygame.Surface:
+        """Pick the directional frame that best matches the current facing vector."""
+        if abs(self.facing.x) >= abs(self.facing.y):
+            return self._frames[_DIR_RIGHT] if self.facing.x >= 0 else self._frames[_DIR_LEFT]
+        return self._frames[_DIR_DOWN] if self.facing.y >= 0 else self._frames[_DIR_UP]
 
     def take_damage(self, amount: float):
         """Play hit sound and apply damage."""

@@ -146,19 +146,19 @@ mystic_siege/
 
 ## 5. HERO CLASSES
 
-### Knight of the Burning Crown
+### Knight
 - **HP:** 150 | **Speed:** Medium | **Armor:** High
 - **Passive:** Takes 15% less damage, knockback immune
 - **Starting Weapon:** Spectral Blade (orbiting swords)
 - **Playstyle:** Tank — survives by being a wall
 
-### Witch of the Hollow Marsh
+### Wizard
 - **HP:** 80 | **Speed:** High | **Armor:** None
 - **Passive:** Spells deal 20% more damage, crit chance +10%
 - **Starting Weapon:** Arcane Bolt (homing projectiles)
 - **Playstyle:** Glass cannon — high risk, max damage
 
-### Wandering Friar
+### Friar
 - **HP:** 110 | **Speed:** Medium-High | **Armor:** Low
 - **Passive:** Heals 1 HP per 10 XP orbs collected
 - **Starting Weapon:** Holy Nova (area pulse)

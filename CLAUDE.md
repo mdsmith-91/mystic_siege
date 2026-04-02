@@ -123,12 +123,12 @@ mystic_siege/
 ### Hero Classes (defined in settings.HERO_CLASSES)
 | Hero | HP | Speed | Armor | Starting Weapon |
 |---|---|---|---|---|
-| Knight of the Burning Crown | 150 | 180 | 15 | SpectralBlade |
-| Witch of the Hollow Marsh | 80 | 240 | 0 | ArcaneBolt |
-| Wandering Friar | 110 | 210 | 5 | HolyNova |
+| Knight | 150 | 180 | 15 | SpectralBlade |
+| Wizard | 80 | 240 | 0 | ArcaneBolt |
+| Friar | 110 | 210 | 5 | HolyNova |
 
 Knight passive: 15% damage reduction, knockback immune
-Witch passive: +20% spell damage, +10% crit chance
+Wizard passive: +20% spell damage, +10% crit chance
 Friar passive: heal 1 HP per 10 XP orbs collected
 
 ### Weapons (all have 5 upgrade levels)

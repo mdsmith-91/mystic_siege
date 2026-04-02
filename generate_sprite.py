@@ -2,39 +2,39 @@
 Generate transparent PNG sprite assets with OpenAI's Images API.
 
 Usage:
-    OPENAI_API_KEY=your_key_here python generate_sprite.py \
-        --category enemies \
-        --name skeleton_warrior \
-        --subject "skeletal warrior with rusty sword and round shield"
 
-    # 4-direction spritesheet (cols: down, left, right, up) at 32x32 per frame (128x32 output):
-    OPENAI_API_KEY=your_key_here python generate_sprite.py \
-        --category enemies \
-        --name skeleton \
-        --subject "skeletal warrior with rusty sword and round shield" \
+    # Hero — 4-direction spritesheet (cols: down, left, right, up), 32x32 per frame:
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category heroes --name knight \
+        --subject "armored knight with a burning crown and spectral sword" \
         --directions
 
-    # 4-frame walk animation spritesheet at 32x32 per frame (128x32 output):
-    OPENAI_API_KEY=your_key_here python generate_sprite.py \
-        --category heroes \
-        --name knight_walk \
-        --subject "armored knight with burning sword" \
-        --frames 4 \
-        --frame-size 32
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category heroes --name wizard \
+        --subject "robed wizard with a glowing arcane staff" \
+        --directions
 
-    # 16x16 projectile sprite:
-    OPENAI_API_KEY=your_key_here python generate_sprite.py \
-        --category projectiles \
-        --name fireball \
-        --subject "glowing ember fireball projectile" \
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category heroes --name friar \
+        --subject "wandering friar in rough robes holding a holy lantern" \
+        --directions
+
+    # Enemy — 4-direction spritesheet (cols: down, left, right, up), 32x32 per frame:
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category enemies --name skeleton \
+        --subject "skeletal warrior with a rusty sword and cracked round shield" \
+        --directions
+
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category enemies --name goblin \
+        --subject "small dark goblin with jagged daggers and glowing red eyes" \
+        --directions
+
+    # Projectile — single 16x16 sprite:
+    OPENAI_API_KEY=your_key python generate_sprite.py \
+        --category projectiles --name arcane \
+        --subject "glowing purple arcane bolt projectile" \
         --frame-size 16
-
-    # 3 candidates to pick from (single image mode only):
-    OPENAI_API_KEY=your_key_here python generate_sprite.py \
-        --category heroes \
-        --name mage \
-        --subject "battle mage holding a glowing staff" \
-        --n 3
 
 Requirements:
     pip install -U openai pillow
@@ -68,7 +68,6 @@ DEFAULT_MODEL = "gpt-image-1"
 DEFAULT_SIZE = "1024x1024"
 DEFAULT_QUALITY = "high"
 DEFAULT_FRAME_SIZE = 32
-DEFAULT_FRAMES = 1
 
 # Ordered columns in a 4-direction spritesheet: col 0=down, 1=left, 2=right, 3=up
 DIRECTION_ORDER = ["down", "left", "right", "up"]
@@ -110,14 +109,7 @@ _NEGATIVE = (
 )
 
 
-def build_prompt(
-    category: str,
-    subject: str,
-    style: str | None,
-    frame_idx: int = 0,
-    total_frames: int = 1,
-    direction: str | None = None,
-) -> str:
+def build_prompt(category: str, subject: str, style: str | None) -> str:
     category_guidance: dict[str, str] = {
         "heroes": (
             "single playable character sprite, centered, full body, "
@@ -148,35 +140,18 @@ def build_prompt(
         "bright vivid colors, well-lit, high contrast"
     )
 
-    direction_suffix = ""
-    if direction is not None:
-        facing = _DIRECTION_FACING[direction]
-        direction_suffix = (
-            f" The character must be {facing}. "
-            "This is one frame of a 4-direction sheet; keep the style, color palette, "
-            "and character design identical across all directions."
-        )
-
-    frame_suffix = ""
-    if total_frames > 1:
-        frame_suffix = (
-            f" This is frame {frame_idx + 1} of {total_frames} of a smooth looping animation. "
-            "Match the previous frames' style, color palette, and character design exactly. "
-            "Show a slightly different pose in the animation cycle — subtle motion only, keep the character centered."
-        )
-
     return (
         f"Create one {category_guidance} of {subject}. "
         f"Game context: {_GAME_CONTEXT}. "
         f"Visual style: {style_text}. "
         f"Transparent background. {_NEGATIVE} "
         "Keep the subject fully inside the canvas with some padding. "
-        f"The result must look like a clean standalone game sprite asset.{direction_suffix}{frame_suffix}"
+        "The result must look like a clean standalone game sprite asset."
     )
 
 
 def build_directions_prompt(category: str, subject: str, style: str | None) -> str:
-    """Build a single prompt that requests all 4 directions in a 2x2 grid image.
+    """Build a prompt that requests all 4 directions in a 2x2 grid image.
 
     Grid layout (matches slice_2x2_into_frames extraction order):
         top-left  = front (down)  |  top-right = left profile
@@ -236,24 +211,6 @@ def resize_frame(image_bytes: bytes, size: int) -> PILImage.Image:
     return img.resize((size, size), PILImage.Resampling.LANCZOS)
 
 
-def slice_into_frames(sheet: PILImage.Image, n_cols: int, frame_size: int) -> list[PILImage.Image]:
-    """Slice a wide image into n_cols equal columns and resize each to frame_size×frame_size.
-
-    Crops to the content bounding box first to remove transparent padding the model
-    adds around the full image, which would otherwise shift the slice boundaries.
-    """
-    bbox = sheet.getbbox()
-    if bbox:
-        sheet = sheet.crop(bbox)
-    col_w = sheet.width // n_cols
-    frames = []
-    for i in range(n_cols):
-        box = (i * col_w, 0, (i + 1) * col_w, sheet.height)
-        col = sheet.crop(box).convert("RGBA")
-        frames.append(col.resize((frame_size, frame_size), PILImage.Resampling.LANCZOS))
-    return frames
-
-
 def slice_2x2_into_frames(sheet: PILImage.Image, frame_size: int) -> list[PILImage.Image]:
     """Slice a 2x2 grid image into 4 frames in [down, left, right, up] order.
 
@@ -296,25 +253,25 @@ def pil_to_png_bytes(img: PILImage.Image) -> bytes:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate transparent sprite PNGs for Mystic Siege.")
+    parser = argparse.ArgumentParser(
+        description="Generate transparent sprite PNGs for Mystic Siege.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Frame sizes by category:\n"
+            "  heroes, enemies, ui  → 32 (default)\n"
+            "  projectiles, effects → 16 (pass --frame-size 16)\n\n"
+            "Use --directions for heroes and enemies to generate a 4-direction\n"
+            "spritesheet (cols: down, left, right, up) that Spritesheet() can\n"
+            "slice at runtime. Projectiles and effects are single sprites."
+        ),
+    )
     parser.add_argument("--category", required=True, choices=sorted(VALID_CATEGORIES))
-    parser.add_argument("--name", required=True, help="Output filename without extension, e.g. skeleton_warrior")
+    parser.add_argument("--name", required=True, help="Output filename without extension, e.g. skeleton")
     parser.add_argument("--subject", required=True, help="Short description of the sprite subject")
     parser.add_argument(
         "--style",
         default="stylized 2D painted game art, chunky pixel-art influenced",
-        help="Visual style guidance for the sprite",
-    )
-    parser.add_argument(
-        "--frames",
-        type=int,
-        default=DEFAULT_FRAMES,
-        metavar="N",
-        help=(
-            "Number of animation frames to generate as a horizontal spritesheet "
-            f"(default: {DEFAULT_FRAMES} = single image). Each frame is a separate API call. "
-            "Mutually exclusive with --n > 1."
-        ),
+        help="Visual style guidance appended to the prompt",
     )
     parser.add_argument(
         "--frame-size",
@@ -323,8 +280,25 @@ def parse_args() -> argparse.Namespace:
         metavar="SIZE",
         help=(
             f"Output pixel size per frame after downscaling (default: {DEFAULT_FRAME_SIZE}). "
-            "Use 32 for heroes/enemies/ui, 16 for projectiles, 12 for effects."
+            "Use 32 for heroes/enemies/ui, 16 for projectiles/effects."
         ),
+    )
+    parser.add_argument(
+        "--directions",
+        action="store_true",
+        default=False,
+        help=(
+            "Generate a 4-direction spritesheet with frames for down, left, right, up "
+            "(cols 0-3 at frame-size each). Generates the 2x2 grid in a single API call "
+            "for consistent style, then slices into a horizontal strip. "
+            "Mutually exclusive with --n > 1."
+        ),
+    )
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=1,
+        help="Number of candidate images to generate (1-10, default: 1). Cannot be > 1 with --directions.",
     )
     parser.add_argument(
         "--model",
@@ -342,22 +316,6 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_SIZE,
         choices=["1024x1024", "1536x1024", "1024x1536", "auto"],
         help=f"Image size sent to the API (default: {DEFAULT_SIZE})",
-    )
-    parser.add_argument(
-        "--n",
-        type=int,
-        default=1,
-        help="Number of candidates to generate (1-10, default: 1). Cannot be > 1 with --frames > 1.",
-    )
-    parser.add_argument(
-        "--directions",
-        action="store_true",
-        default=False,
-        help=(
-            "Generate a 4-direction spritesheet with frames for down, left, right, up "
-            "(cols 0-3). Each direction gets a tailored prompt. "
-            "Mutually exclusive with --frames > 1 and --n > 1."
-        ),
     )
     parser.add_argument(
         "--project-root",
@@ -380,18 +338,10 @@ def main() -> None:
 
     if not (1 <= args.n <= 10):
         sys.exit("--n must be between 1 and 10")
-    if not (1 <= args.frames <= 24):
-        sys.exit("--frames must be between 1 and 24")
     if not (4 <= args.frame_size <= 256):
         sys.exit("--frame-size must be between 4 and 256")
-    if args.frames > 1 and args.n > 1:
-        sys.exit("--frames and --n > 1 are mutually exclusive; use --n 1 when generating spritesheets")
-    if args.directions and args.frames > 1:
-        sys.exit("--directions and --frames > 1 are mutually exclusive")
     if args.directions and args.n > 1:
         sys.exit("--directions and --n > 1 are mutually exclusive")
-
-    is_spritesheet = args.frames > 1
 
     project_root = Path(args.project_root).expanduser().resolve()
     output_dir = project_root / "assets" / "sprites" / args.category
@@ -399,24 +349,19 @@ def main() -> None:
 
     safe_name = args.name.strip().lower().replace(" ", "_")
 
-    # Log the prompt that will be used
-    if args.directions:
-        prompt = build_directions_prompt(args.category, args.subject, args.style)
-    else:
-        prompt = build_prompt(args.category, args.subject, args.style, frame_idx=0, total_frames=args.frames)
-    prompt_log_path = output_dir / f"{safe_name}_prompt.txt"
-    prompt_log_path.write_text(prompt + "\n", encoding="utf-8")
-
     client = OpenAI()
     saved_paths: list[Path] = []
 
     if args.directions:
-        # Single API call: all 4 directions in one image, then slice for style consistency
-        dir_prompt = build_directions_prompt(args.category, args.subject, args.style)
+        # Single API call: all 4 directions in one 2x2 image, then slice for style consistency
+        prompt = build_directions_prompt(args.category, args.subject, args.style)
+        prompt_log_path = output_dir / f"{safe_name}_prompt.txt"
+        prompt_log_path.write_text(prompt + "\n", encoding="utf-8")
+
         print(f"Generating 4-direction sheet in one call with {args.model}...")
         response = client.images.generate(
             model=args.model,
-            prompt=dir_prompt,
+            prompt=prompt,
             size="1024x1024",
             quality=args.quality,
             background="transparent",
@@ -428,13 +373,12 @@ def main() -> None:
         raw_bytes = base64.b64decode(response.data[0].b64_json)
         full_sheet = remove_background(PILImage.open(io.BytesIO(raw_bytes)))
 
-        # Save the raw unsliced (but background-removed) sheet for inspection
+        # Save raw unsliced sheet for inspection
         raw_path = output_dir / f"{safe_name}_raw.png"
         raw_path.write_bytes(pil_to_png_bytes(full_sheet))
-        print(f"Raw unsliced sheet: {raw_path}")
+        print(f"Raw unsliced sheet saved: {raw_path}")
 
         frames = slice_2x2_into_frames(full_sheet, args.frame_size)
-
         strip = composite_spritesheet(frames, args.frame_size)
         output_path = output_dir / f"{safe_name}.png"
         output_path.write_bytes(pil_to_png_bytes(strip))
@@ -452,47 +396,12 @@ def main() -> None:
         meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
         print(f"Spritesheet metadata: {meta_path}")
 
-    elif is_spritesheet:
-        # Generate N frames individually and composite into a horizontal strip
-        frames: list[PILImage.Image] = []
-        for frame_idx in range(args.frames):
-            frame_prompt = build_prompt(
-                args.category, args.subject, args.style,
-                frame_idx=frame_idx, total_frames=args.frames,
-            )
-            print(f"Generating frame {frame_idx + 1}/{args.frames} with {args.model}...")
-            response = client.images.generate(
-                model=args.model,
-                prompt=frame_prompt,
-                size=args.size,
-                quality=args.quality,
-                background="transparent",
-                output_format="png",
-                n=1,
-            )
-            if not getattr(response, "data", None) or not getattr(response.data[0], "b64_json", None):
-                sys.exit(f"No image data returned for frame {frame_idx + 1}.")
-            raw_bytes = base64.b64decode(response.data[0].b64_json)
-            frames.append(resize_frame(raw_bytes, args.frame_size))
-
-        strip = composite_spritesheet(frames, args.frame_size)
-        output_path = output_dir / f"{safe_name}.png"
-        output_path.write_bytes(pil_to_png_bytes(strip))
-        saved_paths.append(output_path)
-
-        meta = {
-            "frame_w": args.frame_size,
-            "frame_h": args.frame_size,
-            "frame_count": args.frames,
-            "cols": args.frames,
-            "rows": 1,
-        }
-        meta_path = output_dir / f"{safe_name}_meta.json"
-        meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
-        print(f"Spritesheet metadata: {meta_path}")
-
     else:
-        # Generate one or more single-image candidates
+        # Single sprite, optionally multiple candidates
+        prompt = build_prompt(args.category, args.subject, args.style)
+        prompt_log_path = output_dir / f"{safe_name}_prompt.txt"
+        prompt_log_path.write_text(prompt + "\n", encoding="utf-8")
+
         print(f"Generating {args.n} sprite candidate(s) with {args.model}...")
         response = client.images.generate(
             model=args.model,
@@ -517,20 +426,10 @@ def main() -> None:
             output_path.write_bytes(pil_to_png_bytes(resized))
             saved_paths.append(output_path)
 
-            meta = {
-                "frame_w": args.frame_size,
-                "frame_h": args.frame_size,
-                "frame_count": 1,
-                "cols": 1,
-                "rows": 1,
-            }
-            meta_path = output_dir / f"{safe_name}{suffix}_meta.json"
-            meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
-
     if not saved_paths:
         sys.exit("The API response did not contain any decodable image payloads.")
 
-    print("Saved files:")
+    print("Saved:")
     for path in saved_paths:
         print(f"  {path}")
     print(f"Prompt log: {prompt_log_path}")

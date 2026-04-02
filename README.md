@@ -30,9 +30,9 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 | Hero | HP | Speed | Armor | Passive | Starting Weapon |
 |------|----|-------|-------|---------|-----------------|
-| Knight of the Burning Crown | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
-| Witch of the Hollow Marsh | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
-| Wandering Friar | 110 | 210 | 5 | Heal 1 HP per 10 XP orbs collected | Holy Nova |
+| Knight | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
+| Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
+| Friar | 110 | 210 | 5 | Heal 1 HP per 10 XP orbs collected | Holy Nova |
 
 ---
 

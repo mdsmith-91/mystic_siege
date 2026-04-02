@@ -32,7 +32,7 @@ def generate_hero_assets():
     # Hero colors and labels
     heroes = [
         ("knight.png", (180, 140, 60), "K"),
-        ("witch.png", (160, 60, 220), "W"),
+        ("wizard.png", (160, 60, 220), "W"),
         ("friar.png", (200, 180, 120), "F")
     ]
 
