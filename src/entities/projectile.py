@@ -6,7 +6,8 @@ import math
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
-                 color: tuple = (200, 100, 255), target_enemy=None):
+                 color: tuple = (200, 100, 255), target_enemy=None,
+                 is_enemy_projectile: bool = False):
         super().__init__(groups)
 
         # image: 10x10 circle surface with given color
@@ -34,6 +35,9 @@ class Projectile(pygame.sprite.Sprite):
 
         # Store the original target enemy (for homing projectiles that should not track new enemies)
         self.original_target = target_enemy
+
+        # True for projectiles fired by enemies (hit player, not enemies)
+        self.is_enemy_projectile = is_enemy_projectile
 
     def update(self, dt):
         # Home toward original target only while it's still alive — fly straight once it dies
@@ -66,19 +70,21 @@ class Projectile(pygame.sprite.Sprite):
             self.pos.y < 0 or self.pos.y > WORLD_HEIGHT):
             self.kill()
 
-    def on_hit(self, enemy):
+    def on_hit(self, enemy, effect_group=None):
         """Handle projectile hitting an enemy."""
-        # If enemy.sprite_id in enemies_hit: return (already hit this enemy)
         if enemy.sprite_id in self.enemies_hit:
             return
 
-        # Add to enemies_hit
         self.enemies_hit.add(enemy.sprite_id)
 
         # hit_direction: from enemy back toward the projectile source, for shield checks
         enemy.take_damage(self.damage, hit_direction=-self.direction)
 
-        # If pierce <= 0: kill() else: pierce -= 1
+        if effect_group is not None:
+            from src.entities.effects import DamageNumber, HitSpark
+            DamageNumber(enemy.pos - Vector2(0, 20), self.damage, [effect_group])
+            HitSpark(enemy.pos, (255, 200, 50), [effect_group])
+
         if self.pierce <= 0:
             self.kill()
         else:

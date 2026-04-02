@@ -12,16 +12,16 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class LichFamiliar(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, projectile_group=None, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, projectile_group=None, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Lich",
             "hp": 35,
             "speed": 90,
             "damage": 12,
             "xp_value": 12,
-            "behavior": "ranged"
+            "behavior": "orbit"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Maintains orbit distance of ~200px from player, fires slow orb every 2.5s
         self.projectile_group = projectile_group
@@ -83,7 +83,8 @@ class LichFamiliar(Enemy):
                 enemy_group_ref=None,
                 pierce=0,
                 homing=False,
-                color=(200, 60, 255)
+                color=(200, 60, 255),
+                is_enemy_projectile=True
             )
 
             self.fire_timer = self.fire_interval

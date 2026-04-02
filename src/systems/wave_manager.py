@@ -18,15 +18,16 @@ WRAITH_DATA = {"name":"Wraith", "hp":40, "speed":120, "damage":15, "xp_value":10
 BAT_DATA = {"name":"Bat", "hp":15, "speed":220, "damage":8, "xp_value":6, "behavior":"chase"}
 GOLEM_DATA = {"name":"Golem", "hp":500, "speed":40, "damage":40, "xp_value":80, "behavior":"chase"}
 KNIGHT_DATA = {"name":"Knight", "hp":80, "speed":110, "damage":20, "xp_value":15, "behavior":"chase"}
-LICH_DATA = {"name":"Lich", "hp":35, "speed":90, "damage":12, "xp_value":12, "behavior":"ranged"}
+LICH_DATA = {"name":"Lich", "hp":35, "speed":90, "damage":12, "xp_value":12, "behavior":"orbit"}
 
 class WaveManager:
-    def __init__(self, player, all_sprites, enemy_group, xp_orb_group, projectile_group=None):
+    def __init__(self, player, all_sprites, enemy_group, xp_orb_group, projectile_group=None, effect_group=None):
         self.player = player
         self.all_sprites = all_sprites
         self.enemy_group = enemy_group
         self.xp_orb_group = xp_orb_group
         self.projectile_group = projectile_group
+        self.effect_group = effect_group
 
         # elapsed: float = 0.0
         self.elapsed = 0.0
@@ -173,22 +174,23 @@ class WaveManager:
             pos = self._get_spawn_pos()
 
             groups = (self.all_sprites, self.enemy_group)
+            eg = self.effect_group
             if data["name"] == "Skeleton":
-                enemy = Skeleton(pos, self.player, groups, self.xp_orb_group)
+                enemy = Skeleton(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Goblin":
-                enemy = DarkGoblin(pos, self.player, groups, self.xp_orb_group)
+                enemy = DarkGoblin(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Wraith":
-                enemy = Wraith(pos, self.player, groups, self.xp_orb_group)
+                enemy = Wraith(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Bat":
-                enemy = PlagueBat(pos, self.player, groups, self.xp_orb_group)
+                enemy = PlagueBat(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Golem":
-                enemy = StoneGolem(pos, self.player, groups, self.xp_orb_group)
+                enemy = StoneGolem(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Knight":
-                enemy = CursedKnight(pos, self.player, groups, self.xp_orb_group)
+                enemy = CursedKnight(pos, self.player, groups, self.xp_orb_group, eg)
             elif data["name"] == "Lich":
-                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group, self.xp_orb_group)
+                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group, self.xp_orb_group, eg)
             else:
-                enemy = Enemy(pos, self.player, groups, data, self.xp_orb_group)
+                enemy = Enemy(pos, self.player, groups, data, self.xp_orb_group, eg)
 
             # If elite_mode: multiply hp and damage by 1.5
             if self.elite_mode:

@@ -181,9 +181,18 @@ class UpgradeSystem:
             if len(candidates) >= 3:
                 return random.sample(candidates, 3)
             else:
-                # If not enough passives, add some random ones
-                while len(candidates) < 3:
-                    candidates.append(random.choice(PASSIVE_UPGRADES))
+                # Fill with passives not already in candidates
+                existing_names = {c["name"] for c in candidates}
+                remaining = [p for p in PASSIVE_UPGRADES if p["name"] not in existing_names]
+                random.shuffle(remaining)
+                for p in remaining:
+                    if len(candidates) >= 3:
+                        break
+                    candidates.append({
+                        "stat": p["stat"], "value": p["value"], "name": p["name"],
+                        "description": p["description"], "icon_color": p["icon_color"],
+                        "type": "passive"
+                    })
 
         # Return 3 randomly selected without duplicates
         if len(candidates) >= 3:

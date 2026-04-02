@@ -11,7 +11,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class CursedKnight(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Knight",
             "hp": 80,
@@ -20,7 +20,7 @@ class CursedKnight(Enemy):
             "xp_value": 15,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Shield mechanic — faces toward player each frame
         self.shield_facing = Vector2(1, 0)

@@ -11,7 +11,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class Skeleton(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Skeleton",
             "hp": 30,
@@ -20,7 +20,7 @@ class Skeleton(Enemy):
             "xp_value": 5,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Add small random angle offset (±5 degrees, change every 0.5s) so they spread out
         self.angle_offset = 0.0

@@ -2,14 +2,15 @@ import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from src.entities.xp_orb import XPOrb
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import WORLD_WIDTH, WORLD_HEIGHT, ENEMY_KNOCKBACK_FORCE
 from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
-    def __init__(self, pos, target, all_groups: tuple, enemy_data: dict, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, enemy_data: dict, xp_orb_group=None, effect_group=None):
         super().__init__(pos, all_groups)
         self.all_groups = all_groups
         self.xp_orb_group = xp_orb_group
+        self.effect_group = effect_group
 
         # target = player reference
         self.target = target
@@ -87,6 +88,8 @@ class Enemy(BaseEntity):
         if self._death_handled:
             return
         super().take_damage(amount)
+        if hit_direction is not None and hit_direction.length() > 0:
+            self.apply_knockback(-hit_direction, ENEMY_KNOCKBACK_FORCE)
         if self.hp <= 0 and self.xp_orb_group is not None:
             self._death_handled = True
             self.on_death(self.xp_orb_group)
@@ -101,3 +104,6 @@ class Enemy(BaseEntity):
         self.target.kill_count += 1
         all_sprites = self.all_groups[0]
         XPOrb(self.pos, self.xp_value, (all_sprites, xp_orb_group))
+        if self.effect_group is not None:
+            from src.entities.effects import DeathExplosion
+            DeathExplosion(self.pos, 40, (200, 100, 50), [self.effect_group])

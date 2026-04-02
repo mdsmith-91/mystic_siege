@@ -68,7 +68,7 @@ class HitSpark(pygame.sprite.Sprite):
         for _ in range(6):
             angle = random.uniform(0, 2 * 3.14159)
             distance = random.uniform(5, 15)
-            vel = Vector2(distance * 30 * 3.14159, 0)
+            vel = Vector2(distance * 5, 0)
             vel.rotate_ip(angle)
 
             self.particles.append({
@@ -79,8 +79,8 @@ class HitSpark(pygame.sprite.Sprite):
                 "color": color
             })
 
-        # image: transparent surface sized to contain all particles
-        self.image = pygame.Surface((50, 50), pygame.SRCALPHA)
+        # image: transparent surface sized to contain particles at full travel distance
+        self.image = pygame.Surface((200, 200), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=pos)
 
         # Store original position
@@ -109,8 +109,8 @@ class HitSpark(pygame.sprite.Sprite):
         for particle in self.particles:
             alpha = int(255 * (particle["lifetime"] / 0.25))
             pygame.draw.circle(self.image, (*particle["color"], alpha),
-                             (particle["pos"].x - self.rect.x + 25,
-                              particle["pos"].y - self.rect.y + 25),
+                             (particle["pos"].x - self.rect.x,
+                              particle["pos"].y - self.rect.y),
                              particle["radius"])
 
 class DeathExplosion(pygame.sprite.Sprite):
@@ -207,8 +207,8 @@ class LevelUpEffect(pygame.sprite.Sprite):
         for particle in self.particles:
             alpha = int(255 * (particle["lifetime"] / 1.5))
             pygame.draw.circle(self.image, (212, 175, 55, alpha),
-                             (particle["pos"].x - self.rect.x + 100,
-                              particle["pos"].y - self.rect.y + 100),
+                             (particle["pos"].x - self.rect.x,
+                              particle["pos"].y - self.rect.y),
                              particle["radius"])
 
         # Kill when done

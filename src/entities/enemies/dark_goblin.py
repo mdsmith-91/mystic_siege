@@ -11,7 +11,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class DarkGoblin(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Goblin",
             "hp": 20,
@@ -20,7 +20,7 @@ class DarkGoblin(Enemy):
             "xp_value": 4,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/goblin.png", 32, 32)

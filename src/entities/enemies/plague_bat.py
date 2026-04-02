@@ -13,7 +13,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class PlagueBat(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
+    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Bat",
             "hp": 15,
@@ -22,7 +22,7 @@ class PlagueBat(Enemy):
             "xp_value": 6,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
+        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # split_chance = 0.4  — on death, 40% chance to spawn 2 mini bats
         self.split_chance = 0.4
@@ -89,8 +89,8 @@ class PlagueBat(Enemy):
         super().on_death(xp_orb_group)
 
         if random.random() < self.split_chance and not self.is_mini:
-            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group)
-            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group)
+            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group, self.effect_group)
+            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group, self.effect_group)
 
 class MiniBat(PlagueBat):
     """Mini bat spawned on PlagueBat death."""

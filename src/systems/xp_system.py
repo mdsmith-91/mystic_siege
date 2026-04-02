@@ -6,7 +6,7 @@ class XPSystem:
         self.current_xp = 0.0
         self.current_level = 1
         self.xp_to_next = BASE_XP_REQUIRED
-        self.levelup_pending = False
+        self.levelup_count = 0
 
     def update(self, dt, player, xp_orb_group):
         """Handle XP collection and orb pickup."""
@@ -57,16 +57,16 @@ class XPSystem:
             # xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
             self.xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** self.current_level))
 
-            # levelup_pending = True
-            self.levelup_pending = True
+            # increment levelup_count
+            self.levelup_count += 1
             AudioManager.instance().play_sfx(AudioManager.LEVEL_UP)
 
-        # return levelup_pending
-        return self.levelup_pending
+        # return whether any levelup is pending
+        return self.levelup_count > 0
 
     def consume_levelup(self):
-        """Consume a level up (reset the pending flag)."""
-        self.levelup_pending = False
+        """Consume one pending level up."""
+        self.levelup_count = max(0, self.levelup_count - 1)
 
     def xp_progress(self) -> float:
         """Return XP progress toward next level (0.0 to 1.0)."""

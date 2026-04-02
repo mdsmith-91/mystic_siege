@@ -49,9 +49,10 @@ def generate_hero_assets():
         text_rect = text.get_rect(center=(16, 16))
         surface.blit(text, text_rect)
 
-        # Save file
+        # Only write if no real asset exists
         filepath = f"assets/sprites/heroes/{filename}"
-        pygame.image.save(surface, filepath)
+        if not os.path.exists(filepath):
+            pygame.image.save(surface, filepath)
 
 def generate_enemy_assets():
     """Generate enemy placeholder assets."""
@@ -94,9 +95,10 @@ def generate_enemy_assets():
         text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
         surface.blit(text, text_rect)
 
-        # Save file
+        # Only write if no real asset exists
         filepath = f"assets/sprites/enemies/{filename}"
-        pygame.image.save(surface, filepath)
+        if not os.path.exists(filepath):
+            pygame.image.save(surface, filepath)
 
 def generate_projectile_assets():
     """Generate projectile placeholder assets."""
@@ -120,9 +122,10 @@ def generate_projectile_assets():
         # Draw circle
         pygame.draw.circle(surface, color, (8, 8), 8)
 
-        # Save file
+        # Only write if no real asset exists
         filepath = f"assets/sprites/projectiles/{filename}"
-        pygame.image.save(surface, filepath)
+        if not os.path.exists(filepath):
+            pygame.image.save(surface, filepath)
 
 def generate_xp_orb_asset():
     """Generate XP orb placeholder asset."""
@@ -136,9 +139,10 @@ def generate_xp_orb_asset():
     # Draw gold circle
     pygame.draw.circle(surface, (212, 175, 55), (6, 6), 6)
 
-    # Save file
+    # Only write if no real asset exists
     filepath = "assets/sprites/effects/xp_orb.png"
-    pygame.image.save(surface, filepath)
+    if not os.path.exists(filepath):
+        pygame.image.save(surface, filepath)
 
 def generate_weapon_icon_assets():
     """Generate weapon icon placeholder assets."""
@@ -171,9 +175,10 @@ def generate_weapon_icon_assets():
         text_rect = text.get_rect(center=(16, 16))
         surface.blit(text, text_rect)
 
-        # Save file
+        # Only write if no real asset exists
         filepath = f"assets/sprites/ui/{filename}"
-        pygame.image.save(surface, filepath)
+        if not os.path.exists(filepath):
+            pygame.image.save(surface, filepath)
 
 def _write_sine_wav(path: str, freq_hz: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
     """Write a mono sine-wave WAV file."""
@@ -221,17 +226,33 @@ def generate_audio_placeholders():
     """Generate placeholder SFX WAV files using simple sine waves."""
     sfx_dir = "assets/audio/sfx/"
 
-    _write_sine_wav(f"{sfx_dir}player_hit.wav",     freq_hz=220,  duration_s=0.10)
-    _write_sweep_wav(f"{sfx_dir}player_death.wav",  freq_start=440, freq_end=110, duration_s=0.40)
-    _write_sine_wav(f"{sfx_dir}enemy_death.wav",    freq_hz=660,  duration_s=0.06)
-    _write_sine_wav(f"{sfx_dir}xp_pickup.wav",      freq_hz=1320, duration_s=0.05)
-    _write_chord_wav(f"{sfx_dir}level_up.wav",      freqs=[330, 440, 550], duration_s=0.35)
-    _write_sine_wav(f"{sfx_dir}arcane_bolt.wav",    freq_hz=880,  duration_s=0.07)
-    _write_sine_wav(f"{sfx_dir}holy_nova.wav",      freq_hz=110,  duration_s=0.25)
-    _write_sine_wav(f"{sfx_dir}flame_whip.wav",     freq_hz=330,  duration_s=0.10)
-    _write_sine_wav(f"{sfx_dir}spectral_blade.wav", freq_hz=550,  duration_s=0.06)
-    _write_sine_wav(f"{sfx_dir}lightning_chain.wav",freq_hz=1760, duration_s=0.08)
-    _write_sine_wav(f"{sfx_dir}frost_ring.wav",     freq_hz=220,  duration_s=0.20)
+    # Only write each file if no real asset exists
+    def maybe_write_sine(name, **kw):
+        p = f"{sfx_dir}{name}"
+        if not os.path.exists(p):
+            _write_sine_wav(p, **kw)
+
+    def maybe_write_sweep(name, **kw):
+        p = f"{sfx_dir}{name}"
+        if not os.path.exists(p):
+            _write_sweep_wav(p, **kw)
+
+    def maybe_write_chord(name, **kw):
+        p = f"{sfx_dir}{name}"
+        if not os.path.exists(p):
+            _write_chord_wav(p, **kw)
+
+    maybe_write_sine("player_hit.wav",      freq_hz=220,  duration_s=0.10)
+    maybe_write_sweep("player_death.wav",   freq_start=440, freq_end=110, duration_s=0.40)
+    maybe_write_sine("enemy_death.wav",     freq_hz=660,  duration_s=0.06)
+    maybe_write_sine("xp_pickup.wav",       freq_hz=1320, duration_s=0.05)
+    maybe_write_chord("level_up.wav",       freqs=[330, 440, 550], duration_s=0.35)
+    maybe_write_sine("arcane_bolt.wav",     freq_hz=880,  duration_s=0.07)
+    maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
+    maybe_write_sine("flame_whip.wav",      freq_hz=330,  duration_s=0.10)
+    maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
+    maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
+    maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
 
 
 def main():

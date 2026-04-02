@@ -66,8 +66,8 @@ class GameScene:
         # 3. camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        # 4. wave_manager = WaveManager(player, all_sprites, enemy_group, xp_orb_group, projectile_group)
-        self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group, self.projectile_group)
+        # 4. wave_manager = WaveManager(player, all_sprites, enemy_group, xp_orb_group, projectile_group, effect_group)
+        self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group, self.projectile_group, self.effect_group)
 
         # 5. xp_system = XPSystem()
         self.xp_system = XPSystem()
@@ -228,14 +228,17 @@ class GameScene:
         # all_sprites.update(dt)  — this updates player, enemies, orbs
         self.all_sprites.update(dt)
 
-        # projectile_group is separate from all_sprites, update it explicitly
+        # projectile_group is separate from all_sprites, update explicitly
         self.projectile_group.update(dt)
 
         # wave_manager.update(dt)
         self.wave_manager.update(dt)
 
-        # collision_system.check_all(player, enemy_group, projectile_group)
-        self.collision_system.check_all(self.player, self.enemy_group, self.projectile_group)
+        # collision_system.check_all(player, enemy_group, projectile_group, effect_group)
+        self.collision_system.check_all(self.player, self.enemy_group, self.projectile_group, self.effect_group)
+
+        # Update effect_group AFTER collision so spawned effects move in the same frame
+        self.effect_group.update(dt)
 
         # xp_system.update(dt, player, xp_orb_group)
         self.xp_system.update(dt, self.player, self.xp_orb_group)
@@ -243,11 +246,12 @@ class GameScene:
         # camera.update(player.pos, dt)
         self.camera.update(self.player.pos, dt)
 
-        # Check levelup:
-        # if xp_system.levelup_pending and upgrade_menu is None:
-        if self.xp_system.levelup_pending and self.upgrade_menu is None:
+        # Show upgrade menu for each pending levelup
+        if self.xp_system.levelup_count > 0 and self.upgrade_menu is None:
             choices = self.upgrade_system.get_random_choices(self.player)
             self.upgrade_menu = UpgradeMenu(choices, self.upgrade_system, self.player)
+            from src.entities.effects import LevelUpEffect
+            LevelUpEffect(self.player.pos, [self.effect_group])
 
         # Check win: if wave_manager.victory_flag: transition to game_over with victory=True
         if self.wave_manager.victory_flag:
@@ -318,15 +322,20 @@ class GameScene:
             if hasattr(weapon, 'draw_effect'):
                 weapon.draw_effect(screen, self.camera.offset)
 
-        # 4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
+        # 4. Draw effects (damage numbers, sparks, explosions) on top of sprites
+        for sprite in self.effect_group:
+            screen_pos = self.camera.apply(sprite)
+            screen.blit(sprite.image, screen_pos)
+
+        # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
         self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, fps)
 
-        # 5. If upgrade_menu: upgrade_menu.draw(screen)
+        # 7. If upgrade_menu: upgrade_menu.draw(screen)
         if self.upgrade_menu:
             self.upgrade_menu.draw(screen)
 
-        # 6. If paused: draw pause overlay or settings overlay
+        # 8. If paused: draw pause overlay or settings overlay
         if self.paused:
             if self._settings_open:
                 self._settings_menu.draw(screen)
