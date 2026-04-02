@@ -36,38 +36,19 @@ class Projectile(pygame.sprite.Sprite):
         self.original_target = target_enemy
 
     def update(self, dt):
-        # If homing and enemy_group_ref has sprites:
-        if self.homing and self.enemy_group_ref:
-            # Find nearest enemy
-            nearest_enemy = None
-            nearest_distance = float('inf')
+        # Home toward original target only while it's still alive — fly straight once it dies
+        if self.homing and self.original_target and self.original_target.alive():
+            target_direction = (self.original_target.pos - self.pos).normalize()
+            angle_diff = self.direction.angle_to(target_direction)
 
-            # If we have an original target and it's still alive, track that target
-            # Otherwise, track the nearest enemy in the group
-            if self.original_target and self.original_target.alive():
-                nearest_enemy = self.original_target
-            else:
-                # Find the nearest enemy in the group
-                for enemy in self.enemy_group_ref:
-                    distance = (enemy.pos - self.pos).length()
-                    if distance < nearest_distance:
-                        nearest_distance = distance
-                        nearest_enemy = enemy
+            # Limit turning speed to 120 degrees per second
+            max_turn = 120 * dt
+            if angle_diff > max_turn:
+                angle_diff = max_turn
+            elif angle_diff < -max_turn:
+                angle_diff = -max_turn
 
-            # Steer direction toward nearest enemy by max 120 degrees/sec (gradual curve)
-            if nearest_enemy:
-                target_direction = (nearest_enemy.pos - self.pos).normalize()
-                angle_diff = self.direction.angle_to(target_direction)
-
-                # Limit turning speed to 120 degrees per second
-                max_turn = 120 * dt
-                if angle_diff > max_turn:
-                    angle_diff = max_turn
-                elif angle_diff < -max_turn:
-                    angle_diff = -max_turn
-
-                # Rotate direction
-                self.direction = self.direction.rotate(angle_diff)
+            self.direction = self.direction.rotate(angle_diff)
 
         # pos += direction * speed * dt
         self.pos += self.direction * self.speed * dt

@@ -95,9 +95,8 @@ jobs:
         with:
           tag_name: v${{ env.VERSION }}
           name: v${{ env.VERSION }}
+          generate_release_notes: true
           body: |
-            Automated build — commit ${{ github.event.workflow_run.head_sha }}
-
             **To play on Linux:** `chmod +x MysticSiege-linux && ./MysticSiege-linux`
             **To play on Windows:** double-click `MysticSiege-windows.exe`
           files: |

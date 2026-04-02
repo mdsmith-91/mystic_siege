@@ -22,7 +22,7 @@ class HolyNova(BaseWeapon):
             {"base_damage": 15},  # L2: +15 damage
             {"base_radius": 40},  # L3: +40 radius
             {"base_cooldown": -0.4},  # L4: -0.4 cooldown
-            {"base_damage": 20, "ring_width": 6}  # L5: more damage, narrower ring
+            {"base_damage": 20, "ring_width": -4}  # L5: more damage, narrower ring
         ]
 
         # Keep a list of active rings

@@ -33,7 +33,9 @@ FRIAR_HEAL_PER_XP = 0.1  # HP healed per XP point collected
 
 # WEAPONS
 MAX_WEAPON_SLOTS = 6
-ARCANE_BOLT_RANGE = 350  # max distance to target an enemy
+ARCANE_BOLT_RANGE = 350         # max distance to target an enemy
+ARCANE_BOLT_SPREAD = 20         # degrees between each bolt in a multi-bolt burst
+ARCANE_BOLT_STAGGER = 0.3       # seconds between each bolt in a burst
 LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
 
 # SPAWNING

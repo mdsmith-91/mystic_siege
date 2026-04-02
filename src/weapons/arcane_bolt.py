@@ -2,7 +2,7 @@ import pygame
 from src.weapons.base_weapon import BaseWeapon
 from src.entities.projectile import Projectile
 from pygame.math import Vector2
-from settings import ARCANE_BOLT_RANGE
+from settings import ARCANE_BOLT_RANGE, ARCANE_BOLT_SPREAD, ARCANE_BOLT_STAGGER
 from src.utils.audio_manager import AudioManager
 
 class ArcaneBolt(BaseWeapon):
@@ -72,10 +72,10 @@ class ArcaneBolt(BaseWeapon):
         for i in range(self.bolt_count):
             direction = base_direction
             if self.bolt_count > 1:
-                angle_offset = (i - (self.bolt_count - 1) / 2) * 10
+                angle_offset = (i - (self.bolt_count - 1) / 2) * ARCANE_BOLT_SPREAD
                 direction = base_direction.rotate(angle_offset)
 
-            delay = i * 0.25  # 0s, 0.25s, 0.5s — stagger each bolt
+            delay = i * ARCANE_BOLT_STAGGER
 
             if delay == 0:
                 self._spawn_bolt(direction, nearest_enemy)
