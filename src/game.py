@@ -28,8 +28,10 @@ class Game:
                     mouse_moved = True
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:
-                        # Toggle fullscreen
-                        pygame.display.toggle_fullscreen()
+                        from settings import SCREEN_WIDTH, SCREEN_HEIGHT
+                        is_fs = bool(pygame.display.get_surface().get_flags() & pygame.FULLSCREEN)
+                        flags = 0 if is_fs else (pygame.FULLSCREEN | pygame.SCALED)
+                        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
                     elif event.key == pygame.K_F12:
                         # Take screenshot
                         filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"

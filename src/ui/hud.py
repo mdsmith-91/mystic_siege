@@ -162,10 +162,10 @@ class HUD:
         inner_rect = pygame.Rect(0, SCREEN_HEIGHT - 30, fill_width, 20)
         pygame.draw.rect(screen, XP_COLOR, inner_rect)
 
-        # Text: "LVL 7" on left side of bar
+        # Text: "LVL 7" on left side of bar, vertically centered
         font = pygame.font.SysFont("serif", 16)
         text = font.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
-        screen.blit(text, (10, SCREEN_HEIGHT - 25))
+        screen.blit(text, (10, xp_bar_rect.centery - text.get_height() // 2))
 
         # 3. Timer (top-center):
         #    wave_manager.get_elapsed_str() in large font, white with dark shadow

@@ -110,7 +110,8 @@ class SettingsMenu:
             if button_name == "fullscreen":
                 self.fullscreen = new_value
                 self.save_system.set_setting("fullscreen", new_value)
-                pygame.display.toggle_fullscreen()
+                flags = (pygame.FULLSCREEN | pygame.SCALED) if new_value else 0
+                pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
             elif button_name == "show_fps":
                 self.show_fps = new_value
                 self.save_system.set_setting("show_fps", new_value)

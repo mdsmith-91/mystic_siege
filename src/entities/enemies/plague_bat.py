@@ -28,12 +28,13 @@ class PlagueBat(Enemy):
         self.split_chance = 0.4
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
+        # Scaled to 20x20 — bats are smaller than standard enemies
         sheet = Spritesheet("assets/sprites/enemies/bat.png", 32, 32)
         self._frames = {
-            _DIR_DOWN:  sheet.get_frame(0, 0),
-            _DIR_LEFT:  sheet.get_frame(1, 0),
-            _DIR_RIGHT: sheet.get_frame(2, 0),
-            _DIR_UP:    sheet.get_frame(3, 0),
+            _DIR_DOWN:  pygame.transform.scale(sheet.get_frame(0, 0), (20, 20)),
+            _DIR_LEFT:  pygame.transform.scale(sheet.get_frame(1, 0), (20, 20)),
+            _DIR_RIGHT: pygame.transform.scale(sheet.get_frame(2, 0), (20, 20)),
+            _DIR_UP:    pygame.transform.scale(sheet.get_frame(3, 0), (20, 20)),
         }
 
         self.image = self._frames[_DIR_DOWN]
@@ -106,4 +107,7 @@ class MiniBat(PlagueBat):
         self.damage = 4
         self.xp_value = 3
 
+        # Mini bats are even smaller than regular bats
+        self._frames = {k: pygame.transform.scale(v, (14, 14)) for k, v in self._frames.items()}
+        self.image = self._frames[_DIR_DOWN]
         self.rect = self.image.get_rect(center=pos)
