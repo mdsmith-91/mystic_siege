@@ -15,6 +15,7 @@ class FlameWhip(BaseWeapon):
     cone_angle = 90  # degrees total arc
     burn_damage = 5.0  # per second
     burn_duration = 2.0  # seconds
+    IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -70,7 +71,7 @@ class FlameWhip(BaseWeapon):
 
             if abs(angle_to_enemy) <= self.cone_angle / 2:
                 is_crit = random.random() < self.owner.crit_chance
-                damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
+                damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy)
                 self.burning_enemies[enemy.sprite_id] = self.burn_duration
                 if self.effect_group is not None:

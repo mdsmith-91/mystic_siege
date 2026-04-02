@@ -29,6 +29,7 @@ PICKUP_RADIUS = 80
 # CRITICAL HITS
 CRIT_CHANCE_BASE = 0.05   # 5% base crit chance for all heroes
 CRIT_MULTIPLIER = 2.0     # crits deal 2x damage
+WIZARD_SPELL_DAMAGE_BONUS = 0.20  # Wizard passive: spells deal 20% more damage
 
 # XP
 BASE_XP_REQUIRED = 50

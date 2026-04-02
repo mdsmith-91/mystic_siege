@@ -13,6 +13,7 @@ class ArcaneBolt(BaseWeapon):
     bolt_count = 1
     homing = True
     projectile_color = (160, 80, 255)
+    IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -34,7 +35,7 @@ class ArcaneBolt(BaseWeapon):
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
         """Spawn a single projectile in the given direction."""
-        damage = self.base_damage * self.owner.damage_multiplier
+        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0)
         Projectile(
             pos=self.owner.pos,
             direction=direction,

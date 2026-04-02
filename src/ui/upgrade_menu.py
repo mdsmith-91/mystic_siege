@@ -136,7 +136,9 @@ class UpgradeMenu:
                     "armor": "ARM",
                     "regen_rate": "REG",
                     "xp_multiplier_pct": "XP",
-                    "cooldown_reduction": "CD"
+                    "cooldown_reduction": "CD",
+                    "crit_chance": "CRIT",
+                    "spell_damage_multiplier_pct": "SPL"
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 

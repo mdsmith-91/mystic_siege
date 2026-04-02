@@ -1,7 +1,7 @@
 import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
-from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS, CRIT_CHANCE_BASE
+from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS, CRIT_CHANCE_BASE, WIZARD_SPELL_DAMAGE_BONUS
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
 from src.utils.spritesheet import Spritesheet
@@ -50,8 +50,10 @@ class Player(BaseEntity):
         self.pickup_radius = PICKUP_RADIUS
         self.cooldown_reduction = 0.0       # 0.0 to 0.9 max
         self.crit_chance = CRIT_CHANCE_BASE
+        self.spell_damage_multiplier = 1.0
         if self.hero_class == "Wizard":
             self.crit_chance += 0.10
+            self.spell_damage_multiplier += WIZARD_SPELL_DAMAGE_BONUS
         self.damage_multiplier = 1.0
 
         # iframes: float = 0.0  (countdown timer for invincibility frames)

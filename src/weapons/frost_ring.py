@@ -14,6 +14,7 @@ class FrostRing(BaseWeapon):
     ring_speed = 80  # px per second outward
     max_radius = 200
     freeze_duration = 1.5
+    IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -85,7 +86,7 @@ class FrostRing(BaseWeapon):
                     if enemy.sprite_id not in ring["damage_done"]:
                         # Deal damage
                         is_crit = random.random() < self.owner.crit_chance
-                        damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
+                        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir)

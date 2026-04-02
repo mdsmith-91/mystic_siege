@@ -14,6 +14,7 @@ class HolyNova(BaseWeapon):
     base_radius = 80
     expand_speed = 200  # px per second
     ring_width = 8
+    IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -37,7 +38,7 @@ class HolyNova(BaseWeapon):
         ring = {
             "radius": 0,
             "max_radius": self.base_radius,
-            "damage": self.base_damage * self.owner.damage_multiplier,
+            "damage": self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0),
             "enemies_hit": set()
         }
         self.rings.append(ring)

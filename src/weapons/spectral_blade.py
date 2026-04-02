@@ -16,6 +16,7 @@ class SpectralBlade(BaseWeapon):
     orbit_speed = 180  # degrees per second
     blade_size = (24, 8)
     orbit_angle = 0.0  # current rotation, increments each frame
+    IS_SPELL = False
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)

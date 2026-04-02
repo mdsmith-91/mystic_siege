@@ -14,6 +14,7 @@ class LightningChain(BaseWeapon):
     chain_range = 150  # max distance between chain jumps
     stun_chance = 0.0  # 0.0-1.0
     stun_duration = 0.5
+    IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -84,7 +85,7 @@ class LightningChain(BaseWeapon):
             # Diminish damage by 10% per hop, then roll crit independently per enemy
             damage_multiplier = 0.9 ** i
             is_crit = random.random() < self.owner.crit_chance
-            damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
+            damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
             hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)

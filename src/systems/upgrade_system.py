@@ -58,6 +58,13 @@ PASSIVE_UPGRADES = [
         "stat": "crit_chance",
         "value": 0.05,
         "icon_color": (255, 220, 60)
+    },
+    {
+        "name": "+10% Spell Damage",
+        "description": "Increase damage dealt by all spell weapons by 10%",
+        "stat": "spell_damage_multiplier_pct",
+        "value": 0.10,
+        "icon_color": (160, 80, 255)
     }
 ]
 
@@ -266,3 +273,5 @@ class UpgradeSystem:
             player.cooldown_reduction = min(0.9, player.cooldown_reduction + value)
         elif stat == "crit_chance":
             player.crit_chance += value
+        elif stat == "spell_damage_multiplier_pct":
+            player.spell_damage_multiplier *= (1 + value)
