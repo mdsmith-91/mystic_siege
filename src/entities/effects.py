@@ -18,10 +18,10 @@ class DamageNumber(pygame.sprite.Sprite):
         else:
             self.color = (255, 255, 255)
 
-        # Font size: 18 + min(int(amount/10), 14); crits are 1.5x larger and bold
+        # Font size: 18 + min(int(amount/10), 14); crits are 1.25x larger and bold
         font_size = 18 + min(int(amount / 10), 14)
         if is_crit:
-            font_size = int(font_size * 1.5)
+            font_size = int(font_size * 1.25)
         self.font = pygame.font.SysFont(None, font_size, bold=is_crit)
 
         # Text surface

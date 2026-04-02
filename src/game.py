@@ -14,7 +14,11 @@ class Game:
         self.scene_manager.switch_to(STATE_MENU)
         self._mouse_idle = 0.0
         self._cursor_visible = True
-        pygame.mouse.set_visible(True)
+        self._default_cursor = pygame.mouse.get_cursor()
+        _invis_surf = pygame.Surface((1, 1), pygame.SRCALPHA)
+        _invis_surf.fill((0, 0, 0, 0))
+        self._invisible_cursor = pygame.cursors.Cursor((0, 0), _invis_surf)
+        pygame.mouse.set_cursor(self._default_cursor)
 
     def run(self):
         running = True
@@ -55,12 +59,12 @@ class Game:
             if mouse_moved:
                 self._mouse_idle = 0.0
                 if not self._cursor_visible:
-                    pygame.mouse.set_visible(True)
+                    pygame.mouse.set_cursor(self._default_cursor)
                     self._cursor_visible = True
             else:
                 self._mouse_idle += dt
                 if self._cursor_visible and self._mouse_idle >= MOUSE_HIDE_DELAY:
-                    pygame.mouse.set_visible(False)
+                    pygame.mouse.set_cursor(self._invisible_cursor)
                     self._cursor_visible = False
 
             # Translate controller state into synthetic keyboard events before scenes process them
