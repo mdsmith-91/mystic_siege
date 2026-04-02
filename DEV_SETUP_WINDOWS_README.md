@@ -97,24 +97,54 @@ Install or update **App Installer** from the Microsoft Store, then reopen PowerS
 
 Run:
 
-```powershell
-winget install --id Git.Git -e --source winget
-```
+    ```powershell
+    winget install --id Git.Git -e --source winget
+    ```
 
 Then verify:
 
-```powershell
-git --version
-```
+    ```powershell
+    git --version
+    ```
+
+#### Configure Git identity
+
+Run:
+
+    ```powershell
+    git config --global user.name "Your Name"
+
+    ```
+
+Then:
+
+    ```powershell
+    git config --global user.email "your-email@example.com"
+    ```
+
+Then verify:
+
+    ```powershell
+    git config --global user.name
+    ```
+
+And:
+
+    ```powershell
+    git config --global user.email
+    ```
 
 #### What this does
-Installs Git and confirms it is available from the terminal.
+
+Sets the name and email that Git will attach to your future commits.
 
 #### Why this matters
-Git is required to clone the repo, switch branches, pull changes, and push commits.
 
-#### If Git is already installed
-You can skip the install command and just verify with `git --version`.
+If this is not set correctly, commits may not be attributed properly on GitHub.
+
+#### Privacy note
+
+If you do not want to expose your personal email in public commits, use your GitHub `noreply` email instead of your real email.
 
 ---
 
