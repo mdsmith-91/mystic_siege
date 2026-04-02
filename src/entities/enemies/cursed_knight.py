@@ -1,7 +1,14 @@
 import pygame
 from pygame.math import Vector2
 from src.entities.enemy import Enemy
+from src.utils.spritesheet import Spritesheet
 from settings import WORLD_WIDTH, WORLD_HEIGHT
+
+# Column indices matching direction order in knight_meta.json
+_DIR_DOWN  = 0
+_DIR_LEFT  = 1
+_DIR_RIGHT = 2
+_DIR_UP    = 3
 
 class CursedKnight(Enemy):
     def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None):
@@ -15,39 +22,40 @@ class CursedKnight(Enemy):
         }
         super().__init__(pos, target, all_groups, enemy_data, xp_orb_group)
 
-        # Shield mechanic
-        self.shield_facing = Vector2(1, 0)  # Points toward player each frame
+        # Shield mechanic — faces toward player each frame
+        self.shield_facing = Vector2(1, 0)
 
-        # Override image: 32x32 steel-gray rect with a small blue square on the "front"
-        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
-        self.image.fill((100, 100, 100))  # Steel-gray
+        # Load 4-direction spritesheet: cols = [down, left, right, up]
+        sheet = Spritesheet("assets/sprites/enemies/knight.png", 32, 32)
+        self._frames = {
+            _DIR_DOWN:  sheet.get_frame(0, 0),
+            _DIR_LEFT:  sheet.get_frame(1, 0),
+            _DIR_RIGHT: sheet.get_frame(2, 0),
+            _DIR_UP:    sheet.get_frame(3, 0),
+        }
 
-        # Draw small blue square on front
-        pygame.draw.rect(self.image, (0, 100, 255), (24, 12, 6, 6))  # Blue square on right side
-
-        # Update rect
+        self.image = self._frames[_DIR_DOWN]
         self.rect = self.image.get_rect(center=pos)
 
+    def _frame_for_velocity(self) -> pygame.Surface:
+        """Pick the directional frame that best matches current velocity."""
+        if self.vel.length() < 1:
+            return self._frames[_DIR_DOWN]
+        if abs(self.vel.x) >= abs(self.vel.y):
+            return self._frames[_DIR_RIGHT] if self.vel.x > 0 else self._frames[_DIR_LEFT]
+        return self._frames[_DIR_DOWN] if self.vel.y > 0 else self._frames[_DIR_UP]
+
     def take_damage(self, amount, hit_direction=None):
-        """Apply damage with shield mechanic."""
-        # If hit_direction is provided and we have a shield
+        """Apply damage with frontal shield mechanic — 80% reduction when hit from the front."""
         if hit_direction is not None and hasattr(self, 'shield_facing'):
-            # Calculate angle between shield_facing and hit_direction
             angle = self.shield_facing.angle_to(hit_direction)
-
-            # If angle < 60 degrees (frontal): apply 20% of damage (80% reduction)
             if abs(angle) < 60:
-                amount = amount * 0.2  # 80% damage reduction
-        else:
-            # No shield or no hit direction, apply full damage
-            pass
+                amount = amount * 0.2
 
-        # Call parent take_damage
         super().take_damage(amount)
 
     def update(self, dt):
-        """Update the cursed knight."""
-        # Update shield_facing = (target.pos - self.pos).normalize()
+        # Keep shield facing toward player
         if hasattr(self, 'target') and self.target:
             direction = self.target.pos - self.pos
             if direction.length() > 0:
@@ -55,14 +63,8 @@ class CursedKnight(Enemy):
             else:
                 self.shield_facing = Vector2(1, 0)
 
-        # Call super.update() to handle movement and other updates
         super().update(dt)
 
-        # Update visual representation to show shield facing
-        # Redraw the image to show the shield facing correctly
-        self.image.fill((100, 100, 100))  # Steel-gray background
-
-        # Draw small blue square on front (determined by shield_facing)
-        # For simplicity, we'll draw it on the right side (assuming facing right means right side is front)
-        # In a real implementation, you'd want to be more precise about which side is front
-        pygame.draw.rect(self.image, (0, 100, 255), (24, 12, 6, 6))  # Blue square on right side
+        # Switch to the frame that matches movement direction
+        self.image = self._frame_for_velocity()
+        self.rect = self.image.get_rect(center=self.pos)

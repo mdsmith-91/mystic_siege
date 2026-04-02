@@ -84,7 +84,10 @@ class LightningChain(BaseWeapon):
             # Diminish damage by 10% per hop
             damage_multiplier = 0.9 ** i
             damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier
-            enemy.take_damage(damage)
+            source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
+            diff = source_pos - enemy.pos
+            hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+            enemy.take_damage(damage, hit_direction=hit_dir)
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
             if random.random() < self.stun_chance:

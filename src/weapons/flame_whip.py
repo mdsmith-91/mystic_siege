@@ -68,7 +68,7 @@ class FlameWhip(BaseWeapon):
 
             if abs(angle_to_enemy) <= self.cone_angle / 2:
                 damage = self.base_damage * self.owner.damage_multiplier
-                enemy.take_damage(damage)
+                enemy.take_damage(damage, hit_direction=-direction_to_enemy)
                 self.burning_enemies[enemy.sprite_id] = self.burn_duration
 
         # Show swing visual for 0.2s

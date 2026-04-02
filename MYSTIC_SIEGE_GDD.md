@@ -138,6 +138,7 @@ mystic_siege/
 │       ├── timer.py              # Reusable countdown/interval timer
 │       ├── resource_loader.py    # Centralized asset loading with fallback placeholders
 │       ├── audio_manager.py      # Singleton audio with silent fallback
+│       ├── input_manager.py      # Controller input with hot-plug and synthetic key events
 │       └── placeholder_assets.py # Generates placeholder PNGs and WAVs
 ```
 
@@ -289,9 +290,14 @@ On level-up, player is shown 3 cards drawn from a weighted pool:
 
 ## 14. ART DIRECTION
 
-**Style:** Top-down 16x16 or 32x32 pixel art (or AI-generated painterly sprites)
+**Style:** Top-down 32x32 AI-generated sprites
 
 **Palette:** Dark desaturated base (navy, charcoal, stone gray) with high-contrast magical accent colors (gold, cyan, purple, blood red)
+
+**Enemy Sprites (implemented):** All 7 enemy types have AI-generated 4-direction spritesheets
+(32×32 px, 4 cols: down/left/right/up, 1 row). Files live in `assets/sprites/enemies/` with
+accompanying `*_meta.json` metadata. Each enemy selects a directional frame each frame based
+on movement velocity via `_frame_for_velocity()`.
 
 **Recommended Free Asset Sources:**
 - https://kenney.nl (free game assets)

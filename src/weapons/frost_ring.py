@@ -83,7 +83,9 @@ class FrostRing(BaseWeapon):
                     if enemy.sprite_id not in ring["damage_done"]:
                         # Deal damage
                         damage = self.base_damage * self.owner.damage_multiplier
-                        enemy.take_damage(damage)
+                        diff = ring["center"] - enemy.pos
+                        hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        enemy.take_damage(damage, hit_direction=hit_dir)
 
                         # Freeze enemy — only save max_speed if not already frozen
                         self.frozen_enemies[enemy.sprite_id] = self.freeze_duration

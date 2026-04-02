@@ -82,7 +82,7 @@ class Enemy(BaseEntity):
         if self.attack_timer <= 0:
             self.attack_timer = self.attack_cooldown
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, hit_direction=None):
         """Override to trigger on_death after the entity is killed."""
         if self._death_handled:
             return

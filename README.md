@@ -14,10 +14,13 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 - 3 hero classes with unique passives and starting weapons
 - 6 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors (melee, ranged, phasing, orbiting, splitting)
+- AI-generated 4-direction spritesheets for all 7 enemy types
+- CursedKnight frontal shield mechanic — all weapons pass hit direction for accurate 80% block
 - Progressive wave difficulty scaling over 30 minutes
 - XP orb collection and leveling system with 3-card upgrade choices
 - Visual effects: damage numbers, hit sparks, death explosions, level-up burst
 - Persistent meta-progression saved between sessions
+- Controller support with hot-plug detection and synthetic key events for menus
 - Screenshot capture (F12), fullscreen toggle (F11), FPS counter (F3)
 - Full audio system with silent fallback — runs without any audio files
 
@@ -127,10 +130,12 @@ mystic_siege/
 │   ├── entities/            # Player, enemies, projectiles, XP orbs, effects
 │   ├── weapons/             # 6 weapon implementations
 │   ├── systems/             # Waves, XP, upgrades, collision, camera, saves
-│   └── ui/                  # HUD, menus, upgrade cards, class select
+│   ├── ui/                  # HUD, menus, upgrade cards, class select
+│   └── utils/               # ResourceLoader, AudioManager, InputManager, Spritesheet, Timer
 └── assets/
     ├── sprites/             # heroes / enemies / projectiles / effects / ui
     ├── audio/               # sfx / music
+    ├── backgrounds/
     └── fonts/
 ```
 

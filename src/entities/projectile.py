@@ -75,8 +75,8 @@ class Projectile(pygame.sprite.Sprite):
         # Add to enemies_hit
         self.enemies_hit.add(enemy.sprite_id)
 
-        # enemy.take_damage(damage)
-        enemy.take_damage(self.damage)
+        # hit_direction: from enemy back toward the projectile source, for shield checks
+        enemy.take_damage(self.damage, hit_direction=-self.direction)
 
         # If pierce <= 0: kill() else: pierce -= 1
         if self.pierce <= 0:

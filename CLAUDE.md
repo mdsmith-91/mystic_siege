@@ -45,12 +45,13 @@ mystic_siege/
 │   │   ├── xp_orb.py              # XP orb — bobbing animation, auto-collect
 │   │   ├── effects.py             # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect
 │   │   └── enemies/
-│   │       ├── skeleton.py        # hp=30, slow, slight random wander
-│   │       ├── dark_goblin.py     # hp=20, fast, spawns in groups
-│   │       ├── wraith.py          # hp=40, phases walls, periodic lunge
-│   │       ├── plague_bat.py      # hp=15, arc movement, splits on death
-│   │       ├── cursed_knight.py   # hp=80, frontal shield blocks 80% damage
-│   │       └── lich_familiar.py   # hp=35, orbits player, fires slow orbs
+│   │       ├── skeleton.py        # hp=30, slow, slight random wander; uses skeleton.png 4-dir sheet
+│   │       ├── dark_goblin.py     # hp=20, fast, spawns in groups; uses goblin.png 4-dir sheet
+│   │       ├── wraith.py          # hp=40, phases walls, periodic lunge; uses wraith.png 4-dir sheet
+│   │       ├── plague_bat.py      # hp=15, arc movement, splits on death; uses bat.png 4-dir sheet
+│   │       ├── cursed_knight.py   # hp=80, frontal shield blocks 80% damage; uses knight.png 4-dir sheet
+│   │       ├── lich_familiar.py   # hp=35, orbits player, fires slow orbs; uses lich.png 4-dir sheet
+│   │       └── stone_golem.py     # hp=500, mini-boss, very slow; uses golem.png 4-dir sheet
 │   ├── weapons/
 │   │   ├── base_weapon.py         # BaseWeapon — cooldown, upgrade(), fire() interface
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
@@ -170,6 +171,9 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 - Projectiles: use `enemies_hit` set to track pierce
 - SpectralBlade: per-enemy 0.5s hit cooldown dict
 - HolyNova/FrostRing: `damage_done` set per ring instance
+- `enemy.take_damage(amount, hit_direction=None)` — all weapons and projectiles pass
+  `hit_direction` (Vector2 from enemy back toward the attacker) so CursedKnight's
+  frontal shield mechanic correctly reduces damage by 80% on hits from the front
 
 ---
 

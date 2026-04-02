@@ -65,7 +65,9 @@ class HolyNova(BaseWeapon):
                     # Check if this enemy has already been damaged by this ring
                     if enemy.sprite_id not in ring["enemies_hit"]:
                         # Deal damage once per enemy per ring
-                        enemy.take_damage(ring["damage"])
+                        diff = self.owner.pos - enemy.pos
+                        hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        enemy.take_damage(ring["damage"], hit_direction=hit_dir)
                         ring["enemies_hit"].add(enemy.sprite_id)
 
             # Remove rings that exceed max_radius

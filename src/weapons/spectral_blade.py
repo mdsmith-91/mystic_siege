@@ -58,7 +58,9 @@ class SpectralBlade(BaseWeapon):
                     if enemy.sprite_id not in self.enemy_cooldowns:
                         # Deal damage
                         damage = self.base_damage * self.owner.damage_multiplier
-                        enemy.take_damage(damage)
+                        diff = self.owner.pos - enemy.pos
+                        hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        enemy.take_damage(damage, hit_direction=hit_dir)
                         AudioManager.instance().play_sfx(AudioManager.WEAPON_BLADE)
 
                         # Start 0.5s cooldown for that enemy
