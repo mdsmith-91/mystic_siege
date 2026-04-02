@@ -58,6 +58,9 @@ CONTROLLER_DEADZONE = 0.2
 CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
 
+# MOUSE CURSOR — hide after this many seconds of no movement
+MOUSE_HIDE_DELAY = 2.0
+
 # PAUSE MENU BUTTONS
 PAUSE_BUTTON_WIDTH = 240
 PAUSE_BUTTON_HEIGHT = 50
