@@ -10,7 +10,7 @@ This guide is intended to keep the development environment as contained and repr
 
 Set up a clean Windows development environment with:
 
-- Python **3.12.13**
+- Python **3.12**
 - a repo-local virtual environment at **`.venv`**
 - VS Code using the correct project interpreter
 - Git installed for cloning, pulling, and pushing
@@ -178,12 +178,12 @@ This gives you the `py` command and makes it easier to install and manage the ex
 
 ---
 
-### 7) Install Python 3.12.13
+### 7) Install Python 3.12
 
 Run:
 
 ```powershell
-py install 3.12.13
+py install 3.12
 ```
 
 Then verify:
@@ -193,7 +193,7 @@ py -V
 ```
 
 #### Expected result
-You should see a Python launcher/runtime available. The project target is **Python 3.12.13**.
+You should see a Python launcher/runtime available. The project target is **Python 3.12**.
 
 #### Why this matters
 `venv` does **not** install Python by itself. It creates an isolated environment from an already-installed Python interpreter.
@@ -204,6 +204,10 @@ You should see a Python launcher/runtime available. The project target is **Pyth
 
 Run:
 
+```powershell
+mkdir C:\dev
+cd C:\dev
+```
 ```powershell
 git clone https://github.com/mdsmith-91/mystic_siege.git
 cd mystic_siege
@@ -241,6 +245,10 @@ Do **not** commit `.venv` to Git.
 Run:
 
 ```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -249,15 +257,6 @@ Activates the local environment for the current PowerShell session.
 
 #### Why this matters
 After activation, Python and pip commands will install and run against this project’s environment instead of the global system Python.
-
-#### If PowerShell blocks activation
-Run:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
-
-Then try activating again.
 
 ---
 
@@ -283,6 +282,9 @@ Run:
 
 ```powershell
 python -m pip install -r requirements.txt
+```
+
+```powershell
 python -m pip install -r requirements-dev.txt
 ```
 
@@ -347,14 +349,11 @@ This confirms the environment is fully working end-to-end.
 In VS Code:
 
 - Open the `mystic_siege` folder
-- Install the **Python** extension if prompted
-- Open the Command Palette
+- Install the **Python** extension
+- Click Quick Access (search bar) at the top, click **Show and Run Commands**
 - Run **Python: Select Interpreter**
-- Choose:
+- Choose: Python 3.12.** (.venv) .venv\Scripts\python.exe
 
-```text
-mystic_siege\.venv\Scripts\python.exe
-```
 
 #### Why this matters
 VS Code needs to use the project’s local interpreter for:
@@ -375,6 +374,10 @@ Recommended extensions:
 - **Python** (Microsoft)
 - **Pylance** (Microsoft)
 - **GitHub Pull Requests and Issues** (GitHub)
+- **Ruff** (Astral Software)
+- **Git Lens** (GitKraken)
+- **Error Lens** (Alexander)
+- **Code Spell Checker** (Street Side Software)
 
 #### Why this helps
 These improve Python editing, type analysis, debugging, and GitHub workflow inside VS Code.
@@ -388,7 +391,7 @@ Each time you start working on the project:
 ### 1) Open PowerShell in the repo folder
 
 ```powershell
-cd path\to\mystic_siege
+cd C:\dev\mystic_siege
 ```
 
 ### 2) Activate the virtual environment
@@ -406,39 +409,6 @@ git pull
 ### 4) Run the game or project commands
 
 ```powershell
-python main.py
-```
-
----
-
-## One-time setup summary
-
-If you already understand the steps and just want the commands:
-
-```powershell
-$PSVersionTable.PSVersion
-winget --version
-winget install --id Git.Git -e --source winget
-winget install --id Microsoft.VisualStudioCode -e --source winget
-winget install 9NQ7512CXL7T -e --accept-package-agreements --disable-interactivity
-py install 3.12.13
-
-git --version
-code --version
-py -V
-
-git clone https://github.com/mdsmith-91/mystic_siege.git
-cd mystic_siege
-
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
-
-python run_check.py
-python src/utils/placeholder_assets.py
 python main.py
 ```
 
@@ -484,7 +454,7 @@ Use this to confirm setup is complete:
 - [ ] `git --version` works
 - [ ] `code --version` works
 - [ ] GitHub account is signed in and the repo is accessible in the browser
-- [ ] `py install 3.12.13` completed successfully
+- [ ] `py install 3.12` completed successfully
 - [ ] `.venv` exists in the repo folder
 - [ ] virtual environment activates successfully
 - [ ] dependencies installed without errors
@@ -547,7 +517,7 @@ winget install 9NQ7512CXL7T -e --accept-package-agreements --disable-interactivi
 Then install Python again:
 
 ```powershell
-py install 3.12.13
+py install 3.12
 ```
 
 ---
@@ -619,7 +589,7 @@ However, if Linux build/testing is needed later:
 After finishing this guide, the normal startup flow should be:
 
 ```powershell
-cd path\to\mystic_siege
+cd C:\dev\mystic_siege
 .\.venv\Scripts\Activate.ps1
 git pull
 python main.py
