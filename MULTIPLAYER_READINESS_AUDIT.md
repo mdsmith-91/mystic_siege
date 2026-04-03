@@ -28,14 +28,19 @@ with minimal surgery: `XPSystem`, `UpgradeSystem`, `BaseWeapon`, all weapon clas
 3. `player.py` — reads global input directly; no per-slot dispatch
 4. `camera.py` — no zoom, no multi-target follow; complete rewrite required
 
-**The V2 guide is accurate about what needs to change** but underspecifies several
-concerns: kill credit attribution, XP orb ownership, body-blocking between players,
-balance scaling with player count, and save-data behavior in multiplayer runs.
+**The V2 guide is directionally accurate about what needs to change** but
+underspecifies several concerns: lethal-damage interception for downed state, menu
+input source ownership, scene recreation for queued class selection, kill credit
+attribution, XP orb ownership, body-blocking between players, balance scaling with
+player count, and save-data behavior in multiplayer runs.
 
 **Recommended starting point:** Implement `PlayerSlot` + per-joystick `InputManager`
-extensions (Phase 10) without touching any gameplay file. Prove 1P still works.
+extensions first, but also document the two hidden prerequisites up front:
+1. revive/downed requires intercepting lethal damage before `BaseEntity.kill()`
+2. owned multiplayer menus require preserving device identity, not just posting
+plain synthetic `K_RETURN` / `K_ESCAPE` events
 Then migrate `GameScene.__init__` to accept `slots: list[PlayerSlot]`. Every
-subsequent phase is easier once those two are in place.
+subsequent phase is easier once those pieces are in place.
 
 ---
 
@@ -183,6 +188,11 @@ multiplayer as long as new code follows the same constraint.
   immediately. In multiplayer, a downed player should stay alive in the group (but
   unable to act) until the revive timer expires or a teammate revives them.
 - Missing fields: `is_downed`, `revive_timer`, `revive_progress`.
+- **More importantly:** `player.py` is not the first place that kills the player.
+  `BaseEntity.take_damage()` kills immediately when HP reaches 0. That means the
+  revive mechanic cannot be added only by changing the fade/death block in
+  `Player.update()`. Lethal damage must be intercepted earlier, either in
+  `Player.take_damage()` or by changing the base damage flow.
 
 **Kill count (line 70):**
 - `self.kill_count = 0` — per-player kill count exists, which is correct.
@@ -380,9 +390,11 @@ The method signature has an unused `player` parameter. This is a cleanup item.
 - **Input bleed risk:** If Player 1 is choosing an upgrade, Player 2 pressing
   their controller's A button also posts `K_RETURN` and will confirm the choice.
   Any controller can accidentally dismiss another player's upgrade menu.
-- **Fix direction:** Pass `slot_index` to `UpgradeMenu` and only accept input
-  from the matching `input_config`'s device. Or show menus sequentially with
-  clear visual ownership. This is complex to get right.
+- **Critical implementation note:** the current synthetic events do not preserve
+  controller identity. `InputManager` posts plain `KEYDOWN` events with only a key
+  code, so `UpgradeMenu` cannot tell which controller sent `K_RETURN`. "Filter by
+  source device" is not possible until the event model changes or the menu polls
+  the owning device directly.
 
 **Header text (line 94):**
 - `"LEVEL UP!"` — no per-player identity. In multiplayer, should display
@@ -412,13 +424,19 @@ The method signature has an unused `player` parameter. This is a cleanup item.
 - The scene does not accept `slots: list[PlayerSlot]` or `confirmed_slots`.
 - Complete redesign required to support sequential per-player hero selection.
 
+**SceneManager coupling:**
+- Even if `ClassSelect` is rewritten to accept `slots` and `confirmed_slots`, the
+  current `SceneManager` caches `STATE_CLASS_SELECT` and instantiates it once with
+  no kwargs. A slot-queue flow will not work until `STATE_CLASS_SELECT` is recreated
+  fresh per transition or explicitly reinitialized with the queued kwargs.
+
 **Input bleed (same risk as `UpgradeMenu`):**
 - `handle_events()` processes `K_RETURN` from the global event queue. Any
   connected controller's A button posts `K_RETURN` via `InputManager`, so
   Player 2's controller can confirm Player 1's hero selection.
-- **Fix direction:** Same as upgrade menu — filter events to the current slot's
-  device during the slot-queue path. Accept `K_RETURN` only from the device
-  matching `current_slot.input_config`; discard other devices' confirm events.
+- **Fix direction:** Same as upgrade menu — but note that filtering plain
+  `K_RETURN` events by device is not possible in the current code because source
+  controller identity is discarded by `InputManager`.
 
 ---
 
@@ -458,6 +476,12 @@ The method signature has an unused `player` parameter. This is a cleanup item.
   for the disconnected joystick. The `player_group` slot would need its own
   disconnect policy (pause? auto-resume with keyboard?).
 
+**This is the hidden blocker for owned multiplayer menus:**
+- The current event payload written by `_post_key()` / `_post_keyup()` contains no
+  joystick instance ID. That means V2's "filter by device" guidance is not directly
+  implementable with the current `InputManager` shape. Either custom event payloads
+  or direct device polling are required.
+
 **Missing per-joystick API (required by V2 Section 4.1):**
 - `get_movement_for_joystick(iid: int) -> tuple[float, float]` — not implemented
 - `get_confirm_for_joystick(iid: int) -> bool` — not implemented  
@@ -465,10 +489,13 @@ The method signature has an unused `player` parameter. This is a cleanup item.
 
 ---
 
-### `src/entities/base_entity.py` — COMPATIBLE
+### `src/entities/base_entity.py` — COMPATIBLE WITH ONE MAJOR CAVEAT
 
-No changes needed. `sprite_id`, `hp/max_hp`, `take_damage()`, `heal()`, `is_alive`
-are all correct for multiplayer use.
+`sprite_id`, `hp/max_hp`, `heal()`, and the base interface are fine for multiplayer.
+However, `take_damage()` kills the sprite immediately when HP reaches 0. That is
+compatible for enemies, but incompatible with a player downed/revive flow. The base
+class itself does not need a multiplayer rewrite, but the docs must treat this as a
+hard prerequisite for revive.
 
 ### `src/weapons/*.py` — COMPATIBLE
 

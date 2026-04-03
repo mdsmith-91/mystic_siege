@@ -102,9 +102,11 @@ Every item below must be replaced with a collection-based or slot-based equivale
 7. **Lobby minimum is 1.** The game can start with any number of joined players
    from 1 to 4. There is no mandatory second player.
 
-8. **Hero selection is simultaneous, not sequential.** All joined players select
-   on the same screen at the same time; a hero that is locked by one player becomes
-   un-selectable for others. This is simpler and faster than sequential passes.
+8. **Hero selection may be simultaneous later, but the first implementation should
+   be sequential.** The current repo already has a `ClassSelect` scene and a cached
+   `SceneManager` flow. A slot queue through recreated `ClassSelect` scenes is the
+   lowest-risk path for the first implementation. A fully simultaneous lobby-driven
+   hero picker can be a later polish pass.
 
 9. **Upgrades are sequential but clearly labeled.** When multiple players level up
    at the same time, a queue shows each menu one at a time. Each menu header names
@@ -252,6 +254,14 @@ before calling `super().take_damage()`. On death, credit `self.last_attacker`
 (fall back to `self.target` if None). This also makes 1P kill counts more accurate
 and is safe to add in Phase 1 (no gameplay regression).
 
+**Important caveat for the current codebase:** the hit pipeline does not currently
+pass attacker ownership into `Enemy.take_damage()`. For example, projectiles call
+`enemy.take_damage(actual_damage, hit_direction=-self.direction)` in
+`src/entities/projectile.py`, and several weapon classes call `enemy.take_damage(...)`
+directly. To make kill credit attribution work, the implementation must thread the
+attacking `Player` through those call sites or add an equivalent owner field to the
+damage source.
+
 ### 4.7 HUD Layout for N Players
 
 | Player count | Layout |
@@ -282,6 +292,13 @@ This is the only place that knows about screen positions.
   can revive them (all downed simultaneously, or last player dies outright in 1P).
 - **1P game over**: existing behavior unchanged — `player.dying` → fade → kill.
 
+**Critical prerequisite in the current repo:** this cannot be implemented only by
+changing `Player.update()`. `BaseEntity.take_damage()` currently calls `self.kill()`
+immediately when HP reaches 0, so a player would be removed from sprite groups before
+any downed/revive state could begin. The implementation must intercept lethal damage
+before `BaseEntity.kill()` runs, either by overriding `Player.take_damage()` or by
+changing the base damage/death flow.
+
 ### 4.9 Pause / Menu Behavior
 
 - Any player pressing ESC pauses the game. The pause menu is navigated by any input.
@@ -289,14 +306,22 @@ This is the only place that knows about screen positions.
 - During upgrade menu: other players' input is consumed (read and discarded) so
   buttons don't bleed into the menu navigation.
 
+**Current InputManager limitation:** this repo's synthetic controller events are
+posted as plain `KEYDOWN` / `KEYUP` events with no joystick instance ID attached.
+That means menu code cannot reliably tell which controller generated a `K_RETURN`
+or `K_ESCAPE`. Owned multiplayer menus therefore require one of two changes:
+1. Preserve device metadata on synthetic events, using a custom event payload.
+2. Bypass synthetic menu events for owned menus and poll the assigned device directly.
+Without one of those, "filter by source device" is not implementable.
+
 ### 4.10 Device Disconnect / Hot-Plug
 
 - Controller disconnect mid-game: the player's `input_config` remains set to the
   disconnected joystick ID. Movement returns `(0.0, 0.0)`, confirm returns False.
   The player stops moving. A small HUD icon can indicate the disconnection.
-- Reconnect: `InputManager.scan()` is already called on `JOYDEVICEADDED`. If the
-  same physical controller reconnects with the same instance ID (typical), input
-  resumes automatically.
+- Reconnect: `InputManager.update()` already handles `JOYDEVICEADDED`, and startup
+  enumeration is done by `InputManager.scan()` in `main.py`. If the same physical
+  controller reconnects with the same instance ID, input resumes automatically.
 - Keyboard "disconnect" is not possible; no handling needed.
 
 ---
@@ -339,6 +364,9 @@ Changes:
    `return self.alive() and not self.is_downed`.
 8. Death trigger: if slot is not None (multiplayer), go downed instead of dying.
    If slot is None (1P legacy), existing dying behavior unchanged.
+9. Do not rely on `Player.update()` alone for downed state. The implementation must
+   intercept lethal damage before `BaseEntity.take_damage()` removes the sprite from
+   its groups.
 
 **Regression risk:** Low. All changes are additive. 1P path taken when `slot=None`.
 
@@ -368,7 +396,9 @@ Changes:
 
 2. In `SceneManager`: register `LobbyScene`. Add to always-create-fresh set.
 
-3. In `MainMenu`: route "New Run" → `STATE_LOBBY` (not directly to `STATE_CLASS_SELECT`).
+3. In `settings.py`: add `STATE_LOBBY = "lobby"`.
+
+4. In `MainMenu`: route "New Run" → `STATE_LOBBY` (not directly to `STATE_CLASS_SELECT`).
 
 **Note on 1P path:** A single player joining and pressing start goes through the
 lobby just like 2–4 players. The lobby with one slot is visually simple and does
@@ -400,15 +430,18 @@ Changes:
 2. Current slot = `slots[0]`. Header: `f"PLAYER {current_slot.index + 1} — CHOOSE YOUR HERO"`.
 
 3. Navigate using `current_slot.input_config` (dispatch same as `Player._read_input`).
-   **Input bleed risk:** The current `handle_events()` loop processes `K_RETURN` from
-   the global event queue. Any connected controller's A button posts `K_RETURN`, which
-   means another player can accidentally confirm the current player's hero selection.
-   Mitigation: filter `K_RETURN` events by source device when in slot-queue mode.
-   For keyboard slots, accept only `K_RETURN` from that slot's keyboard scheme.
-   For controller slots, accept only button events matching that slot's joystick ID.
-   Discard other devices' confirm events during this scene.
+   **Scene lifecycle requirement:** the current `SceneManager` caches `ClassSelect`.
+   For slot-queue routing to work, `STATE_CLASS_SELECT` must be recreated fresh on
+   every transition or explicitly reinitialized with the new kwargs. Without that,
+   later queue passes will reuse stale scene state.
 
-4. **Duplicate prevention:** collect `{slot.hero_data['class'] for slot in confirmed_slots}`.
+   **Input bleed risk:** The current `handle_events()` loop processes `K_RETURN` from
+   the global event queue, and `InputManager` strips source device information when
+   it posts synthetic key events. For controller-owned slot selection, do not rely on
+   filtering plain `K_RETURN` events by source. Instead, either preserve `instance_id`
+   in custom synthetic events or poll the assigned controller directly during this scene.
+
+4. **Duplicate prevention:** collect `{slot.hero_data['name'] for slot in confirmed_slots}`.
    Render locked-out heroes with a gray overlay and the name of the player who
    picked them. Keyboard/controller cannot land on or confirm a locked hero.
 
@@ -502,6 +535,9 @@ Changes:
 11. `LevelUpEffect`: use the leveling player's position, not a hardcoded `self.player.pos`.
     In the upgrade queue iteration, pass `p.pos` (the current player being leveled)
     when creating the `LevelUpEffect`.
+
+12. Update `SceneManager` to instantiate `GameScene` and `ClassSelect` with kwargs
+    in this new flow. The current `ClassSelect()` call with no kwargs is not enough.
 
 **Regression risk:** High — this is the central file. Test 1P after every change.
 
@@ -620,6 +656,8 @@ were never added to `settings.py`. Do not add them; just do not create them.
   `take_damage()` (override in `Enemy`, update `self.last_attacker` before calling
   `super().take_damage()`). On death, credit `self.last_attacker` with the kill;
   fall back to `self.target` if `last_attacker` is None.
+- Because current damage calls do not pass attacker ownership, this phase must also
+  thread attacker references through projectile and weapon hit paths.
 - **`LichFamiliar` special case:** this subclass orbits `self.target.pos` and fires
   at `self.target`. Verify after the base class change that `self.target` is still
   being updated by `_pick_target()` and that orbit/fire logic in `lich_familiar.py`
