@@ -194,6 +194,6 @@ class HUD:
 
         # 7. FPS counter (above XP bar, centered over LVL label)
         if show_fps:
-            fps_text = self.font_16.render(f"FPS: {fps:.0f}", True, (255, 255, 255))
+            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, (255, 255, 255))
             fps_rect = fps_text.get_rect(centerx=lvl_rect.centerx, bottom=xp_bar_rect.top - 2)
             screen.blit(fps_text, fps_rect)
