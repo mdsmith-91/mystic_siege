@@ -4,6 +4,7 @@ from settings import (
     MAX_WEAPON_SLOTS, WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
     WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
+    HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
 )
 
 # Arrow geometry: tip distance from edge, half-width of arrow base
@@ -27,10 +28,11 @@ class HUD:
         screen_top = camera.offset.y
         screen_bottom = camera.offset.y + SCREEN_HEIGHT
 
-        # Safe range for the sliding axis so the arrow body stays on-screen
-        clamp_min = _ARROW_TIP + _ARROW_HALF
-        clamp_x_max = SCREEN_WIDTH - clamp_min
-        clamp_y_max = SCREEN_HEIGHT - clamp_min
+        # Sliding-axis clamps — keep arrow body inside safe zones on each edge
+        clamp_x_min = HUD_SAFE_LEFT   + _ARROW_TIP + _ARROW_HALF
+        clamp_x_max = SCREEN_WIDTH  - HUD_SAFE_RIGHT  - _ARROW_TIP - _ARROW_HALF
+        clamp_y_min = HUD_SAFE_TOP    + _ARROW_TIP + _ARROW_HALF
+        clamp_y_max = SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_HALF
 
         arrows_drawn = 0
         for enemy in enemy_group:
@@ -50,28 +52,28 @@ class HUD:
 
             if offscreen_left:
                 # Arrow on left edge, tip points left
-                ay = max(clamp_min, min(clamp_y_max, cy))
-                tip = (_ARROW_TIP, ay)
-                poly = [tip, (_ARROW_TIP + _ARROW_DEPTH, ay - _ARROW_HALF),
-                              (_ARROW_TIP + _ARROW_DEPTH, ay + _ARROW_HALF)]
+                ay = max(clamp_y_min, min(clamp_y_max, cy))
+                tip = (HUD_SAFE_LEFT + _ARROW_TIP, ay)
+                poly = [tip, (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay - _ARROW_HALF),
+                              (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay + _ARROW_HALF)]
             elif offscreen_right:
                 # Arrow on right edge, tip points right
-                ay = max(clamp_min, min(clamp_y_max, cy))
-                tip = (SCREEN_WIDTH - _ARROW_TIP, ay)
-                poly = [tip, (SCREEN_WIDTH - _ARROW_TIP - _ARROW_DEPTH, ay - _ARROW_HALF),
-                              (SCREEN_WIDTH - _ARROW_TIP - _ARROW_DEPTH, ay + _ARROW_HALF)]
+                ay = max(clamp_y_min, min(clamp_y_max, cy))
+                tip = (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP, ay)
+                poly = [tip, (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay - _ARROW_HALF),
+                              (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay + _ARROW_HALF)]
             elif offscreen_top:
                 # Arrow on top edge, tip points up
-                ax = max(clamp_min, min(clamp_x_max, cx))
-                tip = (ax, _ARROW_TIP)
-                poly = [tip, (ax - _ARROW_HALF, _ARROW_TIP + _ARROW_DEPTH),
-                              (ax + _ARROW_HALF, _ARROW_TIP + _ARROW_DEPTH)]
+                ax = max(clamp_x_min, min(clamp_x_max, cx))
+                tip = (ax, HUD_SAFE_TOP + _ARROW_TIP)
+                poly = [tip, (ax - _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH),
+                              (ax + _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH)]
             else:
                 # Arrow on bottom edge, tip points down
-                ax = max(clamp_min, min(clamp_x_max, cx))
-                tip = (ax, SCREEN_HEIGHT - _ARROW_TIP)
-                poly = [tip, (ax - _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH),
-                              (ax + _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH)]
+                ax = max(clamp_x_min, min(clamp_x_max, cx))
+                tip = (ax, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP)
+                poly = [tip, (ax - _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH),
+                              (ax + _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH)]
 
             pygame.draw.polygon(screen, THREAT_ARROW_COLOR, poly)
             arrows_drawn += 1
@@ -136,10 +138,6 @@ class HUD:
         fill_width = int(SCREEN_WIDTH * xp_progress)
 
         if fill_width > 0:
-            # Glow: semi-transparent wider bar drawn underneath the main bar
-            glow_surf = pygame.Surface((fill_width, 24), pygame.SRCALPHA)
-            glow_surf.fill((*XP_COLOR, 80))
-            screen.blit(glow_surf, (0, SCREEN_HEIGHT - 22))
             pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 20, fill_width, 20))
 
         lvl_text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))

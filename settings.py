@@ -29,6 +29,13 @@ HP_MED_COLOR = (255, 255, 0)
 HP_LOW_COLOR = (220, 60, 60)
 THREAT_ARROW_COLOR = (255, 60, 60)
 
+# Threat arrow safe zones — keep arrows clear of edge UI elements.
+# Update these when new HUD elements are added to screen edges.
+HUD_SAFE_TOP    = 45   # clears HP bar (y=20, h=20) + gap
+HUD_SAFE_BOTTOM = 20   # clears XP bar (h=20)
+HUD_SAFE_LEFT   = 0
+HUD_SAFE_RIGHT  = 0
+
 # PLAYER BASE STATS
 BASE_HP = 100
 BASE_SPEED = 200

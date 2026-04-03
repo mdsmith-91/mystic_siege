@@ -173,6 +173,7 @@ class GameScene:
             if self._settings_menu.next_scene is not None:
                 # Back/ESC in settings returns to pause screen
                 self._settings_open = False
+                self.show_fps = self._settings_menu.show_fps
                 self._settings_menu.next_scene = None
             return
 
@@ -219,6 +220,12 @@ class GameScene:
 
     def update(self, dt):
         """Update the game scene."""
+        # When in-game settings overlay is open, delegate update so deferred
+        # display-mode changes (fullscreen) are applied each frame
+        if self._settings_open:
+            self._settings_menu.update(dt)
+            return
+
         # If paused or upgrade_menu is open (and not yet dismissed): return
         if self.paused or (self.upgrade_menu and not self.upgrade_menu.done):
             return
