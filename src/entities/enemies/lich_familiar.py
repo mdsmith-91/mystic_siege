@@ -75,7 +75,7 @@ class LichFamiliar(Enemy):
             dist = (self.target.pos - self.pos).length()
             if 0 < dist < LICH_FIRE_RANGE:
                 direction_to_player = (self.target.pos - self.pos) / dist
-                proj_groups = [self.projectile_group] if self.projectile_group else []
+                proj_groups = [self.projectile_group] if self.projectile_group is not None else []
                 Projectile(
                     pos=self.pos,
                     direction=direction_to_player,
