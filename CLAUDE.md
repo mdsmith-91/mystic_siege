@@ -5,16 +5,20 @@
 Mystic Siege is a top-down medieval fantasy survivor game built in Python 3.12.13
 with pygame-ce. Style: Vampire Survivors / Brotato. Players choose a hero, survive
 escalating waves of enemies, collect XP orbs, level up, and pick upgrades — all in
-15-30 minute sessions.
+15–30 minute sessions.
 
 Two developers, AI-assisted workflow, small scope first.
+
+**Current state:** the existing playable loop is single-player.
+**Planned direction:** local multiplayer may be added later, but only through a phased,
+low-regression migration that preserves the current single-player experience.
 
 ---
 
 ## Tech Stack
 
 - **Language:** Python 3.12.13
-- **Framework:** pygame-ce (NOT standard pygame — never import pygame, always pygame-ce)
+- **Framework:** pygame-ce (NOT standard pygame — the project depends on the CE fork)
 - **Dependencies:** pygame-ce>=2.5.0, pytmx>=3.32, numpy>=1.26
 - **Version control:** Git
 - **Run the game:** `python main.py`
@@ -25,7 +29,7 @@ Two developers, AI-assisted workflow, small scope first.
 
 ## Project Structure
 
-```
+```text
 mystic_siege/
 ├── main.py                        # Entry point
 ├── settings.py                    # ALL constants live here — never hardcode elsewhere
@@ -56,7 +60,7 @@ mystic_siege/
 │   │   ├── base_weapon.py         # BaseWeapon — cooldown, upgrade(), fire() interface
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
-│   │   ├── spectral_blade.py      # Orbiting swords, continuous, per-enemy cooldown
+│   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
 │   │   ├── flame_whip.py          # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   └── lightning_chain.py     # Chains between enemies, jagged arc visual
@@ -107,7 +111,7 @@ mystic_siege/
    — no need to import from `typing`. Use `match/case` where it improves clarity.
 
 6. **Never use `datetime.utcnow()`.** Use `datetime.now(timezone.utc)` instead
-   (utcnow was deprecated in 3.12).
+   (`utcnow` was deprecated in 3.12).
 
 7. **Output complete files when editing.** Never leave placeholder comments like
    `# rest of code here` or `# same as before`. Always write every line.
@@ -120,18 +124,20 @@ mystic_siege/
 
 ## Key Design Decisions
 
-### Hero Classes (defined in settings.HERO_CLASSES)
+### Hero Classes (defined in `settings.HERO_CLASSES`)
+
 | Hero | HP | Speed | Armor | Starting Weapon |
-|---|---|---|---|---|
+|---|---:|---:|---:|---|
 | Knight | 150 | 180 | 15 | SpectralBlade |
 | Wizard | 80 | 240 | 0 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
 
-Knight passive: 15% damage reduction, knockback immune
-Wizard passive: +20% spell damage, +10% crit chance
+Knight passive: 15% damage reduction, knockback immune  
+Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 1 HP per 10 XP orbs collected
 
 ### Weapons (all have 5 upgrade levels)
+
 - ArcaneBolt — homing projectiles, 1→3 bolts
 - HolyNova — expanding damage ring, no projectile object
 - SpectralBlade — orbiting swords, continuous collision
@@ -139,7 +145,8 @@ Friar passive: heal 1 HP per 10 XP orbs collected
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 
-### Enemy Spawn Timeline (wave_manager.py)
+### Enemy Spawn Timeline (`wave_manager.py`)
+
 - 0s: Skeletons only
 - 60s: Add Goblins
 - 120s: Add Wraiths
@@ -151,21 +158,25 @@ Friar passive: heal 1 HP per 10 XP orbs collected
 - 1800s: Victory
 
 ### Game Loop
+
+```text
+Menu → Class Select → Game → (die or 30 min) → Game Over → Menu
 ```
-Menu → Class Select → Game → (die or 30min) → Game Over → Menu
-```
+
 - Time stops on level-up (upgrade menu open)
 - ESC pauses
 - F3 toggles FPS counter
 - F12 saves screenshot
 
 ### XP Formula
+
 ```python
 xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 # BASE_XP_REQUIRED = 50, XP_SCALE_FACTOR = 1.12
 ```
 
 ### Collision Rules
+
 - Player contact damage: 0.5s iframes after each hit
 - Projectiles: use `enemies_hit` set to track pierce
 - SpectralBlade: per-enemy 0.5s hit cooldown dict
@@ -179,6 +190,7 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 ## Scene Transition Pattern
 
 Scenes communicate transitions via `.next_scene` and `.next_scene_kwargs`:
+
 ```python
 # In a scene:
 self.next_scene = "game"
@@ -186,32 +198,41 @@ self.next_scene_kwargs = {"hero": selected_class_dict}
 
 # SceneManager checks this each frame and calls switch_to()
 ```
+
 GameScene is always re-instantiated fresh on each new run.
+
+**Important:** `next_scene_kwargs` must stay lightweight and serializable.
+Do not put live sprite references, `pygame.Surface` objects, open file handles,
+or other runtime-only objects in scene kwargs.
 
 ---
 
 ## Asset Loading Pattern
 
 Always use `ResourceLoader` — never load assets directly:
+
 ```python
 from src.utils.resource_loader import ResourceLoader
 rl = ResourceLoader.instance()
 image = rl.load_image("assets/sprites/heroes/knight.png", scale=(32, 32))
 sound = rl.load_sound("assets/audio/sfx/player_hit.wav")
 ```
-If the file doesn't exist, `load_image` returns a magenta 32x32 placeholder so
+
+If the file doesn't exist, `load_image` returns a magenta 32×32 placeholder so
 the game always runs even without real assets.
 
 ---
 
 ## Audio Pattern
 
-Always use `AudioManager` — never call pygame.mixer directly:
+Always use `AudioManager` — never call `pygame.mixer` directly:
+
 ```python
 from src.utils.audio_manager import AudioManager
 AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
+
 All audio methods fail silently if files are missing or mixer isn't initialized.
 
 ---
@@ -219,11 +240,14 @@ All audio methods fail silently if files are missing or mixer isn't initialized.
 ## Controller / Input Pattern
 
 Always use `InputManager` for controller state — never read `pygame.joystick` directly:
+
 ```python
 from src.utils.input_manager import InputManager
+
 # Analog movement vector (deadzone applied), returns (0.0, 0.0) if no controller
 ax, ay = InputManager.instance().get_movement()
 ```
+
 Controller button/D-pad presses are automatically translated into synthetic
 `pygame.KEYDOWN` events and posted to the pygame event queue, so all menus work
 with a controller without any extra code in the UI layer.
@@ -232,9 +256,10 @@ Call `InputManager.instance().scan()` once after `pygame.init()` to register
 already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
 
 Default button mapping (Xbox / PlayStation / Switch Pro):
+
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
-- A / Cross (btn 0) → confirm (K_RETURN)
-- B / Circle (btn 1), Start / Options (btn 7/9) → back / pause (K_ESCAPE)
+- A / Cross (btn 0) → confirm (`K_RETURN`)
+- B / Circle (btn 1), Start / Options (btn 7/9) → back / pause (`K_ESCAPE`)
 
 Tune deadzone and repeat timing in `settings.py`:
 `CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`
@@ -259,35 +284,42 @@ sprites and audio for any missing asset files.
 ## Common Tasks
 
 **Run the game:**
-```
+
+```bash
 python main.py
 ```
 
 **Check for import errors:**
-```
+
+```bash
 python run_check.py
 ```
 
 **Regenerate placeholder assets:**
-```
+
+```bash
 python src/utils/placeholder_assets.py
 ```
 
 **Add a new enemy:**
+
 1. Create `src/entities/enemies/newenemy.py` inheriting from `Enemy`
 2. Add spawn data dict to `wave_manager.py`
 3. Add to wave timeline in `wave_manager._check_timeline()`
 
 **Add a new weapon:**
+
 1. Create `src/weapons/newweapon.py` inheriting from `BaseWeapon`
 2. Add class name string to `WEAPON_CLASSES` in `upgrade_system.py`
 
 **Tune difficulty:**
+
 - Edit wave timing and spawn rates in `wave_manager.py`
-- Edit enemy stats in the DATA dicts at the top of `wave_manager.py`
+- Edit enemy stats in the data dicts at the top of `wave_manager.py`
 - Edit hero/weapon base stats in `settings.py`
 
 **Add a real sprite:**
+
 - Drop PNG at the correct `assets/sprites/` path
 - It loads automatically — no code changes needed
 
@@ -295,25 +327,26 @@ python src/utils/placeholder_assets.py
 
 ## Development Principles
 
-These rules govern how changes are made to the project — as important as the coding rules above.
+These rules govern how changes are made to the project — they are as important as
+the coding rules above.
 
-1. **Preserve single-player behavior.** Mystic Siege is a single-player game. Never
-   modify core systems (collision, XP, wave timing, save data) in ways that break or
-   degrade the solo experience, even when adding optional features.
+1. **Preserve single-player behavior.** Mystic Siege is a single-player-first game.
+   Never modify core systems (collision, XP, wave timing, save data, scene flow)
+   in ways that break or degrade the solo experience, even when adding optional features.
 
 2. **Do not rewrite working systems.** If a system functions correctly, patch or extend
    it — do not replace it. Rewrites invalidate tested behavior, introduce regressions,
    and waste time recovering ground already covered.
 
-3. **Prefer phased migration.** When a system does need significant change, do it in
+3. **Prefer phased migration.** When a system needs significant change, do it in
    stages: (a) add the new code alongside the old, (b) migrate all callers, (c) remove
    the old code. Never do a big-bang swap in a single commit.
 
-4. **Read before editing.** Always read a file in full before modifying it. Never edit
-   based on assumptions about what it contains.
+4. **Read before editing.** Always read a file in full before modifying it.
+   Never edit based on assumptions about what it contains.
 
 5. **Verify after every non-trivial change.** Run `python run_check.py` after any edit
-   that touches imports or adds new files. Catch errors before they compound.
+   that touches imports, scene flow, or adds new files. Catch errors before they compound.
 
 6. **Keep `settings.py` the source of truth.** When adding new tunable values for a
    feature, add them to `settings.py` first, then reference them. Never hardcode
@@ -322,12 +355,172 @@ These rules govern how changes are made to the project — as important as the c
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.
 
+8. **Favor maintainability over cleverness.** Prefer explicit, readable code and
+   small safe abstractions over compact but fragile logic.
+
+9. **Be honest about verification.** Do not claim gameplay behavior works unless the
+   relevant code path was actually checked. If only static/import validation was run,
+   say that clearly.
+
+---
+
+## Multiplayer Migration Rules
+
+These rules apply to all multiplayer-related changes.
+
+1. **No new hard-coded P1/P2 architecture.** Do not introduce new parameters or fields such as
+   `hero_p1`, `hero_p2`, `p1_config`, `p2_config`, or logic branches tied to exactly two players.
+
+2. **Prefer collections over named players.** Multiplayer systems should pass
+   `list[Player]`, `list[PlayerSlot]`, or equivalent collection-based structures.
+
+3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
+   the current single-player gameplay loop before expanding to 2P+.
+
+4. **Scene transition data must stay lightweight and serializable.** Do not put live sprite
+   references, `pygame.Surface` objects, or other runtime-only objects inside
+   `next_scene_kwargs`.
+
+5. **Input must stay decoupled from player identity.** Do not assume a player is defined by
+   keyboard, controller, or slot alone. Input device, slot, and hero choice are separate concepts.
+
+6. **Do not add networking systems yet.** No `NetworkManager`, rollback, peer discovery,
+   or netcode stubs unless explicitly requested.
+
+7. **Be ruthless about removing single-player-only assumptions** from systems that are being
+   generalized, but do not break the actual single-player runtime behavior while doing so.
+
+---
+
+## Verification Protocol
+
+1. **Always run `python run_check.py` after non-trivial changes.**
+
+2. **If gameplay code changes, also describe the exact manual test path** needed to verify
+   the game still works in 1P:
+
+   ```text
+   Menu → Class Select → Game → Level Up → Death/Game Over
+   ```
+
+3. **For multiplayer-related changes, verification order is mandatory:**
+   - First prove 1P still works
+   - Then verify 2P behavior
+   - Only then discuss 3P/4P impact
+
+4. **Do not claim a feature works unless the relevant code path was actually checked.**
+   If runtime verification was not performed, say so explicitly.
+
+5. **When changing scene flow, input handling, HUD, save data, camera behavior, or pause rules,**
+   always include a short regression-risk note in the response.
+
+6. **For large changes, include both:**
+   - what was actually verified
+   - what still remains unverified
+
+---
+
+## Save / Progression Safety
+
+1. **Do not break existing save files casually.** When changing `save_system.py` or the shape
+   of saved data, preserve backward compatibility where practical.
+
+2. **Prefer additive save changes.** Add new fields with safe defaults rather than renaming
+   or removing old fields immediately.
+
+3. **If a save-data migration is required, state it explicitly** and keep the migration logic simple.
+
+4. **Do not couple run-local multiplayer state to permanent meta-progression** unless explicitly requested.
+
+5. **Never silently reset player progress** as a side effect of a feature change.
+
+---
+
+## Performance Rules for Hot Paths
+
+1. **Treat `update()` and `draw()` as hot paths.** Avoid unnecessary allocations, repeated lookups,
+   and debug prints inside per-frame loops.
+
+2. **Prefer squared-distance comparisons** when exact distance is not required.
+
+3. **Do not add expensive work to every entity every frame** if the same result can be cached,
+   throttled, or computed at a higher level.
+
+4. **Do not add logging spam inside gameplay loops.** If temporary debug output is needed,
+   gate it behind a debug flag in `settings.py`.
+
+5. **Be careful with camera, collision, and HUD changes.** These are likely to become more
+   expensive first as multiplayer is added.
+
+---
+
+## Temporary Debug Code
+
+1. **Temporary debug helpers are allowed only if clearly marked and easy to remove.**
+
+2. **Prefer debug flags in `settings.py`** over one-off hardcoded debug behavior.
+
+3. **Do not leave stray `print()` debugging in finished gameplay code.**
+
+4. **When adding a temporary debug aid, mention whether it should remain or be removed**
+   before the next clean commit.
+
+---
+
+## Determinism-Friendly Rules
+
+1. **Avoid introducing unnecessary non-determinism** in gameplay systems.
+
+2. **When randomness matters to gameplay outcomes, prefer centralized or seedable RNG**
+   over scattered ad hoc random calls.
+
+3. **Keep gameplay state mutations inside the normal update flow** rather than hiding them
+   in UI code, loading code, or rendering code.
+
+4. **Do not future-proof for networking with large speculative systems.**
+   Small deterministic-friendly choices are good; dead framework code is not.
+
+---
+
+## Response Format for Claude Code
+
+For non-trivial tasks, respond in this order:
+
+1. **Plan** — brief summary of intended change
+2. **Files** — exact files to inspect or modify
+3. **Risks** — likely regression points
+4. **Implementation** — make the requested change only
+5. **Verification** — commands run and what was or was not actually verified
+6. **Next step** — the single best follow-up action, if relevant
+
+Do not bundle multiple major refactors into one pass unless explicitly requested.
+
+For audit/planning tasks, prefer this output order:
+
+1. Executive summary
+2. File-by-file findings
+3. Risks
+4. Recommended implementation order
+5. Verification strategy
+
+---
+
+## Multiplayer Edge Cases to Remember
+
+- 1P must still work through the multiplayer-capable flow
+- Duplicate hero picks must be blocked cleanly
+- Device claims must be unique
+- Upgrade menus must not allow input bleed from non-active players
+- Controller disconnects should fail safely, not crash
+- HUD and camera changes must remain readable in 1P
+- Save/progression behavior must remain sane if a multiplayer run is introduced later
+- Pause/menu ownership should be explicit, not accidental
+
 ---
 
 ## What NOT to Do
 
-- Don't import `pygame` — always import `pygame` via `pygame-ce` (same namespace,
-  but the project depends on the CE fork specifically)
+- Don't import standard `pygame` if a change would break the pygame-ce requirement
 - Don't hardcode colors, speeds, or sizes anywhere outside `settings.py`
 - Don't create new sprite groups — reuse the ones created in `game_scene.py`
 - Don't call `pygame.mixer` directly — use `AudioManager`
@@ -337,6 +530,11 @@ These rules govern how changes are made to the project — as important as the c
 - Don't restructure the scene graph or game loop unless explicitly asked — it touches everything
 - Don't add `settings.py` constants speculatively — only add a constant when code actually needs it
 - Don't silently change gameplay feel (speeds, damage, timing) while fixing unrelated bugs — those are separate PRs
+- Don't add new hard-coded P1/P2 code while working on multiplayer migration
+- Don't introduce networking architecture unless explicitly requested
+- Don't leave temporary debug prints or cheat toggles in finished code
+- Don't claim manual testing happened unless it actually happened
+- Don't change save-data shape casually or without noting compatibility impact
 
 ---
 
@@ -354,4 +552,12 @@ Track progress here as phases are completed:
 - [x] Phase 8 — Additional enemies & effects
 - [x] Phase 9 — Polish & meta (save system, settings menu)
 
-Update the checkboxes as you complete each phase.
+### Planned Multiplayer Phases
+
+- [ ] Phase 10 — Multiplayer foundation (slot abstraction, input separation)
+- [ ] Phase 11 — Lobby and hero-selection migration
+- [ ] Phase 12 — Multiplayer GameScene/system integration
+- [ ] Phase 13 — Multiplayer HUD, revive, and camera polish
+- [ ] Phase 14 — Multiplayer testing, cleanup, and regression hardening
+
+Update the checkboxes as phases are completed.
