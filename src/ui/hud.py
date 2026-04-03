@@ -142,8 +142,9 @@ class HUD:
             screen.blit(glow_surf, (0, SCREEN_HEIGHT - 22))
             pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 20, fill_width, 20))
 
-        text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
-        screen.blit(text, (10, xp_bar_rect.centery - text.get_height() // 2))
+        lvl_text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
+        lvl_rect = lvl_text.get_rect(midleft=(10, xp_bar_rect.centery))
+        screen.blit(lvl_text, lvl_rect)
 
         # 3. Timer (top-center)
         timer_text = wave_manager.get_elapsed_str()
@@ -193,7 +194,8 @@ class HUD:
             screen.blit(warning_shadow, (wx + 3, 203))
             screen.blit(warning_surface, (wx, 200))
 
-        # 7. FPS counter (inside XP bar, right of LVL)
+        # 7. FPS counter (above XP bar, centered over LVL label)
         if show_fps:
             fps_text = self.font_16.render(f"FPS: {fps:.0f}", True, (255, 255, 255))
-            screen.blit(fps_text, (90, xp_bar_rect.centery - fps_text.get_height() // 2))
+            fps_rect = fps_text.get_rect(centerx=lvl_rect.centerx, bottom=xp_bar_rect.top - 2)
+            screen.blit(fps_text, fps_rect)
