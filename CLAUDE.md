@@ -73,7 +73,7 @@ mystic_siege/
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
-│   │   ├── settings_menu.py       # Volume sliders, fullscreen toggle, reset
+│   │   ├── settings_menu.py       # Volume sliders, show FPS toggle, reset
 │   │   └── stats_menu.py          # Meta-progression stats viewer
 │   └── utils/
 │       ├── timer.py               # Reusable countdown/interval timer
@@ -157,7 +157,6 @@ Menu → Class Select → Game → (die or 30min) → Game Over → Menu
 - Time stops on level-up (upgrade menu open)
 - ESC pauses
 - F3 toggles FPS counter
-- F11 toggles fullscreen
 - F12 saves screenshot
 
 ### XP Formula

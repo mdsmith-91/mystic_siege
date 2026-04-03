@@ -66,40 +66,6 @@ def _get_cursor_display_index() -> int:
     return 0
 
 
-def _get_window_display_index() -> int:
-    """Detect which SDL display index the current window is on.
-
-    Tries three strategies in order of reliability, falling back to 0.
-    """
-    try:
-        wx, wy = pygame.display.get_window_position()
-        ww, wh = pygame.display.get_window_size()
-        cx, cy = wx + ww // 2, wy + wh // 2  # window centre point
-
-        # Strategy 1: pygame-ce internal SDL2 Window wrapper (most direct)
-        try:
-            from pygame._sdl2.video import Window  # type: ignore[import]
-            return Window.from_display_module().display_index
-        except Exception:
-            pass
-
-        # Strategy 2: ctypes SDL_GetDisplayBounds — works for any monitor layout
-        bounds = _sdl_display_bounds()
-        if bounds:
-            for i, (dx, dy, dw, dh) in enumerate(bounds):
-                if dx <= cx < dx + dw and dy <= cy < dy + dh:
-                    return i
-
-        # Strategy 3: left-to-right accumulation heuristic (common dual-monitor layout)
-        x_cursor = 0
-        for i, (w, _h) in enumerate(pygame.display.get_desktop_sizes()):
-            if x_cursor <= wx < x_cursor + w:
-                return i
-            x_cursor += w
-
-    except Exception:
-        pass
-    return 0
 
 BACKGROUND_COLOR    = (15, 10, 25)
 TEXT_COLOR          = (255, 255, 255)
@@ -120,10 +86,9 @@ class SettingsMenu:
 
         self.music_volume = self.save_system.get_setting("music_volume")
         self.sfx_volume   = self.save_system.get_setting("sfx_volume")
-        self.fullscreen   = self.save_system.get_setting("fullscreen")
         self.show_fps     = self.save_system.get_setting("show_fps")
 
-        # Keyboard nav index for buttons (0=fullscreen, 1=show_fps, 2=reset, 3=back)
+        # Keyboard nav index for buttons (0=show_fps, 1=reset, 2=back)
         self.selected_index = 0
         self.keyboard_active = False
 
@@ -131,7 +96,6 @@ class SettingsMenu:
         self.dragging_slider = None
         self.sliders = {}
         self.buttons = {}
-        self._pending_fullscreen: int | None = None
 
         self.font_title = pygame.font.SysFont("serif", 64)
         self.font_label = pygame.font.SysFont("serif", 20)
@@ -163,24 +127,19 @@ class SettingsMenu:
             "label":       "SFX Volume",
         }
 
-        # Buttons (navigable, 0–3)
-        self.buttons["fullscreen"] = {
-            "rect":  pygame.Rect(button_x, 340, button_width, button_height),
-            "text":  "Fullscreen: " + ("ON" if self.fullscreen else "OFF"),
-            "value": self.fullscreen,
-        }
+        # Buttons (navigable, 0–2)
         self.buttons["show_fps"] = {
-            "rect":  pygame.Rect(button_x, 410, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 340, button_width, button_height),
             "text":  "Show FPS: " + ("ON" if self.show_fps else "OFF"),
             "value": self.show_fps,
         }
         self.buttons["reset"] = {
-            "rect":  pygame.Rect(button_x, 480, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 410, button_width, button_height),
             "text":  "Reset Progress",
             "value": None,
         }
         self.buttons["back"] = {
-            "rect":  pygame.Rect(button_x, 550, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 480, button_width, button_height),
             "text":  "Back",
             "value": None,
         }
@@ -204,20 +163,12 @@ class SettingsMenu:
             self.confirm_dialog_open = True
         elif button_name == "back":
             self.next_scene = "menu"
-        elif button_name in ("fullscreen", "show_fps"):
-            button_data = self.buttons[button_name]
-            new_value = not button_data["value"]
-            self.buttons[button_name]["value"] = new_value
-            _labels = {"fullscreen": "Fullscreen", "show_fps": "Show FPS"}
-            self.buttons[button_name]["text"] = _labels[button_name] + ": " + ("ON" if new_value else "OFF")
-            if button_name == "fullscreen":
-                self.fullscreen = new_value
-                self.save_system.set_setting("fullscreen", new_value)
-                # Defer mode change to update() so it happens after all events are processed
-                self._pending_fullscreen = (pygame.FULLSCREEN | pygame.SCALED) if new_value else pygame.SCALED
-            elif button_name == "show_fps":
-                self.show_fps = new_value
-                self.save_system.set_setting("show_fps", new_value)
+        elif button_name == "show_fps":
+            new_value = not self.buttons["show_fps"]["value"]
+            self.buttons["show_fps"]["value"] = new_value
+            self.buttons["show_fps"]["text"] = "Show FPS: " + ("ON" if new_value else "OFF")
+            self.show_fps = new_value
+            self.save_system.set_setting("show_fps", new_value)
 
     def handle_events(self, events):
         for event in events:
@@ -234,7 +185,6 @@ class SettingsMenu:
                     self.confirm_dialog_open = False
                     self.music_volume = self.save_system.get_setting("music_volume")
                     self.sfx_volume   = self.save_system.get_setting("sfx_volume")
-                    self.fullscreen   = self.save_system.get_setting("fullscreen")
                     self.show_fps     = self.save_system.get_setting("show_fps")
                     self._init_ui_elements()
                 elif self.confirm_dialog["buttons"]["cancel"]["rect"].collidepoint(mouse_pos):
@@ -252,9 +202,9 @@ class SettingsMenu:
                 self.selected_index = max(0, self.selected_index - 1)
             elif event.key in (pygame.K_DOWN, pygame.K_s):
                 self.keyboard_active = True
-                self.selected_index = min(3, self.selected_index + 1)
+                self.selected_index = min(2, self.selected_index + 1)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                btn_keys = ["fullscreen", "show_fps", "reset", "back"]
+                btn_keys = ["show_fps", "reset", "back"]
                 self._activate_button(btn_keys[self.selected_index])
             return
 
@@ -264,7 +214,7 @@ class SettingsMenu:
                 if slider_data["handle_rect"].collidepoint(mouse_pos):
                     self.dragging_slider = slider_name
                     return
-            btn_keys = ["fullscreen", "show_fps", "reset", "back"]
+            btn_keys = ["show_fps", "reset", "back"]
             for i, button_name in enumerate(btn_keys):
                 if self.buttons[button_name]["rect"].collidepoint(mouse_pos):
                     self.selected_index = i
@@ -293,22 +243,7 @@ class SettingsMenu:
                     AudioManager.instance().set_sfx_volume(new_value)
 
     def update(self, dt: float):
-        if self._pending_fullscreen is not None:
-            flags = self._pending_fullscreen
-            self._pending_fullscreen = None
-            if flags & pygame.FULLSCREEN:
-                # Fullscreen: target the display the window is currently on
-                pygame.display.set_mode(
-                    (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
-                    display=_get_window_display_index(),
-                )
-            else:
-                pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
-            # Prime the new surface immediately — prevents vsync deadlock on Windows
-            surf = pygame.display.get_surface()
-            surf.fill((0, 0, 0))
-            pygame.display.flip()
-            pygame.event.pump()
+        pass
 
     def draw(self, screen):
         screen.fill(BACKGROUND_COLOR)
@@ -347,7 +282,7 @@ class SettingsMenu:
             screen.blit(pct, (track.right + 12, track.centery - pct.get_height() // 2))
 
         # Buttons
-        btn_keys = ["fullscreen", "show_fps", "reset", "back"]
+        btn_keys = ["show_fps", "reset", "back"]
         for i, key in enumerate(btn_keys):
             btn  = self.buttons[key]
             rect = btn["rect"]

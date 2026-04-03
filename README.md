@@ -21,7 +21,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 - Visual effects: damage numbers, hit sparks, death explosions, level-up burst
 - Persistent meta-progression saved between sessions
 - Controller support with hot-plug detection and synthetic key events for menus
-- Screenshot capture (F12), fullscreen toggle (F11), FPS counter (F3)
+- Screenshot capture (F12), FPS counter (F3), always runs fullscreen for maximum compatibility
 - Full audio system with silent fallback — runs without any audio files
 
 ---
@@ -66,7 +66,6 @@ python main.py
 | Move | WASD or Arrow keys |
 | Pause | ESC |
 | Select Upgrade | 1, 2, 3 |
-| Toggle Fullscreen | F11 |
 | Toggle FPS Counter | F3 |
 | Take Screenshot | F12 |
 

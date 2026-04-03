@@ -11,12 +11,9 @@ if __name__ == "__main__":
 
     # Set display to SCREEN_WIDTH x SCREEN_HEIGHT with TITLE
     from settings import SCREEN_WIDTH, SCREEN_HEIGHT, TITLE
-    from src.systems.save_system import SaveSystem
     from src.ui.settings_menu import _get_cursor_display_index
-    is_fullscreen = SaveSystem().get_setting("fullscreen")
-    flags = (pygame.FULLSCREEN | pygame.SCALED) if is_fullscreen else pygame.SCALED
     screen = pygame.display.set_mode(
-        (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
+        (SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED, vsync=1,
         display=_get_cursor_display_index(),
     )
     pygame.display.set_caption(TITLE)

@@ -15,8 +15,7 @@ DEFAULT_SAVE = {
     "settings": {
         "music_volume": 0.5,
         "sfx_volume": 0.8,
-        "fullscreen": False,
-        "show_fps": False
+"show_fps": False
     }
 }
 

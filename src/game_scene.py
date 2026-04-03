@@ -220,8 +220,7 @@ class GameScene:
 
     def update(self, dt):
         """Update the game scene."""
-        # When in-game settings overlay is open, delegate update so deferred
-        # display-mode changes (fullscreen) are applied each frame
+        # When in-game settings overlay is open, delegate update to the settings menu
         if self._settings_open:
             self._settings_menu.update(dt)
             return

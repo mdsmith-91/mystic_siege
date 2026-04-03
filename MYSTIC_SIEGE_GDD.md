@@ -129,7 +129,7 @@ mystic_siege/
 │   │   ├── main_menu.py
 │   │   ├── class_select.py  # Hero selection screen
 │   │   ├── game_over.py
-│   │   ├── settings_menu.py # Volume sliders, fullscreen toggle
+│   │   ├── settings_menu.py # Volume sliders, show FPS toggle, reset
 │   │   └── stats_menu.py    # Meta-progression stats viewer
 │   │
 │   └── utils/
