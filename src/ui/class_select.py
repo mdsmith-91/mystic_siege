@@ -70,7 +70,9 @@ class ClassSelect:
                     self.next_scene = "menu"
 
             elif event.type == pygame.QUIT:
-                pygame.quit()
+                # Do NOT call pygame.quit() here — see game_scene.py for explanation.
+                # game.py handles QUIT by setting running=False; main.py's finally
+                # block owns the single pygame.quit() call.
                 return
 
     def update(self, dt):

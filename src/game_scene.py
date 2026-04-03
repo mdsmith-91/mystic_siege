@@ -212,7 +212,11 @@ class GameScene:
                 elif menu_rect.collidepoint(event.pos):
                     self.next_scene = STATE_MENU
             elif event.type == pygame.QUIT:
-                pygame.quit()
+                # Do NOT call pygame.quit() here. game.py already sets running=False
+                # when it sees this event, so the main loop exits cleanly after this
+                # frame and main.py's finally block calls pygame.quit() exactly once.
+                # Calling it here would deinitialize pygame mid-frame, causing hangs
+                # on Linux and swallowing crash tracebacks on all platforms.
                 return
 
         if self.upgrade_menu and not self.upgrade_menu.done:
