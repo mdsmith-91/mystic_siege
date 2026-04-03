@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-04-03  
 **Codebase state:** Single-player loop complete, 0% multiplayer implementation  
-**Scope:** Local co-op 2–4 players, preserving the current single-player loop  
+**Scope:** Local co-op 1–4 players, preserving the current single-player loop  
 **Reference document:** MULTIPLAYER_IMPLEMENTATION_V2.md  
 
 ---
@@ -108,9 +108,11 @@ methods is a small surgical addition, not a restructure.
 `collision.py`'s `check_enemy_separation()` is already O(N²) over enemies and does
 not involve players. It works correctly for any number of players.
 
-### 2.10 Scene transition pattern is already serializable
-`next_scene_kwargs` uses dicts with primitive values. The pattern is safe for
-multiplayer as long as new code follows the same constraint.
+### 2.10 Scene transition pattern is already lightweight
+`next_scene_kwargs` is already used for small in-memory handoff objects. The
+pattern is safe for multiplayer as long as new code keeps kwargs lightweight and
+free of runtime-only objects such as sprites, surfaces, or file handles. Plain
+dataclasses like `PlayerSlot` are acceptable if their fields stay JSON-safe.
 
 ---
 
@@ -272,15 +274,10 @@ multiplayer as long as new code follows the same constraint.
 - `player.iframes` check and knockback application — single player.
 
 **`check_enemy_projectiles_player` (lines 40–58):**
-- Checks `player.iframes > 0` (line 45) before iterating, which means if any player
-  has iframes, the entire check loop is skipped. This is a latent bug even in 1P
-  but only becomes critical in multiplayer: Player 1's iframes would prevent
-  Player 2 from taking projectile damage.
-- **This is a correctness bug even in 1P context** — if `player.iframes > 0`, the
-  loop `continue`s per-projectile but exits entirely when `player.iframes > 0` at
-  the top of the method. Actually re-reading: line 45 is inside the `for projectile`
-  loop, so it skips that projectile for the player if they have iframes. This is
-  correct for 1P. In multiplayer it must loop over all players per projectile.
+- In 1P, the current logic is correct: a projectile is skipped for the player when
+  that player has iframes.
+- In multiplayer, the method must loop over all players per projectile rather than
+  treating collision as a single-player check.
 
 **`check_weapon_hits` (lines 60–65):**
 - Currently a no-op pass. Area weapons handle their own collision internally.
@@ -574,16 +571,16 @@ Every one of these must change before multiplayer works.
 
 ---
 
-## 5. Remaining 2-Player Assumptions or Risks in the V2 Guide
+## 5. Remaining Design Gaps or Risks in the V2 Guide
 
 These are places where V2 itself still risks assuming exactly 2 players, or where
 it underspecifies the N-player case.
 
 ### 5.1 LobbyScene layout
 V2 (line 27) notes that V1's lobby laid out "exactly two side-by-side slots." V2
-does not specify what the lobby layout looks like for 3 or 4 players. The 4-slot
-lobby is straightforward conceptually (4 panels in a row or 2×2 grid), but no
-concrete layout was specified.
+did not previously specify what the lobby layout looks like for 3 or 4 players.
+The first implementation should define a concrete 4-slot layout up front
+(recommended: 2×2 grid) so the UI work is not deferred until implementation.
 
 ### 5.2 Camera zoom formula
 V2 Section 4.3 (around line 96–99) specifies "0.75–0.85x" for 2 players and
@@ -612,10 +609,10 @@ acceptable minimum zoom level and what happens when players exceed it (teleport?
 soft boundary?) is not specified.
 
 ### 5.6 Ready condition for lobby
-V2 removes "both slots filled" as the ready condition. The replacement — "at least
-1 slot joined and all joined slots ready" — is implied but not stated. Can a single
-player start a 1P run from the lobby? What prevents accidentally starting with only
-1 of 2 players ready?
+V2 correctly removes "both slots filled" as the ready condition, but this must stay
+explicit in the implementation guidance: minimum 1 joined slot, joined slots are
+implicitly ready once they have claimed a device, and starting begins a run with
+exactly the currently joined slots.
 
 ---
 

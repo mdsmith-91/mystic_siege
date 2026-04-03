@@ -146,21 +146,25 @@ menus look up slot metadata without coupling to the sprite internals.
 
 ```
 MainMenu
-  └── LobbyScene (new — replaces InputAssignScene + ClassSelect two-pass)
-        Handles: join/leave, input assignment, hero selection, duplicate prevention
-        Produces: list[PlayerSlot] with all hero_data filled
-        ──→ GameScene(slots: list[PlayerSlot])
-              ──→ GameOverScene (aggregated stats)
-                    ──→ MainMenu
+  └── LobbyScene (new — replaces InputAssignScene)
+        Handles: join/leave, input assignment, device claims, start readiness
+        Produces: list[PlayerSlot] with input_config filled
+        ──→ ClassSelect (recreated once per joined slot)
+              Handles: hero selection, duplicate prevention
+              Produces: list[PlayerSlot] with all hero_data filled
+              ──→ GameScene(slots: list[PlayerSlot])
+                    ──→ GameOverScene (aggregated stats)
+                          ──→ MainMenu
 ```
 
-`LobbyScene` replaces both the V1 `InputAssignScene` and the two-pass `ClassSelect`.
-This is more work to implement but eliminates the fragile sequential-pass chain
-that only worked for exactly 2 players.
+For the first implementation, `LobbyScene` replaces only the V1 `InputAssignScene`.
+Hero selection stays in `ClassSelect`, but is routed through an N-slot queue
+instead of the V1 two-pass branch chain. This is the lowest-risk path because it
+reuses the existing scene and avoids combining lobby state, hero cursors, and
+device assignment into one large new UI.
 
-Alternatively (lower-risk option): keep `ClassSelect` as a per-player scene but
-route through it N times using a `remaining_players: list[PlayerSlot]` queue
-rather than hard-coded `player_index == 1 / 2` branching. See Phase 3 below.
+A fully integrated lobby-driven hero picker is still a valid later polish pass,
+but it is not the recommended first architecture for this repo.
 
 ### 4.3 Camera Strategy
 
@@ -208,22 +212,25 @@ Rules:
 - A slot can be vacated (player leaves lobby before start).
 - The lobby shows up to 4 slots. Any slot with no input device is inactive.
 
-### 4.5 Hero Selection — Simultaneous With Duplicate Lock
+### 4.5 Hero Selection — Sequential Slot Queue With Duplicate Lock
 
-All joined slots select heroes at the same time on a shared screen.
-Hero cards display per-slot cursor positions.
-When slot A locks a hero, that card grays out for all other slots.
-No sequential passes. No hard-coded `player_index == 1 → route to pass 2` logic.
+For the first implementation, joined slots select heroes one at a time through a
+recreated `ClassSelect` scene. This keeps the scene flow simple, keeps controller
+ownership unambiguous, and avoids a large new shared-cursor UI while the rest of
+the multiplayer plumbing is still being built.
+
+The important rule is not "simultaneous"; it is "no hard-coded pass count." The
+queue must work the same way for 1, 2, 3, or 4 joined slots.
 
 Implementation options ranked by complexity:
-1. **Single `LobbyScene` combining input assignment + hero selection** (one screen,
+1. **Modified `ClassSelect` driven by a slot queue** (lower risk, recommended for
+   first implementation — see Phase 3).
+2. **Single `LobbyScene` combining input assignment + hero selection** (one screen,
    left side = input, right side = hero; join then immediately navigate to a hero).
    Most polished; most implementation work.
-2. **Modified `ClassSelect` driven by a slot queue** (lower risk, recommended for
-   first implementation — see Phase 3).
 3. **V1 sequential passes** (only works for exactly 2, already rejected).
 
-Option 2 is recommended for the first implementation pass.
+Option 1 is recommended for the first implementation pass.
 
 ### 4.6 Enemy Targeting
 
@@ -324,6 +331,24 @@ Without one of those, "filter by source device" is not implementable.
   controller reconnects with the same instance ID, input resumes automatically.
 - Keyboard "disconnect" is not possible; no handling needed.
 
+### 4.11 Open Decisions To Lock Before Release
+
+These do not block Phase 1, but they should be decided explicitly before
+multiplayer ships so behavior is intentional rather than accidental.
+
+- **XP orb policy:** shared first-come-first-served is acceptable, but if kept,
+  document the tie-break rule and whether update order bias is acceptable.
+- **Balance scaling:** decide whether player count scales spawn rate, enemy HP,
+  elite thresholds, or some combination.
+- **Player body collision:** decide whether players can overlap freely or need soft
+  separation during spawn and movement.
+- **Save aggregation:** decide how multiplayer runs contribute to shared
+  meta-progression totals in `saves/progress.json`.
+- **Reconnect policy:** document what happens if a controller reconnects with a
+  different joystick instance ID than the one originally claimed.
+- **Player readability:** choose one visual distinction strategy now
+  (recommended: colored ground ring plus HUD badge, not sprite tinting).
+
 ---
 
 ## 5. Revised Phased Implementation Plan
@@ -378,17 +403,19 @@ Changes:
 **Goal:** New `LobbyScene` replaces `InputAssignScene`. Supports 1–4 player slots.
 Produces a `list[PlayerSlot]` passed to the class selection chain.
 
-**Files:** `src/ui/lobby.py` (new), `src/scene_manager.py`, `src/ui/main_menu.py`
+**Files:** `src/ui/lobby_scene.py` (new), `src/scene_manager.py`, `src/ui/main_menu.py`
 
 Changes:
 1. Create `LobbyScene`:
-   - Show up to 4 slots in a row.
+   - Show up to 4 slots in a clear 2×2 grid.
    - Each slot starts as "Press any key/button to join".
    - Press any key/button → claims the slot with that device's `input_config`.
    - Press ESC / same button again → vacates the slot.
    - Conflict (device already taken): brief flash "Already taken".
-   - Minimum 1 player to start. "Press ENTER or any controller button to start"
-     appears when at least 1 slot is filled.
+   - Minimum 1 player to start.
+   - A joined slot is implicitly ready once it has claimed a device.
+   - "Press ENTER or any controller button to start" appears when at least 1 slot
+     is filled. Starting begins a run with exactly the currently joined slots.
    - On start: produce `filled_slots: list[PlayerSlot]` for all claimed slots.
    - Assign stable slot indices (0–3) based on join order.
    - Assign default player colors from `PLAYER_COLORS` constant in `settings.py`.
@@ -793,7 +820,7 @@ Changes:
 | `src/systems/xp_system.py` | No change | Already stateless per-player, just iterate N instances. |
 | `src/systems/upgrade_system.py` | No change | `get_random_choices(player)` already takes a Player reference. |
 | `src/game_scene.py` | Major modify | Slot list, player loop, camera `update_multi`, revive method, weapon loop, HUD call. |
-| `src/ui/lobby.py` | New file | Replaces `input_assign.py` from V1. 1–4 slot join screen. |
+| `src/ui/lobby_scene.py` | New file | Replaces `input_assign.py` from V1. 1–4 slot join screen. |
 | `src/ui/class_select.py` | Modify | Accept `slots / confirmed_slots` queue. Duplicate hero lock-out. |
 | `src/ui/hud.py` | Modify | `_draw_player_panel()`, N-player layout from `HUD_PANEL_TUPLES` (convert tuples to `pygame.Rect` at use time). Remove unused `player` param from `draw_threat_arrows`. |
 | `src/ui/upgrade_menu.py` | Minor modify | Header labels from `slot.index`, input dispatch from `slot.input_config`. |

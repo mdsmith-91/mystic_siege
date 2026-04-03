@@ -162,8 +162,16 @@ Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settin
 
 ### Game Loop
 
+Current single-player runtime:
+
 ```text
 Menu → Class Select → Game → (die or 30 min) → Game Over → Menu
+```
+
+Planned multiplayer-capable flow:
+
+```text
+Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Menu
 ```
 
 - Time stops on level-up (upgrade menu open)
@@ -195,18 +203,23 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 Scenes communicate transitions via `.next_scene` and `.next_scene_kwargs`:
 
 ```python
-# In a scene:
+# Current single-player example:
 self.next_scene = "game"
 self.next_scene_kwargs = {"hero": selected_class_dict}
+
+# Planned multiplayer example:
+self.next_scene = "class_select"
+self.next_scene_kwargs = {"slots": filled_slots}
 
 # SceneManager checks this each frame and calls switch_to()
 ```
 
 GameScene is always re-instantiated fresh on each new run.
 
-**Important:** `next_scene_kwargs` must stay lightweight and serializable.
+**Important:** `next_scene_kwargs` must stay lightweight and serialization-friendly.
 Do not put live sprite references, `pygame.Surface` objects, open file handles,
-or other runtime-only objects in scene kwargs.
+or other runtime-only objects in scene kwargs. Plain dataclasses such as
+`PlayerSlot` are acceptable if their fields stay JSON-safe.
 
 ---
 
@@ -391,7 +404,7 @@ These rules apply to all multiplayer-related changes.
 3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
    the current single-player gameplay loop before expanding to 2P+.
 
-4. **Scene transition data must stay lightweight and serializable.** See the Scene
+4. **Scene transition data must stay lightweight and serialization-friendly.** See the Scene
    Transition Pattern section — the same constraint applies to multiplayer flows.
 
 5. **Input must stay decoupled from player identity.** Do not assume a player is defined by
@@ -418,7 +431,8 @@ These rules apply to all multiplayer-related changes.
    the game still works in 1P:
 
    ```text
-   Menu → Class Select → Game → Level Up → Death/Game Over
+   Current 1P: Menu → Class Select → Game → Level Up → Death/Game Over
+   Planned multiplayer-capable path: Menu → Lobby → Class Select → Game → Level Up → Death/Game Over
    ```
 
 3. **For multiplayer-related changes, verification order is mandatory:**
