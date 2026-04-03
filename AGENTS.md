@@ -1,0 +1,57 @@
+# Mystic Siege — Agent Guide
+
+## Purpose
+
+This file is the neutral agent-facing project guide for Mystic Siege. It is the
+Codex-friendly entry point for repository rules and should stay aligned with
+`CLAUDE.md`, `MULTIPLAYER_IMPLEMENTATION_V2.md`, and
+`MULTIPLAYER_READINESS_AUDIT.md`.
+
+## Project Summary
+
+Mystic Siege is a top-down medieval fantasy survivor game built in Python 3.12.13
+with pygame-ce. The current playable loop is single-player. Planned multiplayer
+is local co-op for 1–4 players on one machine, added through a phased migration
+that preserves the solo experience.
+
+## Core Rules
+
+1. Never hardcode values. Put tunables in `settings.py`.
+2. Preserve single-player behavior while generalizing systems for multiplayer.
+3. Do not rewrite working systems when a phased extension will do.
+4. Read files in full before editing them.
+5. Run `python run_check.py` after non-trivial changes.
+6. Keep scene transition kwargs lightweight. No live sprites, surfaces, or file handles.
+7. Be explicit about what was verified versus not verified.
+
+## Multiplayer Rules
+
+1. No new hard-coded P1/P2 architecture.
+2. Prefer collections over named players.
+3. Use `PlayerSlot` as the shared slot/session metadata abstraction.
+4. Keep runtime combat state on `Player`, not on `PlayerSlot`.
+5. Do not add networking architecture unless explicitly requested.
+6. Keep 1P as the first verification path for every multiplayer refactor.
+
+## Input Rules
+
+1. Use `InputManager` for controller state.
+2. Synthetic controller key events are acceptable for global menus.
+3. Synthetic controller key events are not sufficient for owned multiplayer menus,
+   because they do not preserve joystick identity.
+4. Owned multiplayer menus must either preserve device metadata in custom events
+   or poll the assigned device directly.
+
+## Authoritative References
+
+- `MULTIPLAYER_IMPLEMENTATION_V2.md`: authoritative multiplayer design and phase plan
+- `MULTIPLAYER_READINESS_AUDIT.md`: codebase audit, risks, and implementation order
+- `CLAUDE.md`: expanded project context and developer guidance
+
+## Current Multiplayer Clarifications
+
+1. The long-term target is that the lobby always emits a concrete `input_config`,
+   including in 1P.
+2. `input_config=None` is only a temporary migration shim for the old 1P path.
+3. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
+4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.

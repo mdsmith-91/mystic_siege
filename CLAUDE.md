@@ -1,4 +1,4 @@
-# Mystic Siege — Project Context for Claude Code
+# Mystic Siege — Project Context
 
 ## What This Project Is
 
@@ -265,8 +265,10 @@ ax, ay = InputManager.instance().get_movement()
 ```
 
 Controller button/D-pad presses are automatically translated into synthetic
-`pygame.KEYDOWN` events and posted to the pygame event queue, so all menus work
-with a controller without any extra code in the UI layer.
+`pygame.KEYDOWN` events and posted to the pygame event queue, so global menus work
+with a controller without any extra code in the UI layer. This is not sufficient
+for owned multiplayer menus because the synthetic events do not preserve joystick
+identity.
 
 Call `InputManager.instance().scan()` once after `pygame.init()` to register
 already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
@@ -378,7 +380,7 @@ the coding rules above.
 
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.
-   *(This is a reminder for developers — Claude Code should only commit when explicitly asked.)*
+   *(This is a reminder for developers — the coding agent should only commit when explicitly asked.)*
 
 8. **Favor maintainability over cleverness.** Prefer explicit, readable code and
    small safe abstractions over compact but fragile logic.
@@ -432,7 +434,7 @@ These rules apply to all multiplayer-related changes.
 
    ```text
    Current 1P: Menu → Class Select → Game → Level Up → Death/Game Over
-   Planned multiplayer-capable path: Menu → Lobby → Class Select → Game → Level Up → Death/Game Over
+   Planned multiplayer-capable path: Menu → Lobby → Class Select (queued) → Game → Level Up → Death/Game Over
    ```
 
 3. **For multiplayer-related changes, verification order is mandatory:**
@@ -514,9 +516,12 @@ These rules apply to all multiplayer-related changes.
 
 ---
 
-## Response Format for Claude Code
+## Agent-Specific Response Notes
 
-For non-trivial tasks, respond in this order:
+The project rules above are model-agnostic. The guidance below is agent-specific
+workflow preference, not game architecture.
+
+For non-trivial tasks, prefer this response order:
 
 1. **Plan** — brief summary of intended change
 2. **Files** — exact files to inspect or modify

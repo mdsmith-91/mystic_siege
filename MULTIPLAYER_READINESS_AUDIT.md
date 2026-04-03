@@ -614,6 +614,14 @@ explicit in the implementation guidance: minimum 1 joined slot, joined slots are
 implicitly ready once they have claimed a device, and starting begins a run with
 exactly the currently joined slots.
 
+### 5.7 Cross-doc terminology to keep aligned
+Two clarified assumptions should stay consistent across V2, this audit, and the
+agent guide:
+- `PlayerSlot` is lobby/session metadata, not runtime combat state. Downed/revive
+  state belongs on `Player`.
+- The final target is that the lobby emits a concrete `input_config` even for 1P.
+  `input_config=None` is only a temporary migration shim for the pre-lobby 1P path.
+
 ---
 
 ## 6. Missing Multiplayer Considerations Not Fully Covered Yet
@@ -905,7 +913,8 @@ This order is designed to preserve 1P at every checkpoint.
 ### After every phase
 1. **Run `python run_check.py`** — catches import errors immediately.
 2. **Manual 1P smoke test:**
-   `Menu → Class Select → Game → collect XP → level up → pick upgrade → take damage → die → Game Over`
+   - Before Phase 11: `Menu → Class Select → Game → collect XP → level up → pick upgrade → take damage → die → Game Over`
+   - After Phase 11: `Menu → Lobby (1 slot) → ClassSelect → Game → collect XP → level up → pick upgrade → take damage → die → Game Over`
 3. Verify save file updates correctly.
 
 ### After Phase 12 (GameScene refactor)

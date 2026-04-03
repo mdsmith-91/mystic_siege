@@ -69,14 +69,18 @@ Every item below must be replaced with a collection-based or slot-based equivale
 
 ## 3. Revised Multiplayer Design Principles
 
-1. **Player slots, not player count.** A `PlayerSlot` (or `PlayerState`) object
-   binds together: slot index, hero data, input config, and alive/downed status.
+1. **Player slots, not player count.** A `PlayerSlot` object binds together:
+   slot index, hero data, input config, and UI identity metadata such as color.
+   Runtime combat state such as alive/downed/revive progress belongs on the
+   `Player` sprite, not the slot dataclass.
    Game systems iterate over `active_slots: list[PlayerSlot]`; they never check
    `PLAYER_COUNT` directly.
 
-2. **Single-player is a lobby of one.** One joined slot with `input_config=None`
-   (the legacy combined WASD+arrows+controller0 behavior) is exactly the 1P path.
-   No special-casing, no `if PLAYER_COUNT == 1` guards.
+2. **Single-player is a lobby of one.** The long-term architecture is: the lobby
+   always produces exactly one joined slot with a concrete `input_config`, even
+   for 1P. During migration, `input_config=None` may remain as a temporary legacy
+   compatibility shim for the old single-player path, but it should not remain the
+   final lobby output shape. No special-casing, no `if PLAYER_COUNT == 1` guards.
 
 3. **Separate the concepts.**
    - *Slot index*: 0–3, stable across the session, used for UI positioning.
@@ -130,13 +134,14 @@ from dataclasses import dataclass, field
 @dataclass
 class PlayerSlot:
     index: int                    # 0–3, stable for the session
-    input_config: dict | None     # None = legacy 1P combined input
+    input_config: dict | None     # None only as a temporary 1P migration shim
     hero_data: dict | None = None # set during hero selection; None until locked
     color: tuple = (255, 255, 255)# player color badge used in UI
 ```
 
 `PlayerSlot` is a plain data container. It is created in the lobby and passed
-through the scene chain into `GameScene`. It is NOT a pygame sprite.
+through the scene chain into `GameScene`. It is NOT a pygame sprite, and it does
+not own runtime combat state such as HP, downed status, or revive progress.
 
 The `Player` sprite receives its `PlayerSlot` at construction and stores a
 reference back to it (`self.slot = slot`). This lets HUD, camera, and upgrade
@@ -202,7 +207,7 @@ not a crash or bug.
 # Controller — one per joystick instance ID
 {"type": "controller", "joystick_id": <int>}
 
-# Legacy 1P combined (None)
+# Temporary legacy 1P migration shim only (not final lobby output)
 None
 ```
 
@@ -211,6 +216,9 @@ Rules:
 - Each joystick instance ID can only be claimed by one slot at a time.
 - A slot can be vacated (player leaves lobby before start).
 - The lobby shows up to 4 slots. Any slot with no input device is inactive.
+- Final target behavior: the lobby emits a concrete `input_config` for every
+  joined slot, including 1P. `None` exists only so the migration can preserve
+  the pre-lobby single-player path while scenes are being converted.
 
 ### 4.5 Hero Selection — Sequential Slot Queue With Duplicate Lock
 
@@ -387,8 +395,11 @@ Changes:
    `return self.alive()`, but that returns `True` for downed players since they
    stay in sprite groups). The override in `player.py` must be:
    `return self.alive() and not self.is_downed`.
-8. Death trigger: if slot is not None (multiplayer), go downed instead of dying.
-   If slot is None (1P legacy), existing dying behavior unchanged.
+8. Death trigger during migration: if `slot` is not `None`, go downed instead of
+   dying. If `slot` is `None` (temporary legacy 1P shim), keep existing dying
+   behavior unchanged. Once the lobby path is authoritative for 1P too, this
+   branch should be revisited so behavior is keyed on game mode/state rather than
+   "slot exists vs does not exist".
 9. Do not rely on `Player.update()` alone for downed state. The implementation must
    intercept lethal damage before `BaseEntity.take_damage()` removes the sprite from
    its groups.
