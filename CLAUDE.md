@@ -113,8 +113,9 @@ mystic_siege/
 6. **Never use `datetime.utcnow()`.** Use `datetime.now(timezone.utc)` instead
    (`utcnow` was deprecated in 3.12).
 
-7. **Output complete files when editing.** Never leave placeholder comments like
-   `# rest of code here` or `# same as before`. Always write every line.
+7. **No placeholder comments.** When editing existing files, apply targeted diffs —
+   never leave stubs like `# rest of code here` or `# same as before`. When creating
+   a new file from scratch, write every line completely.
 
 8. **Comments describe intent, not mechanics.**
    Write: `# spawn enemy when timer fires`
@@ -134,7 +135,7 @@ mystic_siege/
 
 Knight passive: 15% damage reduction, knockback immune  
 Wizard passive: +20% spell damage, +10% crit chance  
-Friar passive: heal 1 HP per 10 XP orbs collected
+Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 
 ### Weapons (all have 5 upgrade levels)
 
@@ -272,8 +273,9 @@ Real sprites can be swapped in at any time by placing a PNG at the correct path
 in `assets/sprites/`. `ResourceLoader` will automatically use it over the
 placeholder. No code changes needed — just drop the file in.
 
-Real audio can be swapped in at any time by placing a WAV file at the correct
-path in `assets/audio/sfx/`. `AudioManager` loads all SFX at `GameScene` init.
+Real audio can be swapped in at any time by placing files at the correct paths.
+SFX use WAV format (`assets/audio/sfx/`); music tracks use OGG format
+(`assets/audio/music/`). `AudioManager` loads all SFX at `GameScene` init.
 No code changes needed — just drop the file in.
 
 Run `python src/utils/placeholder_assets.py` any time to regenerate placeholder
@@ -311,6 +313,13 @@ python src/utils/placeholder_assets.py
 
 1. Create `src/weapons/newweapon.py` inheriting from `BaseWeapon`
 2. Add class name string to `WEAPON_CLASSES` in `upgrade_system.py`
+
+**Add a new hero class:**
+
+1. Add a new dict entry to `HERO_CLASSES` in `settings.py` with `name`, `hp`, `speed`,
+   `armor`, `starting_weapon`, and `passive_description`
+2. Update `class_select.py` if layout logic assumes a fixed hero count
+3. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
 
 **Tune difficulty:**
 
@@ -354,6 +363,7 @@ the coding rules above.
 
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.
+   *(This is a reminder for developers — Claude Code should only commit when explicitly asked.)*
 
 8. **Favor maintainability over cleverness.** Prefer explicit, readable code and
    small safe abstractions over compact but fragile logic.
@@ -372,14 +382,15 @@ These rules apply to all multiplayer-related changes.
    `hero_p1`, `hero_p2`, `p1_config`, `p2_config`, or logic branches tied to exactly two players.
 
 2. **Prefer collections over named players.** Multiplayer systems should pass
-   `list[Player]`, `list[PlayerSlot]`, or equivalent collection-based structures.
+   `list[PlayerSlot]`. The central abstraction is **`PlayerSlot`** (defined in
+   MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
+   Do not invent alternatives.
 
 3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
    the current single-player gameplay loop before expanding to 2P+.
 
-4. **Scene transition data must stay lightweight and serializable.** Do not put live sprite
-   references, `pygame.Surface` objects, or other runtime-only objects inside
-   `next_scene_kwargs`.
+4. **Scene transition data must stay lightweight and serializable.** See the Scene
+   Transition Pattern section — the same constraint applies to multiplayer flows.
 
 5. **Input must stay decoupled from player identity.** Do not assume a player is defined by
    keyboard, controller, or slot alone. Input device, slot, and hero choice are separate concepts.
@@ -389,6 +400,11 @@ These rules apply to all multiplayer-related changes.
 
 7. **Be ruthless about removing single-player-only assumptions** from systems that are being
    generalized, but do not break the actual single-player runtime behavior while doing so.
+
+> For concrete data structures (`PlayerSlot`, `input_config`), per-phase file lists,
+> HUD layout, camera, revive mechanics, and the full verification checklist, see
+> **MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
+> Phases 10–14. CLAUDE.md carries the principles; V2 carries the implementation detail.
 
 ---
 
@@ -535,6 +551,8 @@ For audit/planning tasks, prefer this output order:
 - Don't leave temporary debug prints or cheat toggles in finished code
 - Don't claim manual testing happened unless it actually happened
 - Don't change save-data shape casually or without noting compatibility impact
+- Don't implement `PlayerSlot` or `input_config` differently from the shape defined in
+  MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
 
 ---
 
@@ -553,11 +571,12 @@ Track progress here as phases are completed:
 - [x] Phase 9 — Polish & meta (save system, settings menu)
 
 ### Planned Multiplayer Phases
+*(See MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
 
-- [ ] Phase 10 — Multiplayer foundation (slot abstraction, input separation)
-- [ ] Phase 11 — Lobby and hero-selection migration
-- [ ] Phase 12 — Multiplayer GameScene/system integration
-- [ ] Phase 13 — Multiplayer HUD, revive, and camera polish
-- [ ] Phase 14 — Multiplayer testing, cleanup, and regression hardening
+- [ ] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
+- [ ] Phase 11 — Lobby and hero-selection migration (V2 Phases 2–3: LobbyScene + slot queue ClassSelect)
+- [ ] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene core refactor)
+- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7)
+- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)
 
 Update the checkboxes as phases are completed.
