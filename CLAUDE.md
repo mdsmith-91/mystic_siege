@@ -533,6 +533,19 @@ For audit/planning tasks, prefer this output order:
 - HUD and camera changes must remain readable in 1P
 - Save/progression behavior must remain sane if a multiplayer run is introduced later
 - Pause/menu ownership should be explicit, not accidental
+- **Revive/downed requires intercepting lethal damage before `BaseEntity.kill()` runs.**
+  `BaseEntity.take_damage()` calls `self.kill()` immediately when HP hits 0. `Player.take_damage()`
+  must override this to set `is_downed = True` instead — otherwise the sprite is removed from its
+  groups before any downed state can begin. This is a prerequisite for Phase 13, not an afterthought.
+- **InputManager synthetic events carry no joystick identity (hidden menu blocker).** `_post_key()` /
+  `_post_keyup()` emit plain `KEYDOWN`/`KEYUP` events with no `joystick_id` in the payload. Menu code
+  cannot tell which controller fired `K_RETURN` or `K_ESCAPE`. Owned multiplayer menus (ClassSelect
+  slot-queue, UpgradeMenu) require either (a) a custom event payload that preserves device metadata,
+  or (b) bypassing synthetic events for owned menus and polling the assigned device directly.
+- **SceneManager caches ClassSelect — slot-queue routing requires a fresh instance per pass.**
+  The current `SceneManager` instantiates `STATE_CLASS_SELECT` once and reuses it. A slot-queue flow
+  (ClassSelect visited N times, once per player) will silently malfunction until `STATE_CLASS_SELECT`
+  is in the always-create-fresh set. Address this in Phase 11 before the queue routing is wired.
 
 ---
 

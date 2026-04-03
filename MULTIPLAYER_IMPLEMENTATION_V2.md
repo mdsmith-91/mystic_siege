@@ -336,8 +336,8 @@ Without one of those, "filter by source device" is not implementable.
 > | 1 | 10 | Foundation: PlayerSlot + Input Abstraction |
 > | 2–3 | 11 | Lobby Scene + Hero Selection (ClassSelect slot queue) |
 > | 4 | 12 | GameScene Core Refactor |
-> | 5–6 | 13 | World Systems, Camera, HUD, Revive |
-> | 7–8 | 14 | Integration Test + Polish |
+> | 5–7 | 13 | World Systems, Camera, HUD, Revive |
+> | 8   | 14 | Integration Test + Polish |
 
 ### Phase 1 — Foundation: PlayerSlot + Input Abstraction
 **Goal:** Introduce `PlayerSlot`, generalize `Player._read_input()`, add per-joystick
@@ -789,7 +789,7 @@ Changes:
 | `src/weapons/*.py` | No change | Weapons operate on `self.player` reference already stored at construction. |
 | `src/systems/camera.py` | Modify | Add `update_multi()`, `zoom` field, zoom-aware `apply()`. 1P path unchanged via `len==1` branch. |
 | `src/systems/wave_manager.py` | Modify | Accept `player_list: list[Player]`, use `_nearest_alive()` for spawn targeting. |
-| `src/systems/collision.py` | Modify | `check_all(players: list[Player], ...)` with inner loop. |
+| `src/systems/collision.py` | Modify | `check_all(players: list[Player], ...)` with inner loop. **High regression risk** — `check_all` is the hub for all iframes and damage interactions and has many callers in `game_scene.py`. Change it last within Phase 5, after camera and wave_manager are stable. |
 | `src/systems/xp_system.py` | No change | Already stateless per-player, just iterate N instances. |
 | `src/systems/upgrade_system.py` | No change | `get_random_choices(player)` already takes a Player reference. |
 | `src/game_scene.py` | Major modify | Slot list, player loop, camera `update_multi`, revive method, weapon loop, HUD call. |
@@ -818,6 +818,7 @@ Changes:
 
 ### 7.2 Gameplay Edge Cases
 
+- **XP orb collection is first-come-first-served (shared pool).** `xp_orb.py` has no owner binding. Whichever player reaches an orb first collects it. This is the intended co-op design — no per-player binding is required. It means players do not need to race for their "own" orbs, which is friendlier for co-op play. Do not add owner binding without an explicit design decision to change this policy.
 - **All players downed within the same frame:** `_update_revive()` checks `downed and not alive` after processing all downed players in one call. Safe.
 - **Player dies at exactly `REVIVE_RADIUS` boundary:** use `<=` for inclusive check. Boundary cases feel less frustrating than `<`.
 - **4 players, 1 controller, 3 keyboards:** keyboard schemes WASD and arrows only cover 2 of 3 keyboard slots. Third keyboard player cannot join. Document this limit clearly in the lobby UI. Add a "Keyboard IJKL" scheme as a third keyboard option if needed.

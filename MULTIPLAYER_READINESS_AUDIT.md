@@ -52,6 +52,11 @@ at `update()` call time, not at construction. Instantiating N `XPSystem` objects
 calling each one with its corresponding player requires zero changes to `XPSystem`.
 This is exactly the right design.
 
+Note: `xp_orb.py` collection is first-come-first-served (no owner binding). This is
+structurally fine for co-op shared-pool XP, but the policy should be an explicit
+design choice — see Section 6.2. The XPSystem itself is clean; the orb semantics are
+the item to consciously decide.
+
 ### 2.2 Weapon owner binding
 All six weapon classes (`arcane_bolt.py`, `holy_nova.py`, `spectral_blade.py`,
 `flame_whip.py`, `frost_ring.py`, `lightning_chain.py`) bind `self.owner = owner`
