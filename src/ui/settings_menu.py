@@ -35,6 +35,37 @@ def _sdl_display_bounds() -> list[tuple[int, int, int, int]]:
         return []
 
 
+def _get_cursor_display_index() -> int:
+    """Return the SDL display index the mouse cursor is currently on.
+
+    Uses SDL_GetGlobalMouseState so it works before any window is created.
+    Falls back to 0 on failure.
+    """
+    import sys
+    import ctypes
+    from ctypes.util import find_library
+    try:
+        lib = find_library("SDL2")
+        if not lib:
+            lib = {"win32": "SDL2.dll", "darwin": "libSDL2.dylib"}.get(
+                sys.platform, "libSDL2-2.0.so.0"
+            )
+        sdl2 = ctypes.CDLL(lib)
+        sdl2.SDL_GetGlobalMouseState.restype = ctypes.c_uint32
+        sdl2.SDL_GetGlobalMouseState.argtypes = [
+            ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)
+        ]
+        mx, my = ctypes.c_int(0), ctypes.c_int(0)
+        sdl2.SDL_GetGlobalMouseState(ctypes.byref(mx), ctypes.byref(my))
+        bounds = _sdl_display_bounds()
+        for i, (dx, dy, dw, dh) in enumerate(bounds):
+            if dx <= mx.value < dx + dw and dy <= my.value < dy + dh:
+                return i
+    except Exception:
+        pass
+    return 0
+
+
 def _get_window_display_index() -> int:
     """Detect which SDL display index the current window is on.
 
@@ -179,7 +210,7 @@ class SettingsMenu:
                 self.fullscreen = new_value
                 self.save_system.set_setting("fullscreen", new_value)
                 # Defer mode change to update() so it happens after all events are processed
-                self._pending_fullscreen = (pygame.FULLSCREEN | pygame.SCALED) if new_value else 0
+                self._pending_fullscreen = (pygame.FULLSCREEN | pygame.SCALED) if new_value else pygame.SCALED
             elif button_name == "show_fps":
                 self.show_fps = new_value
                 self.save_system.set_setting("show_fps", new_value)
@@ -261,7 +292,7 @@ class SettingsMenu:
         if self._pending_fullscreen is not None:
             flags = self._pending_fullscreen
             self._pending_fullscreen = None
-            if flags:
+            if flags & pygame.FULLSCREEN:
                 # Fullscreen: target the display the window is currently on
                 pygame.display.set_mode(
                     (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
@@ -269,6 +300,10 @@ class SettingsMenu:
                 )
             else:
                 pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+            # Prime the new surface immediately — prevents vsync deadlock on Windows
+            surf = pygame.display.get_surface()
+            surf.fill((0, 0, 0))
+            pygame.display.flip()
             pygame.event.pump()
 
     def draw(self, screen):

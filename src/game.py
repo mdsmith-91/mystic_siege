@@ -35,14 +35,18 @@ class Game:
                     if event.key == pygame.K_F11:
                         from settings import SCREEN_WIDTH, SCREEN_HEIGHT
                         is_fs = bool(pygame.display.get_surface().get_flags() & pygame.FULLSCREEN)
-                        flags = 0 if is_fs else (pygame.FULLSCREEN | pygame.SCALED)
-                        if flags:
+                        flags = pygame.SCALED if is_fs else (pygame.FULLSCREEN | pygame.SCALED)
+                        if flags & pygame.FULLSCREEN:
                             pygame.display.set_mode(
                                 (SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1,
                                 display=_get_window_display_index(),
                             )
                         else:
                             pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags, vsync=1)
+                        # Prime the new surface immediately — prevents vsync deadlock on Windows
+                        surf = pygame.display.get_surface()
+                        surf.fill((0, 0, 0))
+                        pygame.display.flip()
                         pygame.event.pump()
                     elif event.key == pygame.K_F12:
                         # Take screenshot
