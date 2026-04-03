@@ -8,11 +8,12 @@ FPS = 60
 TITLE = "Mystic Siege"
 
 # AUDIO INIT
-AUDIO_FREQUENCY = 44100   # Hz — standard CD-quality sample rate
-AUDIO_SIZE      = -16     # 16-bit signed samples
-AUDIO_CHANNELS  = 2       # stereo
-AUDIO_BUFFER       = 512    # samples per chunk — Windows/macOS sweet spot
-AUDIO_BUFFER_LINUX = 2048   # Linux needs a larger buffer to prevent underruns (PulseAudio/PipeWire)
+AUDIO_FREQUENCY       = 44100   # Hz — Windows/macOS (DirectSound/CoreAudio resample cleanly)
+AUDIO_FREQUENCY_LINUX = 48000   # Hz — matches PipeWire/PulseAudio native rate; eliminates resampling artifacts
+AUDIO_SIZE            = -16     # 16-bit signed samples
+AUDIO_CHANNELS        = 2       # stereo
+AUDIO_BUFFER          = 512     # samples per chunk — Windows/macOS sweet spot
+AUDIO_BUFFER_LINUX    = 1024    # 48kHz + no resampling = stable at half old buffer (~21ms latency)
 TILE_SIZE = 32
 WORLD_WIDTH = 3000
 WORLD_HEIGHT = 3000

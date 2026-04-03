@@ -5,9 +5,12 @@ from src.game import Game
 if __name__ == "__main__":
     # Pre-init mixer with explicit params before pygame.init() to avoid
     # Linux audio crackling caused by mismatched default buffer settings
-    from settings import AUDIO_FREQUENCY, AUDIO_SIZE, AUDIO_CHANNELS, AUDIO_BUFFER, AUDIO_BUFFER_LINUX
-    _audio_buf = AUDIO_BUFFER_LINUX if sys.platform == "linux" else AUDIO_BUFFER
-    pygame.mixer.pre_init(AUDIO_FREQUENCY, AUDIO_SIZE, AUDIO_CHANNELS, _audio_buf)
+    from settings import (AUDIO_FREQUENCY, AUDIO_FREQUENCY_LINUX,
+                          AUDIO_SIZE, AUDIO_CHANNELS, AUDIO_BUFFER, AUDIO_BUFFER_LINUX)
+    _is_linux   = sys.platform == "linux"
+    _audio_freq = AUDIO_FREQUENCY_LINUX if _is_linux else AUDIO_FREQUENCY
+    _audio_buf  = AUDIO_BUFFER_LINUX    if _is_linux else AUDIO_BUFFER
+    pygame.mixer.pre_init(_audio_freq, AUDIO_SIZE, AUDIO_CHANNELS, _audio_buf)
     pygame.init()
 
     # Set display to SCREEN_WIDTH x SCREEN_HEIGHT with TITLE
