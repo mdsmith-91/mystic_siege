@@ -3,8 +3,10 @@ import sys
 from src.game import Game
 
 if __name__ == "__main__":
-    # Initialize pygame-ce with mixer
-    pygame.mixer.init()
+    # Pre-init mixer with explicit params before pygame.init() to avoid
+    # Linux audio crackling caused by mismatched default buffer settings
+    from settings import AUDIO_FREQUENCY, AUDIO_SIZE, AUDIO_CHANNELS, AUDIO_BUFFER
+    pygame.mixer.pre_init(AUDIO_FREQUENCY, AUDIO_SIZE, AUDIO_CHANNELS, AUDIO_BUFFER)
     pygame.init()
 
     # Set display to SCREEN_WIDTH x SCREEN_HEIGHT with TITLE

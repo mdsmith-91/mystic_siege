@@ -101,12 +101,12 @@ class HUD:
 
         # 1b. Player stat block (top-left, below HP bar)
         #     Always show Speed; show others only when non-default
-        spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
-        stat_lines = [
-            (f"SPD  {spd_pct}%", (200, 200, 200)),
-        ]
+        stat_lines = []
+        if player.speed > player.base_speed:
+            spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
+            stat_lines.append((f"SPD  {spd_pct}%", (200, 200, 200)))
         if player.armor > 0:
-            stat_lines.append((f"ARM  {int(player.armor)}%", (200, 200, 200)))
+            stat_lines.append((f"ARM  {int(player.armor)}%", (192, 200, 215)))
         if player.cooldown_reduction > 0:
             stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
         if player.damage_multiplier > 1.0:
@@ -128,8 +128,8 @@ class HUD:
             screen.blit(surf, (20, stat_y))
             stat_y += 16
 
-        # 2. XP Bar (bottom of screen, full width)
-        xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 30, SCREEN_WIDTH, 20)
+        # 2. XP Bar (flush with screen bottom, full width)
+        xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 20, SCREEN_WIDTH, 20)
         pygame.draw.rect(screen, (30, 30, 30), xp_bar_rect)
 
         xp_progress = xp_system.xp_progress()
@@ -139,8 +139,8 @@ class HUD:
             # Glow: semi-transparent wider bar drawn underneath the main bar
             glow_surf = pygame.Surface((fill_width, 24), pygame.SRCALPHA)
             glow_surf.fill((*XP_COLOR, 80))
-            screen.blit(glow_surf, (0, SCREEN_HEIGHT - 32))
-            pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 30, fill_width, 20))
+            screen.blit(glow_surf, (0, SCREEN_HEIGHT - 22))
+            pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 20, fill_width, 20))
 
         text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
         screen.blit(text, (10, xp_bar_rect.centery - text.get_height() // 2))
@@ -161,7 +161,7 @@ class HUD:
 
         # 5. Weapon slots (bottom-right)
         weapon_slots_x = SCREEN_WIDTH - (MAX_WEAPON_SLOTS * 45 + 5)
-        weapon_slots_y = SCREEN_HEIGHT - 75
+        weapon_slots_y = SCREEN_HEIGHT - 65
 
         for i in range(MAX_WEAPON_SLOTS):
             slot_rect = pygame.Rect(weapon_slots_x + i * 45, weapon_slots_y, 40, 40)
@@ -193,7 +193,7 @@ class HUD:
             screen.blit(warning_shadow, (wx + 3, 203))
             screen.blit(warning_surface, (wx, 200))
 
-        # 7. FPS counter (bottom-left, above XP bar)
+        # 7. FPS counter (inside XP bar, right of LVL)
         if show_fps:
             fps_text = self.font_16.render(f"FPS: {fps:.0f}", True, (255, 255, 255))
-            screen.blit(fps_text, (10, SCREEN_HEIGHT - 55))
+            screen.blit(fps_text, (90, xp_bar_rect.centery - fps_text.get_height() // 2))

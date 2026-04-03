@@ -6,6 +6,12 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 FPS = 60
 TITLE = "Mystic Siege"
+
+# AUDIO INIT
+AUDIO_FREQUENCY = 44100   # Hz — standard CD-quality sample rate
+AUDIO_SIZE      = -16     # 16-bit signed samples
+AUDIO_CHANNELS  = 2       # stereo
+AUDIO_BUFFER    = 512     # samples per chunk; 512 is the Linux sweet spot
 TILE_SIZE = 32
 WORLD_WIDTH = 3000
 WORLD_HEIGHT = 3000
