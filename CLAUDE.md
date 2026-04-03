@@ -293,6 +293,37 @@ python src/utils/placeholder_assets.py
 
 ---
 
+## Development Principles
+
+These rules govern how changes are made to the project — as important as the coding rules above.
+
+1. **Preserve single-player behavior.** Mystic Siege is a single-player game. Never
+   modify core systems (collision, XP, wave timing, save data) in ways that break or
+   degrade the solo experience, even when adding optional features.
+
+2. **Do not rewrite working systems.** If a system functions correctly, patch or extend
+   it — do not replace it. Rewrites invalidate tested behavior, introduce regressions,
+   and waste time recovering ground already covered.
+
+3. **Prefer phased migration.** When a system does need significant change, do it in
+   stages: (a) add the new code alongside the old, (b) migrate all callers, (c) remove
+   the old code. Never do a big-bang swap in a single commit.
+
+4. **Read before editing.** Always read a file in full before modifying it. Never edit
+   based on assumptions about what it contains.
+
+5. **Verify after every non-trivial change.** Run `python run_check.py` after any edit
+   that touches imports or adds new files. Catch errors before they compound.
+
+6. **Keep `settings.py` the source of truth.** When adding new tunable values for a
+   feature, add them to `settings.py` first, then reference them. Never hardcode
+   "temporary" values directly in game code.
+
+7. **Commit working states.** Make a git commit whenever the game reaches a clean,
+   runnable state. Never let a multi-day stretch pass without a checkpoint.
+
+---
+
 ## What NOT to Do
 
 - Don't import `pygame` — always import `pygame` via `pygame-ce` (same namespace,
@@ -303,6 +334,9 @@ python src/utils/placeholder_assets.py
 - Don't load images directly — use `ResourceLoader`
 - Don't add unrequested features when fixing a bug — fix only what's broken
 - Don't use `List`, `Dict`, `Tuple` from `typing` — use lowercase built-in syntax
+- Don't restructure the scene graph or game loop unless explicitly asked — it touches everything
+- Don't add `settings.py` constants speculatively — only add a constant when code actually needs it
+- Don't silently change gameplay feel (speeds, damage, timing) while fixing unrelated bugs — those are separate PRs
 
 ---
 
