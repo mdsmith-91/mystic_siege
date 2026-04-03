@@ -7,6 +7,11 @@ class StatsMenu:
     def __init__(self):
         self.next_scene = None
         self.next_scene_kwargs = {}
+
+        self.font_title = pygame.font.SysFont("serif", 64)
+        self.font_label = pygame.font.SysFont("serif", 28)
+        self.font_small = pygame.font.SysFont("serif", 20)
+
         data = SaveSystem().data
         total_time = int(data.get("total_time_played", 0))
         best_time = int(data.get("best_time_survived", 0))
@@ -48,13 +53,9 @@ class StatsMenu:
     def draw(self, screen):
         screen.fill((15, 10, 25))
 
-        title_font = pygame.font.SysFont("serif", 64)
-        label_font = pygame.font.SysFont("serif", 28)
-        value_font = pygame.font.SysFont("serif", 28)
-
         # Title
-        title_surf = title_font.render("STATS", True, GOLD)
-        title_shadow = title_font.render("STATS", True, (0, 0, 0))
+        title_surf = self.font_title.render("STATS", True, GOLD)
+        title_shadow = self.font_title.render("STATS", True, (0, 0, 0))
         cx = SCREEN_WIDTH // 2
         screen.blit(title_shadow, (cx - title_surf.get_width() // 2 + 3, 103))
         screen.blit(title_surf, (cx - title_surf.get_width() // 2, 100))
@@ -66,8 +67,8 @@ class StatsMenu:
         col_value_x = cx + 220
 
         for label, value in self.rows:
-            label_surf = label_font.render(label, True, (160, 150, 140))
-            value_surf = value_font.render(value, True, (255, 240, 180))
+            label_surf = self.font_label.render(label, True, (160, 150, 140))
+            value_surf = self.font_label.render(value, True, (255, 240, 180))
             screen.blit(label_surf, (col_label_x, row_y))
             screen.blit(value_surf, (col_value_x - value_surf.get_width(), row_y))
             # Divider line
@@ -82,7 +83,6 @@ class StatsMenu:
         back_color = (80, 60, 30) if back_rect.collidepoint(mouse_pos) else (40, 30, 20)
         pygame.draw.rect(screen, back_color, back_rect)
         pygame.draw.rect(screen, GOLD, back_rect, 2)
-        small_font = pygame.font.SysFont("serif", 20)
-        back_text = small_font.render("BACK", True, (255, 255, 255))
+        back_text = self.font_small.render("BACK", True, (255, 255, 255))
         screen.blit(back_text, (back_rect.centerx - back_text.get_width() // 2,
                                 back_rect.centery - back_text.get_height() // 2))

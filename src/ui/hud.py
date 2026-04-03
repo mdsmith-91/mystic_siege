@@ -1,9 +1,9 @@
 import pygame
 from settings import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR, MAX_WEAPON_SLOTS,
-    WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
+    SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_MED_COLOR, HP_LOW_COLOR, XP_COLOR,
+    MAX_WEAPON_SLOTS, WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
     WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
-    CRIT_CHANCE_BASE, PICKUP_RADIUS,
+    CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
 )
 
 # Arrow geometry: tip distance from edge, half-width of arrow base
@@ -73,7 +73,7 @@ class HUD:
                 poly = [tip, (ax - _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH),
                               (ax + _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH)]
 
-            pygame.draw.polygon(screen, (255, 60, 60), poly)
+            pygame.draw.polygon(screen, THREAT_ARROW_COLOR, poly)
             arrows_drawn += 1
 
     def draw(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
@@ -89,7 +89,7 @@ class HUD:
         if hp_ratio > 0.5:
             fill_color = HP_COLOR
         elif hp_ratio > 0.25:
-            fill_color = (255, 255, 0)
+            fill_color = HP_MED_COLOR
         else:
             fill_color = HP_LOW_COLOR
 

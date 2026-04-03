@@ -11,6 +11,11 @@ class ClassSelect:
         self.nav_index = 0  # keyboard nav index for hero cards (0–2)
         self.keyboard_active = False
 
+        self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
+        self.font_large = pygame.font.SysFont("serif", 28)
+        self.font_medium = pygame.font.SysFont("serif", 20)
+        self.font_small = pygame.font.SysFont("serif", 16)
+
     def handle_events(self, events):
         """Handle user input events."""
         mouse_pos = pygame.mouse.get_pos()
@@ -79,9 +84,8 @@ class ClassSelect:
         screen.fill((15, 10, 25))
 
         # 2. Title "CHOOSE YOUR HERO" at top, centered
-        font = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
         title = "CHOOSE YOUR HERO"
-        title_surface = font.render(title, True, (255, 255, 255))
+        title_surface = self.font_title.render(title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
 
         # 3. For each of 3 HERO_CLASSES cards:
@@ -91,9 +95,7 @@ class ClassSelect:
         total_width = 3 * card_width + 2 * spacing
         start_x = (SCREEN_WIDTH - total_width) // 2
 
-        font_large = pygame.font.SysFont("serif", 28)
-        font_medium = pygame.font.SysFont("serif", 20)
-        font_small = pygame.font.SysFont("serif", 16)
+        mouse_pos = pygame.mouse.get_pos()
 
         for i, hero in enumerate(HERO_CLASSES):
             # Calculate card position
@@ -104,7 +106,6 @@ class ClassSelect:
             card_rect = pygame.Rect(x, y, card_width, card_height)
 
             # Check hover state
-            mouse_pos = pygame.mouse.get_pos()
             hovered = card_rect.collidepoint(mouse_pos)
             if hovered:
                 self.hovered_card = i
@@ -129,7 +130,7 @@ class ClassSelect:
             name = hero["name"]
             name_lines = textwrap.wrap(name, width=20)
             for j, line in enumerate(name_lines):
-                line_surface = font_medium.render(line, True, (255, 255, 255))
+                line_surface = self.font_medium.render(line, True, (255, 255, 255))
                 screen.blit(line_surface, (x + card_width // 2 - line_surface.get_width() // 2, y + 50 + j * 24))
 
             # Stats grid: HP / SPD / ARM values
@@ -141,7 +142,7 @@ class ClassSelect:
             ]
 
             for j, stat in enumerate(stats):
-                stat_surface = font_medium.render(stat, True, (255, 255, 255))
+                stat_surface = self.font_medium.render(stat, True, (255, 255, 255))
                 screen.blit(stat_surface, (x + 20, stats_y + j * 30))
 
             # Passive ability text (wrapped to card width, 20px right padding)
@@ -150,14 +151,14 @@ class ClassSelect:
             wrapped_text = textwrap.wrap(passive_text, width=26)
 
             for j, line in enumerate(wrapped_text):
-                line_surface = font_small.render(line, True, (200, 200, 200))
+                line_surface = self.font_small.render(line, True, (200, 200, 200))
                 screen.blit(line_surface, (x + 20, passive_y + j * 20))
 
             # Starting weapon name wrapped to fit card width
             weapon_y = y + 305
             weapon_lines = textwrap.wrap(f"Starts with: {hero['starting_weapon']}", width=26)
             for j, line in enumerate(weapon_lines):
-                weapon_surface = font_small.render(line, True, (255, 255, 255))
+                weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))
 
         # 4. "CONFIRM" button (only shown if a card is selected) at bottom center
@@ -166,15 +167,14 @@ class ClassSelect:
             pygame.draw.rect(screen, (40, 30, 20), confirm_rect)
             pygame.draw.rect(screen, (255, 215, 0), confirm_rect, 2)  # Gold border
 
-            confirm_text = font_medium.render("CONFIRM", True, (255, 255, 255))
+            confirm_text = self.font_medium.render("CONFIRM", True, (255, 255, 255))
             screen.blit(confirm_text, (SCREEN_WIDTH // 2 - confirm_text.get_width() // 2, SCREEN_HEIGHT - 70))
 
         # 5. "BACK" button bottom-left
         back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
-        mouse_pos = pygame.mouse.get_pos()
         back_color = (80, 60, 30) if back_rect.collidepoint(mouse_pos) else (40, 30, 20)
         pygame.draw.rect(screen, back_color, back_rect)
         pygame.draw.rect(screen, (255, 215, 0), back_rect, 2)  # Gold border
 
-        back_text = font_small.render("BACK", True, (255, 255, 255))
+        back_text = self.font_small.render("BACK", True, (255, 255, 255))
         screen.blit(back_text, (20 + 50 - back_text.get_width() // 2, SCREEN_HEIGHT - 50))

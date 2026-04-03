@@ -133,6 +133,10 @@ class SettingsMenu:
         self.buttons = {}
         self._pending_fullscreen: int | None = None
 
+        self.font_title = pygame.font.SysFont("serif", 64)
+        self.font_label = pygame.font.SysFont("serif", 20)
+        self.font_button = pygame.font.SysFont("serif", 22)
+
         self._init_ui_elements()
 
     def _init_ui_elements(self):
@@ -310,16 +314,13 @@ class SettingsMenu:
         screen.fill(BACKGROUND_COLOR)
 
         # Title
-        title_font = pygame.font.SysFont("serif", 64)
-        title_surf   = title_font.render("SETTINGS", True, GOLD)
-        title_shadow = title_font.render("SETTINGS", True, (0, 0, 0))
+        title_surf   = self.font_title.render("SETTINGS", True, GOLD)
+        title_shadow = self.font_title.render("SETTINGS", True, (0, 0, 0))
         cx = SCREEN_WIDTH // 2
         screen.blit(title_shadow, (cx - title_surf.get_width() // 2 + 3, 53))
         screen.blit(title_surf,   (cx - title_surf.get_width() // 2,     50))
 
-        label_font  = pygame.font.SysFont("serif", 20)
-        button_font = pygame.font.SysFont("serif", 22)
-        mouse_pos   = pygame.mouse.get_pos()
+        mouse_pos = pygame.mouse.get_pos()
 
         # Sliders
         for slider_name, slider_data in self.sliders.items():
@@ -327,7 +328,7 @@ class SettingsMenu:
             handle = slider_data["handle_rect"]
 
             # Label centered above track
-            lbl = label_font.render(slider_data["label"], True, LABEL_COLOR)
+            lbl = self.font_label.render(slider_data["label"], True, LABEL_COLOR)
             screen.blit(lbl, (cx - lbl.get_width() // 2, track.top - 28))
 
             # Track
@@ -342,7 +343,7 @@ class SettingsMenu:
             pygame.draw.rect(screen, GOLD, handle, 1, border_radius=6)
 
             # Percentage value to the right of track
-            pct = label_font.render(f"{int(slider_data['value'] * 100)}%", True, TEXT_COLOR)
+            pct = self.font_label.render(f"{int(slider_data['value'] * 100)}%", True, TEXT_COLOR)
             screen.blit(pct, (track.right + 12, track.centery - pct.get_height() // 2))
 
         # Buttons
@@ -353,7 +354,7 @@ class SettingsMenu:
             highlighted = rect.collidepoint(mouse_pos) or (self.keyboard_active and i == self.selected_index)
             pygame.draw.rect(screen, BUTTON_HIGHLIGHT if highlighted else BUTTON_COLOR, rect, border_radius=6)
             pygame.draw.rect(screen, GOLD, rect, 2, border_radius=6)
-            text_surf = button_font.render(btn["text"], True, TEXT_COLOR)
+            text_surf = self.font_button.render(btn["text"], True, TEXT_COLOR)
             screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
                                     rect.centery - text_surf.get_height() // 2))
 
@@ -363,7 +364,7 @@ class SettingsMenu:
             pygame.draw.rect(screen, CONFIRM_BG,  dialog["rect"], border_radius=8)
             pygame.draw.rect(screen, GOLD, dialog["rect"], 2, border_radius=8)
 
-            msg = label_font.render(dialog["text"], True, TEXT_COLOR)
+            msg = self.font_label.render(dialog["text"], True, TEXT_COLOR)
             screen.blit(msg, (dialog["rect"].centerx - msg.get_width() // 2,
                               dialog["rect"].top + 24))
 
@@ -372,6 +373,6 @@ class SettingsMenu:
                 highlighted = rect.collidepoint(mouse_pos)
                 pygame.draw.rect(screen, BUTTON_HIGHLIGHT if highlighted else BUTTON_COLOR, rect, border_radius=6)
                 pygame.draw.rect(screen, GOLD, rect, 2, border_radius=6)
-                t = button_font.render(btn_data["text"], True, TEXT_COLOR)
+                t = self.font_button.render(btn_data["text"], True, TEXT_COLOR)
                 screen.blit(t, (rect.centerx - t.get_width() // 2,
                                 rect.centery - t.get_height() // 2))

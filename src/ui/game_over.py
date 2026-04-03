@@ -11,6 +11,10 @@ class GameOver:
         self.victory = victory
         self.stats = stats
 
+        self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
+        self.font_medium = pygame.font.SysFont("serif", 20)
+        self.font_small = pygame.font.SysFont("serif", 18)
+
         # Persist run stats to save file
         SaveSystem().update_after_run({
             "kills": stats["kills"],
@@ -89,8 +93,7 @@ class GameOver:
                           int(50 * (0.7 + 0.3 * pulse)),
                           int(50 * (0.7 + 0.3 * pulse)))
 
-        font_large = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
-        title_surface = font_large.render(title, True, final_color)
+        title_surface = self.font_title.render(title, True, final_color)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_surface, title_rect)
 
@@ -99,23 +102,20 @@ class GameOver:
         #    "Enemies Slain: {kills}"
         #    "Level Reached: {level}"
         #    "Weapons: {', '.join(weapons)}"
-        font_medium = pygame.font.SysFont("serif", 20)
         stats_y = 250
 
         stats_text = [
-            f"Time Survived: {self.stats['time_str']}",
-            f"Enemies Slain: {self.stats['kills']}",
-            f"Level Reached: {self.stats['level']}",
-            f"Weapons: {', '.join(self.stats['weapons'])}"
+            f"Time Survived: {self.stats.get('time_str', '0:00')}",
+            f"Enemies Slain: {self.stats.get('kills', 0)}",
+            f"Level Reached: {self.stats.get('level', 1)}",
+            f"Weapons: {', '.join(self.stats.get('weapons', []))}",
         ]
 
         for i, text in enumerate(stats_text):
-            text_surface = font_medium.render(text, True, (255, 255, 255))
+            text_surface = self.font_medium.render(text, True, (255, 255, 255))
             screen.blit(text_surface, (SCREEN_WIDTH // 2 - text_surface.get_width() // 2, stats_y + i * 30))
 
         # 4. Two buttons: "PLAY AGAIN" and "MAIN MENU", centered, y=480 and y=550
-        font_small = pygame.font.SysFont("serif", 18)
-
         mouse_pos = pygame.mouse.get_pos()
         go_buttons = [("PLAY AGAIN", 480), ("MAIN MENU", 550)]
         for i, (label, y) in enumerate(go_buttons):
@@ -123,5 +123,5 @@ class GameOver:
             highlighted = rect.collidepoint(mouse_pos) or (self.keyboard_active and i == self.selected_index)
             pygame.draw.rect(screen, (60, 45, 25) if highlighted else (40, 30, 20), rect)
             pygame.draw.rect(screen, GOLD, rect, 2)
-            text_surf = font_small.render(label, True, (255, 255, 255))
+            text_surf = self.font_small.render(label, True, (255, 255, 255))
             screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, y + 15))

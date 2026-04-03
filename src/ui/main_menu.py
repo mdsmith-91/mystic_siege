@@ -11,6 +11,9 @@ class MainMenu:
         self.keyboard_active = False
         self.particles = []
 
+        self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
+        self.font_sub = pygame.font.SysFont("serif", 24)
+
         # Initialize particles
         for _ in range(50):  # Start with some particles
             self.particles.append({
@@ -104,32 +107,33 @@ class MainMenu:
                 })
 
         # Remove particles that are off-screen or have alpha <= 0
-        self.particles = [p for p in self.particles if p["pos"].y < SCREEN_HEIGHT + 20 and p["alpha"] > 0]
+        self.particles = [
+            p for p in self.particles
+            if -20 < p["pos"].y < SCREEN_HEIGHT + 20 and p["alpha"] > 0
+        ]
 
     def draw(self, screen):
         """Draw the main menu."""
         # 1. Fill screen with very dark color (15, 10, 25)
         screen.fill((15, 10, 25))
 
-        # 2. Draw particles as small colored circles
+        # 2. Draw particles as small colored circles, faded by alpha ratio
         for particle in self.particles:
-            alpha = min(255, max(0, particle["alpha"]))
-            color = (*particle["color"], alpha)
-            pygame.draw.circle(screen, color, (int(particle["pos"].x), int(particle["pos"].y)), particle["size"])
+            ratio = max(0.0, particle["alpha"] / 255.0)
+            draw_color = tuple(int(c * ratio) for c in particle["color"])
+            pygame.draw.circle(screen, draw_color, (int(particle["pos"].x), int(particle["pos"].y)), particle["size"])
 
         # 3. Title "MYSTIC SIEGE" centered at y=160, large font, GOLD color
         #    with dark glow/shadow offset by 3px
-        font = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
         title = "MYSTIC SIEGE"
-        title_surface = font.render(title, True, GOLD)
-        title_shadow = font.render(title, True, (0, 0, 0))
+        title_surface = self.font_title.render(title, True, GOLD)
+        title_shadow = self.font_title.render(title, True, (0, 0, 0))
         screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2 + 3, 160))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 160))
 
         # 4. Subtitle "A Medieval Survivor" smaller, gray, below title
-        subtitle_font = pygame.font.SysFont("serif", 24)
         subtitle = "A Medieval Survivor"
-        subtitle_surface = subtitle_font.render(subtitle, True, (150, 150, 150))
+        subtitle_surface = self.font_sub.render(subtitle, True, (150, 150, 150))
         screen.blit(subtitle_surface, (SCREEN_WIDTH // 2 - subtitle_surface.get_width() // 2, 240))
 
         # 5. Buttons centered horizontally:
@@ -151,5 +155,5 @@ class MainMenu:
             button_color = (40, 30, 20) if highlighted else (30, 20, 10)
             pygame.draw.rect(screen, button_color, rect)
             pygame.draw.rect(screen, GOLD, rect, 2)
-            text_surf = subtitle_font.render(label, True, (255, 255, 255))
+            text_surf = self.font_sub.render(label, True, (255, 255, 255))
             screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, y + 15))
