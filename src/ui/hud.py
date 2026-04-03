@@ -3,204 +3,176 @@ from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_LOW_COLOR, XP_COLOR, MAX_WEAPON_SLOTS,
     WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
     WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
+    CRIT_CHANCE_BASE, PICKUP_RADIUS,
 )
+
+# Arrow geometry: tip distance from edge, half-width of arrow base
+_ARROW_TIP = 15
+_ARROW_DEPTH = 14
+_ARROW_HALF = 8
+
 
 class HUD:
     def __init__(self):
-        pass
+        self.font_16 = pygame.font.SysFont("serif", 16)
+        self.font_14 = pygame.font.SysFont("serif", 14)
+        self.font_32 = pygame.font.SysFont("serif", 32)
+        self.font_20 = pygame.font.SysFont("serif", 20)
+        self.font_48 = pygame.font.SysFont("serif", 48)
 
     def draw_threat_arrows(self, screen, player, enemy_group, camera):
-        """Draw arrows pointing to enemies that are offscreen."""
-        # Get screen boundaries
+        """Draw arrows at screen edges pointing toward offscreen enemies."""
         screen_left = camera.offset.x
         screen_right = camera.offset.x + SCREEN_WIDTH
         screen_top = camera.offset.y
         screen_bottom = camera.offset.y + SCREEN_HEIGHT
 
-        # Track how many arrows we've drawn
-        arrows_drawn = 0
+        # Safe range for the sliding axis so the arrow body stays on-screen
+        clamp_min = _ARROW_TIP + _ARROW_HALF
+        clamp_x_max = SCREEN_WIDTH - clamp_min
+        clamp_y_max = SCREEN_HEIGHT - clamp_min
 
-        # For each enemy, check if it's offscreen
+        arrows_drawn = 0
         for enemy in enemy_group:
-            if arrows_drawn >= 8:  # Max 8 arrows
+            if arrows_drawn >= 8:
                 break
 
-            # Get enemy position relative to screen
-            enemy_left = enemy.rect.left
-            enemy_right = enemy.rect.right
-            enemy_top = enemy.rect.top
-            enemy_bottom = enemy.rect.bottom
+            offscreen_left = enemy.rect.right < screen_left
+            offscreen_right = enemy.rect.left > screen_right
+            offscreen_top = enemy.rect.bottom < screen_top
+            offscreen_bottom = enemy.rect.top > screen_bottom
 
-            # Check if enemy is offscreen
-            offscreen_left = enemy_right < screen_left
-            offscreen_right = enemy_left > screen_right
-            offscreen_top = enemy_bottom < screen_top
-            offscreen_bottom = enemy_top > screen_bottom
+            if not (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
+                continue
 
-            # Only draw arrow if enemy is more than 400px offscreen
-            if (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
-                # Calculate center of enemy
-                enemy_center_x = (enemy_left + enemy_right) / 2
-                enemy_center_y = (enemy_top + enemy_bottom) / 2
+            cx = (enemy.rect.left + enemy.rect.right) / 2 - camera.offset.x
+            cy = (enemy.rect.top + enemy.rect.bottom) / 2 - camera.offset.y
 
-                # Calculate screen edge where arrow should point
-                arrow_x, arrow_y = 0, 0
-                arrow_color = (255, 0, 0)  # Default to red
+            if offscreen_left:
+                # Arrow on left edge, tip points left
+                ay = max(clamp_min, min(clamp_y_max, cy))
+                tip = (_ARROW_TIP, ay)
+                poly = [tip, (_ARROW_TIP + _ARROW_DEPTH, ay - _ARROW_HALF),
+                              (_ARROW_TIP + _ARROW_DEPTH, ay + _ARROW_HALF)]
+            elif offscreen_right:
+                # Arrow on right edge, tip points right
+                ay = max(clamp_min, min(clamp_y_max, cy))
+                tip = (SCREEN_WIDTH - _ARROW_TIP, ay)
+                poly = [tip, (SCREEN_WIDTH - _ARROW_TIP - _ARROW_DEPTH, ay - _ARROW_HALF),
+                              (SCREEN_WIDTH - _ARROW_TIP - _ARROW_DEPTH, ay + _ARROW_HALF)]
+            elif offscreen_top:
+                # Arrow on top edge, tip points up
+                ax = max(clamp_min, min(clamp_x_max, cx))
+                tip = (ax, _ARROW_TIP)
+                poly = [tip, (ax - _ARROW_HALF, _ARROW_TIP + _ARROW_DEPTH),
+                              (ax + _ARROW_HALF, _ARROW_TIP + _ARROW_DEPTH)]
+            else:
+                # Arrow on bottom edge, tip points down
+                ax = max(clamp_min, min(clamp_x_max, cx))
+                tip = (ax, SCREEN_HEIGHT - _ARROW_TIP)
+                poly = [tip, (ax - _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH),
+                              (ax + _ARROW_HALF, SCREEN_HEIGHT - _ARROW_TIP - _ARROW_DEPTH)]
 
-                # Determine which edge the arrow should point to
-                if offscreen_left:
-                    arrow_x = 0
-                    arrow_y = enemy_center_y - camera.offset.y
-                    # Adjust to screen edge
-                    if arrow_y < 0:
-                        arrow_y = 0
-                    elif arrow_y > SCREEN_HEIGHT:
-                        arrow_y = SCREEN_HEIGHT
-                elif offscreen_right:
-                    arrow_x = SCREEN_WIDTH
-                    arrow_y = enemy_center_y - camera.offset.y
-                    # Adjust to screen edge
-                    if arrow_y < 0:
-                        arrow_y = 0
-                    elif arrow_y > SCREEN_HEIGHT:
-                        arrow_y = SCREEN_HEIGHT
-                elif offscreen_top:
-                    arrow_x = enemy_center_x - camera.offset.x
-                    arrow_y = 0
-                    # Adjust to screen edge
-                    if arrow_x < 0:
-                        arrow_x = 0
-                    elif arrow_x > SCREEN_WIDTH:
-                        arrow_x = SCREEN_WIDTH
-                elif offscreen_bottom:
-                    arrow_x = enemy_center_x - camera.offset.x
-                    arrow_y = SCREEN_HEIGHT
-                    # Adjust to screen edge
-                    if arrow_x < 0:
-                        arrow_x = 0
-                    elif arrow_x > SCREEN_WIDTH:
-                        arrow_x = SCREEN_WIDTH
-
-                # Draw arrow
-                pygame.draw.polygon(screen, arrow_color, [
-                    (arrow_x, arrow_y),
-                    (arrow_x - 10, arrow_y - 5),
-                    (arrow_x - 10, arrow_y + 5)
-                ])
-                arrows_drawn += 1
+            pygame.draw.polygon(screen, (255, 60, 60), poly)
+            arrows_drawn += 1
 
     def draw(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
         """Draw all in-game overlay UI in screen space (no camera offset)."""
 
-        # 1. HP Bar (top-left, x=20, y=20):
-        #    Background rect 200x20, dark
-        #    Fill rect scaled to hp/max_hp ratio
-        #    Color: HP_COLOR if >50%, yellow if >25%, HP_LOW_COLOR otherwise
-        #    Text: "HP  85 / 150" to the right of bar
+        # 1. HP Bar (top-left, x=20, y=20)
         hp_bar_rect = pygame.Rect(20, 20, 200, 20)
-        pygame.draw.rect(screen, (30, 30, 30), hp_bar_rect)  # Dark background
+        pygame.draw.rect(screen, (30, 30, 30), hp_bar_rect)
 
-        # Fill rect scaled to hp/max_hp ratio
-        hp_ratio = player.hp / player.max_hp
+        hp_ratio = max(0.0, player.hp / player.max_hp)
         fill_width = int(200 * hp_ratio)
 
-        # Color: HP_COLOR if >50%, yellow if >25%, HP_LOW_COLOR otherwise
         if hp_ratio > 0.5:
             fill_color = HP_COLOR
         elif hp_ratio > 0.25:
-            fill_color = (255, 255, 0)  # Yellow
+            fill_color = (255, 255, 0)
         else:
             fill_color = HP_LOW_COLOR
 
-        fill_rect = pygame.Rect(20, 20, fill_width, 20)
-        pygame.draw.rect(screen, fill_color, fill_rect)
+        pygame.draw.rect(screen, fill_color, pygame.Rect(20, 20, fill_width, 20))
 
-        # Text: "HP  85 / 150" to the right of bar
-        font = pygame.font.SysFont("serif", 16)
-        text = font.render(f"HP  {int(player.hp)} / {int(player.max_hp)}", True, (255, 255, 255))
+        hp_display = max(0, int(player.hp))
+        text = self.font_16.render(f"HP  {hp_display} / {int(player.max_hp)}", True, (255, 255, 255))
         screen.blit(text, (230, 20))
 
         # 1b. Player stat block (top-left, below HP bar)
-        #     Always show Speed and Armor; show others only when non-default
-        stat_font = pygame.font.SysFont("serif", 14)
+        #     Always show Speed; show others only when non-default
+        spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
         stat_lines = [
-            (f"SPD  {int(player.speed / player.base_speed * 100)}%", (200, 200, 200)),
-            (f"ARM  {int(player.armor)}%", (200, 200, 200)),
+            (f"SPD  {spd_pct}%", (200, 200, 200)),
         ]
+        if player.armor > 0:
+            stat_lines.append((f"ARM  {int(player.armor)}%", (200, 200, 200)))
         if player.cooldown_reduction > 0:
             stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
         if player.damage_multiplier > 1.0:
             stat_lines.append((f"DMG  {player.damage_multiplier:.1f}x", (255, 200, 120)))
-        if player.crit_chance > 0:
+        if player.crit_chance > CRIT_CHANCE_BASE:
             stat_lines.append((f"CRIT  {int(player.crit_chance * 100)}%", (255, 230, 80)))
         if player.regen_rate > 0:
             stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 160)))
+        if player.spell_damage_multiplier > 1.0:
+            stat_lines.append((f"SPELL  {player.spell_damage_multiplier:.2f}x", (180, 140, 255)))
+        if player.xp_multiplier > 1.0:
+            stat_lines.append((f"XP  {player.xp_multiplier:.2f}x", (200, 255, 200)))
+        if player.pickup_radius > PICKUP_RADIUS:
+            stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
 
         stat_y = 48
         for label, color in stat_lines:
-            surf = stat_font.render(label, True, color)
+            surf = self.font_14.render(label, True, color)
             screen.blit(surf, (20, stat_y))
             stat_y += 16
 
-        # 2. XP Bar (bottom of screen, full width, y=SCREEN_HEIGHT-30, height=20):
-        #    Background full-width dark rect
-        #    Fill rect scaled to xp_system.xp_progress()
-        #    Color: XP_COLOR with glow (draw twice, outer with alpha 80)
-        #    Text: "LVL 7" on left side of bar
+        # 2. XP Bar (bottom of screen, full width)
         xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 30, SCREEN_WIDTH, 20)
-        pygame.draw.rect(screen, (30, 30, 30), xp_bar_rect)  # Dark background
+        pygame.draw.rect(screen, (30, 30, 30), xp_bar_rect)
 
-        # Fill rect scaled to xp_system.xp_progress()
         xp_progress = xp_system.xp_progress()
         fill_width = int(SCREEN_WIDTH * xp_progress)
 
-        # Draw twice for glow effect (outer with alpha 80)
-        glow_rect = pygame.Rect(0, SCREEN_HEIGHT - 30, fill_width, 20)
-        pygame.draw.rect(screen, XP_COLOR, glow_rect)
+        if fill_width > 0:
+            # Glow: semi-transparent wider bar drawn underneath the main bar
+            glow_surf = pygame.Surface((fill_width, 24), pygame.SRCALPHA)
+            glow_surf.fill((*XP_COLOR, 80))
+            screen.blit(glow_surf, (0, SCREEN_HEIGHT - 32))
+            pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 30, fill_width, 20))
 
-        # Draw the inner bar with full opacity
-        inner_rect = pygame.Rect(0, SCREEN_HEIGHT - 30, fill_width, 20)
-        pygame.draw.rect(screen, XP_COLOR, inner_rect)
-
-        # Text: "LVL 7" on left side of bar, vertically centered
-        font = pygame.font.SysFont("serif", 16)
-        text = font.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
+        text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
         screen.blit(text, (10, xp_bar_rect.centery - text.get_height() // 2))
 
-        # 3. Timer (top-center):
-        #    wave_manager.get_elapsed_str() in large font, white with dark shadow
-        font = pygame.font.SysFont("serif", 32)
+        # 3. Timer (top-center)
         timer_text = wave_manager.get_elapsed_str()
-        timer_surface = font.render(timer_text, True, (255, 255, 255))
-        timer_shadow = font.render(timer_text, True, (0, 0, 0))
-        screen.blit(timer_shadow, (SCREEN_WIDTH // 2 - timer_surface.get_width() // 2 + 2, 10))
-        screen.blit(timer_surface, (SCREEN_WIDTH // 2 - timer_surface.get_width() // 2, 10))
+        timer_surface = self.font_32.render(timer_text, True, (255, 255, 255))
+        timer_shadow = self.font_32.render(timer_text, True, (0, 0, 0))
+        tx = SCREEN_WIDTH // 2 - timer_surface.get_width() // 2
+        screen.blit(timer_shadow, (tx + 2, 12))
+        screen.blit(timer_surface, (tx, 10))
 
-        # 4. Kill counter (top-right):
-        #    "✦ {player.kill_count}" right-aligned
-        font = pygame.font.SysFont("serif", 16)
-        kill_text = f"KILLS  {player.kill_count}"
-        text = font.render(kill_text, True, (255, 255, 255))
-        screen.blit(text, (SCREEN_WIDTH - text.get_width() - 10, 20))
+        # 4. Kill counter and hero class (top-right)
+        kill_text = self.font_16.render(f"KILLS  {player.kill_count}", True, (255, 255, 255))
+        screen.blit(kill_text, (SCREEN_WIDTH - kill_text.get_width() - 10, 20))
+        class_text = self.font_14.render(player.hero_class.upper(), True, (180, 160, 120))
+        screen.blit(class_text, (SCREEN_WIDTH - class_text.get_width() - 10, 40))
 
-        # 5. Weapon slots (bottom-right, MAX_WEAPON_SLOTS slots of 40x40):
-        #    All slots always drawn — empty slots show a dim border, occupied slots gold
+        # 5. Weapon slots (bottom-right)
         weapon_slots_x = SCREEN_WIDTH - (MAX_WEAPON_SLOTS * 45 + 5)
         weapon_slots_y = SCREEN_HEIGHT - 75
-        font = pygame.font.SysFont("serif", 20)
 
         for i in range(MAX_WEAPON_SLOTS):
             slot_rect = pygame.Rect(weapon_slots_x + i * 45, weapon_slots_y, 40, 40)
             pygame.draw.rect(screen, (40, 40, 40), slot_rect)
 
             if i < len(player.weapons):
-                # Occupied slot: gold border + weapon initial
                 pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2)
                 weapon_name = player.weapons[i].name
                 letter = weapon_name[0] if weapon_name else "?"
-                text = font.render(letter, True, (255, 255, 255))
+                text = self.font_20.render(letter, True, (255, 255, 255))
                 screen.blit(text, text.get_rect(center=slot_rect.center))
-                # Level pip dots: filled pips up to weapon.level, empty pips beyond
                 weapon_level = player.weapons[i].level
                 total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * WEAPON_SLOT_PIP_SPACING
                 pip_start_x = slot_rect.centerx - total_pip_width // 2
@@ -210,24 +182,18 @@ class HUD:
                     color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon_level else WEAPON_SLOT_PIP_EMPTY_COLOR
                     pygame.draw.circle(screen, color, (pip_x, pip_y), WEAPON_SLOT_PIP_RADIUS)
             else:
-                # Empty slot: dim border only
                 pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1)
 
-        # 6. Wave warning (center screen, fades out):
-        #    wave_manager.get_warning() if non-empty
-        #    Large red/orange text centered horizontally at y=200
+        # 6. Wave warning (center screen, fades out)
         warning = wave_manager.get_warning()
         if warning:
-            font = pygame.font.SysFont("serif", 48)
-            warning_surface = font.render(warning, True, (255, 100, 0))  # Red/orange
-            warning_shadow = font.render(warning, True, (0, 0, 0))
-            screen.blit(warning_shadow, (SCREEN_WIDTH // 2 - warning_surface.get_width() // 2 + 3, 200))
-            screen.blit(warning_surface, (SCREEN_WIDTH // 2 - warning_surface.get_width() // 2, 200))
+            warning_surface = self.font_48.render(warning, True, (255, 100, 0))
+            warning_shadow = self.font_48.render(warning, True, (0, 0, 0))
+            wx = SCREEN_WIDTH // 2 - warning_surface.get_width() // 2
+            screen.blit(warning_shadow, (wx + 3, 203))
+            screen.blit(warning_surface, (wx, 200))
 
-        # 7. FPS counter (bottom-left, above LVL field, if show_fps): f"FPS: {fps:.0f}"
+        # 7. FPS counter (bottom-left, above XP bar)
         if show_fps:
-            font = pygame.font.SysFont("serif", 16)
-            fps_text = f"FPS: {fps:.0f}"
-            text = font.render(fps_text, True, (255, 255, 255))
-            screen.blit(text, (10, SCREEN_HEIGHT - 55))
-
+            fps_text = self.font_16.render(f"FPS: {fps:.0f}", True, (255, 255, 255))
+            screen.blit(fps_text, (10, SCREEN_HEIGHT - 55))

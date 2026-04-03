@@ -329,6 +329,7 @@ class GameScene:
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
+        self.hud.draw_threat_arrows(screen, self.player, self.enemy_group, self.camera)
         self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, fps)
 
         # 7. If upgrade_menu: upgrade_menu.draw(screen)
