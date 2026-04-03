@@ -41,6 +41,8 @@ mystic_siege/
 │   ├── game.py                    # Main loop, delegates to SceneManager
 │   ├── scene_manager.py           # Scene switching (menu/game/gameover)
 │   ├── game_scene.py              # Main gameplay — wires all systems together
+│   ├── core/                          # (created in Phase 10) Plain data types, no pygame dependency
+│   │   └── player_slot.py         # PlayerSlot dataclass — slot index, input_config, hero_data, color
 │   ├── entities/
 │   │   ├── base_entity.py         # Base pygame.sprite.Sprite with hp/damage/movement
 │   │   ├── player.py              # Player — WASD movement, weapons list, passives

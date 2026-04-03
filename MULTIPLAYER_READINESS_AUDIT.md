@@ -59,10 +59,18 @@ Weapons are created per-player and need no changes to function in multiplayer.
 and `apply_choice(choice, player)` call time. Calling it with different player
 objects for each upgrade queue slot requires no internal changes.
 
-### 2.4 BaseEntity is clean
+### 2.4 BaseEntity is mostly clean (with one override required)
 `base_entity.py` has `sprite_id = id(self)` for identity tracking, correct `hp/max_hp`
 fields, and a standard `take_damage()` + `heal()` interface. It works for N players
 without change.
+
+**One exception:** `base_entity.py:66–69` defines `is_alive` as `return self.alive()`
+(the pygame sprite group membership check). This is correct for enemies and XP orbs,
+but incorrect for downed players — downed players stay in sprite groups (by design,
+to allow revive), so `self.alive()` returns `True` for them. When `is_downed` is
+added to `player.py` in Phase 10, `player.py` must **override** `is_alive` as:
+`return self.alive() and not self.is_downed`. Failing to add this override means
+downed players are treated as alive by all systems.
 
 ### 2.5 Sprite groups are not player-tied
 The groups created in `game_scene.py` (`all_sprites`, `enemy_group`,
@@ -404,6 +412,14 @@ The method signature has an unused `player` parameter. This is a cleanup item.
 - The scene does not accept `slots: list[PlayerSlot]` or `confirmed_slots`.
 - Complete redesign required to support sequential per-player hero selection.
 
+**Input bleed (same risk as `UpgradeMenu`):**
+- `handle_events()` processes `K_RETURN` from the global event queue. Any
+  connected controller's A button posts `K_RETURN` via `InputManager`, so
+  Player 2's controller can confirm Player 1's hero selection.
+- **Fix direction:** Same as upgrade menu — filter events to the current slot's
+  device during the slot-queue path. Accept `K_RETURN` only from the device
+  matching `current_slot.input_config`; discard other devices' confirm events.
+
 ---
 
 ### `src/ui/game_over.py` — LOW RISK
@@ -681,8 +697,21 @@ time and never retarget. Adding a second player does not change enemy behavior.
 logic regresses.  
 **Fix direction:** Coordinated change. `WaveManager` stores `player_list`.
 `Enemy.__init__` accepts `player_list`. `enemy.update()` calls
-`self._pick_target(player_list)` to find nearest alive player each frame (or
-on a throttled interval for performance). Kill credit via `self.last_attacker`.  
+`self._pick_target()` to find nearest alive player each frame (or on a throttled
+interval for performance). Kill credit via `self.last_attacker`.
+
+**Important — all 7 subclass `__init__` signatures need updating:** Verified from
+`skeleton.py:14` — every subclass overrides `__init__` with a `target` parameter
+that it passes to `super().__init__()`. The fix is the same in each: rename
+`target` → `player_list` in the `__init__` signature and the `super().__init__()`
+call. The subclasses' `update()` methods that reference `self.target` (e.g.
+`skeleton.py:57`) do **not** need changes — `_pick_target()` in the parent updates
+`self.target`, and subclasses inherit the current value automatically.
+
+**`LichFamiliar` special case:** this subclass orbits `self.target.pos` and fires
+at `self.target`. After the base class change, verify explicitly that `LichFamiliar`
+uses the inherited `self.target` attribute (not a locally cached copy). If it does,
+no further change is needed.  
 **Solve before 2P:** Yes — enemies ignoring all but one player is non-functional.
 
 ### HR-4: `camera.py` — Zoom and multi-target follow
@@ -693,11 +722,17 @@ would need to support scaling for zoom. This touches the entire draw pipeline.
 **Affected files:** `camera.py`, `game_scene.py` (draw section), `settings.py`  
 **What could break:** All world-space rendering if the offset math changes.
 Background rendering (`game_scene.py` lines 298–308) uses `camera.offset` directly.
-Enemy health bars use `camera.offset`. Threat arrows use `camera.offset`.  
+Enemy health bars (`base_entity.py:draw_health_bar`) compute screen positions from
+`self.rect` and raw `offset` — wrong once zoom is applied. Threat arrows in
+`hud.py` use `camera.offset` for screen boundary math and must be rechecked.  
 **Fix direction:** Add `zoom: float = 1.0` to `Camera`. Add `update_multi(positions)`.
-Update `apply()` to incorporate zoom. Update background subsurface calculation.
+Update `apply()` to return a zoom-scaled `pygame.Rect` (not just offset-shifted).
+Update `game_scene.py`'s draw loop to scale sprites to the zoomed rect size, OR
+render the world to an off-screen surface and scale the entire surface once per
+frame (recommended — one `transform.scale` call regardless of entity count).
+Background tile rendering loop must also be updated to account for `camera.zoom`.
 This is a complete camera rewrite.  
-**Solve before 2P:** Yes for the centroid follow; zoom can be deferred to Phase 5.
+**Solve before 2P:** Yes for the centroid follow; zoom can be deferred to Phase 13.
 
 ### HR-5: `collision.py` — Multi-player collision
 **Severity: HIGH**  
@@ -725,8 +760,16 @@ Pure additions; nothing is removed. Safe to do in Phase 10.
 ### LR-2: `settings.py` — Add multiplayer constants
 **Severity: LOW**  
 Add `PLAYER_COLORS`, `SPAWN_OFFSETS`, `CAMERA_ZOOM_MIN`, `CAMERA_ZOOM_LERP`,
-`CAMERA_PLAYER_MARGIN`, `REVIVE_RADIUS`, `REVIVE_DURATION`, `MAX_PLAYERS`.
-Pure additions to `settings.py`. No existing code changes.
+`CAMERA_PLAYER_MARGIN`, `REVIVE_RADIUS`, `REVIVE_DURATION`, `MAX_PLAYERS`,
+and `HUD_PANEL_TUPLES` (as plain `(x, y, w, h)` tuples — `settings.py` must not
+import pygame, so `pygame.Rect` objects must not appear here; convert to `pygame.Rect`
+inside `hud.py` at use time).
+
+**Do not add** `PLAYER_COUNT`, `COOP_CAMERA_ZOOM`, or `COOP_LEASH_DISTANCE` —
+these were V1 design artifacts that were never implemented in the codebase. V2
+references removing them, but they do not currently exist in `settings.py`.
+
+Pure additions; no existing code changes.
 
 ### LR-3: `hud.py` — Unused `player` param in `draw_threat_arrows`
 **Severity: LOW**  
@@ -767,39 +810,56 @@ fixes kill credit in 1P (no regression risk, just a more correct attribution).
 This order is designed to preserve 1P at every checkpoint.
 
 **Phase 10 — Foundation (no gameplay changes, safest possible start)**
-1. Add `PlayerSlot` dataclass to new `src/entities/player_slot.py`
-   (V2 Section 4.1 defines the schema — match it exactly)
+1. Create `src/core/` directory. Add `PlayerSlot` dataclass to new
+   `src/core/player_slot.py` (V2 Section 4.1 defines the schema — match it exactly).
+   Update `CLAUDE.md` project structure to include `src/core/`.
 2. Add per-joystick methods to `InputManager` (`LR-1`)
 3. Add multiplayer constants to `settings.py` (`LR-2`)
 4. Add `last_attacker` tracking to `enemy.py` (`LR-8`)
-5. Run `python run_check.py`. Verify 1P still works end-to-end.
+5. Add `slot: PlayerSlot | None = None` parameter to `Player.__init__`. Store
+   `self.slot = slot`. Add `is_downed = False` and `revive_timer = 0.0`. Override
+   `is_alive` property to `return self.alive() and not self.is_downed`.
+   Condition death trigger on `self.slot is not None`. 1P path (`slot=None`) unchanged.
+6. Run `python run_check.py`. Verify 1P still works end-to-end.
 
 **Phase 11 — LobbyScene (new UI, isolated from gameplay)**
-6. Create `src/ui/lobby_scene.py` with slot-joining and device assignment
-7. Wire `MainMenu` → `LobbyScene` → `ClassSelect` transition path,
-   keeping direct `MainMenu` → `ClassSelect` → `game` path intact for 1P
-8. Create `src/ui/class_select_lobby.py` (slot-aware version) OR extend
-   `class_select.py` to accept optional `slots` / `confirmed_slots` params
-   (additive approach — preserve current behavior when params are absent)
-9. Verify 1P can still reach the game without going through the lobby
+7. Create `src/ui/lobby_scene.py` with slot-joining and device assignment.
+   All players — including the solo 1P — go through the lobby. No separate 1P
+   shortcut path. A 1-slot lobby produces a 1-slot `PlayerSlot` list that feeds
+   through `ClassSelect` → `GameScene` exactly like the 2–4P path.
+   This unifies the code path and avoids maintaining two routes.
+8. Wire `MainMenu` → `LobbyScene` → `ClassSelect` (update `main_menu.py` routing).
+9. Extend `class_select.py` to accept `slots: list[PlayerSlot]` and
+   `confirmed_slots: list[PlayerSlot]` parameters (additive — preserve current
+   behavior when params are absent, so nothing breaks before step 11 completes).
+10. Verify the full unified 1P path: `MainMenu → Lobby (1 slot) → ClassSelect →
+    Game` is functionally identical to the previous direct 1P flow.
+11. Verify the 2P path: sequential hero selects with duplicate hero lock-out.
 
 **Phase 12 — GameScene core refactor (highest risk, most impactful)**
-10. Change `GameScene.__init__` to accept `slots: list[PlayerSlot]`
-11. Replace `self.player` with `self.players: list[Player]`, add `.player` alias
-12. Add per-player `XPSystem` instances
-13. Change `CollisionSystem.check_all` to accept player list (`HR-5`)
-14. Change `WaveManager.__init__` to accept player list, fix spawn positions
-15. Change `Enemy.__init__` to accept player list, add `_pick_target()` (`HR-3`)
-16. Verify 1P with 1-slot `PlayerSlot` list. Do not add 2P until 1P passes.
+12. Change `GameScene.__init__` to accept `slots: list[PlayerSlot]`
+13. Replace `self.player` with `self.players: list[Player]`, add `.player` alias
+14. Add per-player `XPSystem` instances
+15. Change `CollisionSystem.check_all` to accept player list (`HR-5`)
+16. Change `WaveManager.__init__` to accept player list, fix spawn positions
+17. Change `Enemy.__init__` + all 7 subclass `__init__` signatures to accept
+    `player_list` instead of `target`; add `_pick_target()` to `Enemy` (`HR-3`).
+    Verify `LichFamiliar` uses `self.target` (not a cached copy) after this change.
+18. Verify 1P with 1-slot `PlayerSlot` list. Do not add 2P until 1P passes.
 
 **Phase 13 — Camera + HUD + upgrade queue (world systems polish)**
-17. Rewrite `camera.py` with zoom and `update_multi()` (`HR-4`)
-18. Update `game_scene.py` draw pipeline for zoom support
-19. Redesign `hud.py` with `_draw_player_panel()` helper and N-player layout
-20. Add per-player upgrade queue to `GameScene.update()` (`section 6.9`)
-21. Update `UpgradeMenu` with slot index header (`LR-6`)
-22. Add `is_downed` / revive mechanic to `player.py` and `collision.py`
-23. Verify 1P still works. Then verify 2P.
+19. Rewrite `camera.py` with zoom and `update_multi()` (`HR-4`).
+    Update `game_scene.py` draw pipeline for zoom (off-screen surface scale
+    recommended — one `transform.scale` per frame). Update background tile rendering.
+    Update `draw_health_bar()` screen-position math in `base_entity.py`.
+20. Redesign `hud.py` with `_draw_player_panel()` helper and N-player layout
+    (convert `HUD_PANEL_TUPLES` from settings to `pygame.Rect` at use time).
+    Remove unused `player` param from `draw_threat_arrows`.
+21. Add per-player upgrade queue to `GameScene.update()` (`section 6.9`)
+22. Update `UpgradeMenu` with slot index header (`LR-6`); add input device filter
+    so only the active slot's device can confirm its own upgrade menu.
+23. Revive mechanic: add `_update_revive()` to `game_scene.py` (`section 4.8`)
+24. Verify 1P still works. Then verify 2P.
 
 **Phase 14 — Game-over, save, polish**
 24. Update `game_over.py` with per-player results (`LR-4`)
@@ -902,13 +962,15 @@ use "whatever controller they grabbed." Defer until after launch.
 **Why it matters:** `PlayerSlot` is the foundational abstraction V2 builds on.
 Without it, every subsequent phase has no type to refer to, and there is no clean
 way to pass slot information through the scene transition chain.  
-**Affected files:** New `src/entities/player_slot.py`; will be imported by
+**Affected files:** New `src/core/player_slot.py`; will be imported by
 `game_scene.py`, `class_select.py`, `lobby_scene.py`, `player.py`  
 **What could break:** Nothing in 1P — it's an addition. But if not done first,
 every multiplayer file will invent its own ad-hoc representation.  
-**Recommended fix:** Create `src/entities/player_slot.py` as specified in V2
-Section 4.1. Use `@dataclass`. Match the exact field names in V2 (do not rename
-them — cross-phase consistency is critical).  
+**Recommended fix:** Create `src/core/player_slot.py` (V2 uses `src/core/` so it
+is not in `src/entities/` — `PlayerSlot` is not a sprite). Create the `src/core/`
+directory and update `CLAUDE.md`'s project structure listing. Use `@dataclass`.
+Match the exact field names in V2 Section 4.1 (do not rename them — cross-phase
+consistency is critical).  
 **Solve before 2P:** Yes — Phase 10.
 
 ---
@@ -1086,8 +1148,9 @@ before calling `super().take_damage()`. On death, credit `self.last_attacker`
 
 ## Best Next Step
 
-**Implement `PlayerSlot` in `src/entities/player_slot.py` exactly as specified in
-V2 Section 4.1. Do not touch any other file.**
+**Implement `PlayerSlot` in `src/core/player_slot.py` exactly as specified in
+V2 Section 4.1. Create the `src/core/` directory. Update the project structure
+in `CLAUDE.md`. Do not touch any other gameplay file.**
 
 This is Phase 10 Step 1. It is zero-risk (pure addition), makes the dataclass
 available for every subsequent phase, forces a concrete commitment to the field

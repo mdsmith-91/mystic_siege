@@ -244,6 +244,14 @@ Called when:
 reference to `GameScene`'s player list. No enemy stores a slot index — only a
 direct Player reference (which may be replaced on retarget).
 
+**Kill credit attribution:** The current code does `self.target.kill_count += 1`
+on death — always crediting the initial target regardless of who dealt the killing
+blow. Fix: add `self.last_attacker: Player | None = None` to `Enemy.__init__`.
+Override `take_damage()` in `Enemy` to set `self.last_attacker = <the hitting player>`
+before calling `super().take_damage()`. On death, credit `self.last_attacker`
+(fall back to `self.target` if None). This also makes 1P kill counts more accurate
+and is safe to add in Phase 1 (no gameplay regression).
+
 ### 4.7 HUD Layout for N Players
 
 | Player count | Layout |
@@ -295,6 +303,17 @@ This is the only place that knows about screen positions.
 
 ## 5. Revised Phased Implementation Plan
 
+> **Phase numbering note:** These V2 phases (1–8) map to the project's CLAUDE.md
+> numbered phases (10–14) as follows:
+>
+> | V2 Phase | CLAUDE.md Phase | Topic |
+> |---|---|---|
+> | 1 | 10 | Foundation: PlayerSlot + Input Abstraction |
+> | 2–3 | 11 | Lobby Scene + Hero Selection (ClassSelect slot queue) |
+> | 4 | 12 | GameScene Core Refactor |
+> | 5–6 | 13 | World Systems, Camera, HUD, Revive |
+> | 7–8 | 14 | Integration Test + Polish |
+
 ### Phase 1 — Foundation: PlayerSlot + Input Abstraction
 **Goal:** Introduce `PlayerSlot`, generalize `Player._read_input()`, add per-joystick
 InputManager methods. Zero gameplay change.
@@ -314,7 +333,10 @@ Changes:
    Store `self.slot = slot`. If `slot` is None, behavior is exactly 1P legacy.
 5. `Player._read_input()`: dispatch on `self.slot.input_config if self.slot else None`.
 6. Add `self.is_downed = False` and `self.revive_timer = 0.0`.
-7. Add `is_alive` property: `return self.alive() and not self.is_downed`.
+7. **Override** `is_alive` in `player.py` (it already exists in `BaseEntity` as
+   `return self.alive()`, but that returns `True` for downed players since they
+   stay in sprite groups). The override in `player.py` must be:
+   `return self.alive() and not self.is_downed`.
 8. Death trigger: if slot is not None (multiplayer), go downed instead of dying.
    If slot is None (1P legacy), existing dying behavior unchanged.
 
@@ -378,6 +400,13 @@ Changes:
 2. Current slot = `slots[0]`. Header: `f"PLAYER {current_slot.index + 1} — CHOOSE YOUR HERO"`.
 
 3. Navigate using `current_slot.input_config` (dispatch same as `Player._read_input`).
+   **Input bleed risk:** The current `handle_events()` loop processes `K_RETURN` from
+   the global event queue. Any connected controller's A button posts `K_RETURN`, which
+   means another player can accidentally confirm the current player's hero selection.
+   Mitigation: filter `K_RETURN` events by source device when in slot-queue mode.
+   For keyboard slots, accept only `K_RETURN` from that slot's keyboard scheme.
+   For controller slots, accept only button events matching that slot's joystick ID.
+   Discard other devices' confirm events during this scene.
 
 4. **Duplicate prevention:** collect `{slot.hero_data['class'] for slot in confirmed_slots}`.
    Render locked-out heroes with a gray overlay and the name of the player who
@@ -402,9 +431,9 @@ Changes:
      }
      ```
 
-6. When `PLAYER_COUNT == 1` (legacy path — if kept): the existing behavior continues
-   to work because a single-slot list with `confirmed_slots=[]` follows the same code
-   path: selects, remaining is empty, routes to game.
+6. The 1P path works without special-casing: a single-slot list with `confirmed_slots=[]`
+   follows the same code path as any other slot count — selects, remaining is empty,
+   routes to game. No `PLAYER_COUNT` check needed.
 
 **Why a queue, not a count:** adding a 4th player requires no code change — the
 `slots` list just has 4 items. The routing logic is the same regardless.
@@ -470,6 +499,10 @@ Changes:
 
 10. HUD and collision: pass `self.players` as lists.
 
+11. `LevelUpEffect`: use the leveling player's position, not a hardcoded `self.player.pos`.
+    In the upgrade queue iteration, pass `p.pos` (the current player being leveled)
+    when creating the `LevelUpEffect`.
+
 **Regression risk:** High — this is the central file. Test 1P after every change.
 
 **Verification:** `python run_check.py`. 1P: full run identical. 2P: both players spawn, move independently.
@@ -518,6 +551,40 @@ def update_multi(self, positions: list[Vector2], dt: float):
     ...
 ```
 
+The `apply()` method must also be updated to incorporate zoom. The current
+implementation is `entity.rect.move(-self.offset)` (a pure pan). With zoom,
+every world-space position must be scaled before subtracting the offset:
+
+```python
+def apply(self, entity) -> pygame.Rect:
+    # Scale entity position by zoom, then offset to screen space
+    world_x = entity.rect.centerx
+    world_y = entity.rect.centery
+    screen_x = int((world_x - self.offset.x) * self.zoom)
+    screen_y = int((world_y - self.offset.y) * self.zoom)
+    w = int(entity.rect.width  * self.zoom)
+    h = int(entity.rect.height * self.zoom)
+    return pygame.Rect(screen_x - w // 2, screen_y - h // 2, w, h)
+```
+
+**Draw pipeline impact:** The `game_scene.py` draw section currently blits sprites
+using `camera.apply(sprite)` for screen position but draws sprites at their
+original (unscaled) size. With zoom < 1.0 that is wrong — sprites must also be
+scaled. Two options:
+- **Scale each sprite at draw time:** `pygame.transform.scale(sprite.image, (w, h))`
+  applied in the draw loop. Simple but expensive at 60 fps with many sprites.
+- **Scale the world surface:** render all world-space sprites onto an off-screen
+  surface at 1:1, then `pygame.transform.scale` the entire surface to
+  `(SCREEN_WIDTH * zoom, SCREEN_HEIGHT * zoom)` and blit to screen. One scale per
+  frame regardless of entity count. Recommended.
+
+Background tile rendering (`game_scene.py` lines 298–308) uses raw `camera.offset`
+math directly and must also be updated to account for `camera.zoom`. Enemy health
+bars (`draw_health_bar()` in `base_entity.py`) compute screen positions from
+`self.rect` and `offset` — these will be wrong until the draw pipeline is unified.
+Threat arrows in `hud.py` already use `camera.offset` for screen-boundary math and
+must be rechecked after zoom is added.
+
 Add to `settings.py`:
 ```python
 CAMERA_ZOOM_MIN    = 0.45    # floor; sprites still readable
@@ -525,7 +592,8 @@ CAMERA_ZOOM_LERP   = 2.0     # zoom smoothing speed
 CAMERA_PLAYER_MARGIN = 200   # padding around bounding box (pixels)
 ```
 
-Remove: `COOP_CAMERA_ZOOM`, `COOP_LEASH_DISTANCE` (leash is removed).
+**Note:** `COOP_CAMERA_ZOOM` and `COOP_LEASH_DISTANCE` were V1 design artifacts that
+were never added to `settings.py`. Do not add them; just do not create them.
 
 **5b. WaveManager**
 
@@ -536,10 +604,26 @@ Remove: `COOP_CAMERA_ZOOM`, `COOP_LEASH_DISTANCE` (leash is removed).
 
 **5c. Enemy**
 
-- Accept `player_list: list[Player]` in `__init__`.
+- Accept `player_list: list[Player]` in `__init__`. Store as `self.player_list`.
+  Set `self.target = self._pick_target()` at the end of `__init__`.
+- **All 7 enemy subclasses** (`skeleton.py`, `dark_goblin.py`, `wraith.py`,
+  `plague_bat.py`, `cursed_knight.py`, `lich_familiar.py`, `stone_golem.py`)
+  override `__init__` and pass `target` to `super().__init__()`. Each one must be
+  updated: rename the `target` parameter to `player_list` and pass `player_list`
+  through to `super().__init__()`. The subclasses' `update()` methods that reference
+  `self.target` do **not** need changes — they will automatically use the updated
+  target set by `_pick_target()` in the parent class.
 - `_pick_target()`: `min(alive, key=lambda p: (p.pos - self.pos).length_squared())`.
 - Call `_pick_target()` at spawn and whenever current target is downed/dead.
 - Optional periodic retarget every 2 seconds (cheap `length_squared` comparison).
+- **Kill credit:** add `self.last_attacker: Player | None = None`. Update in
+  `take_damage()` (override in `Enemy`, update `self.last_attacker` before calling
+  `super().take_damage()`). On death, credit `self.last_attacker` with the kill;
+  fall back to `self.target` if `last_attacker` is None.
+- **`LichFamiliar` special case:** this subclass orbits `self.target.pos` and fires
+  at `self.target`. Verify after the base class change that `self.target` is still
+  being updated by `_pick_target()` and that orbit/fire logic in `lich_familiar.py`
+  uses `self.target` (not a locally cached copy). No other change should be needed.
 
 **5d. Collision**
 
@@ -601,22 +685,28 @@ Changes:
 1. Change signature: `draw(screen, players, xp_systems, wave_manager, show_fps, fps, camera)`.
    Pass `camera` so revive arcs can be drawn in screen space.
 
-2. Compute panel rects from `len(players)` and `slot.index`:
+2. Compute panel rects from `len(players)` and `slot.index`. Define the layout in
+   `hud.py` (not `settings.py` — `pygame.Rect` objects require a pygame import that
+   doesn't belong in `settings.py`). If you want the raw numbers in `settings.py`,
+   store them as plain tuples and convert to `pygame.Rect` inside `hud.py`:
+
    ```python
-   PANEL_RECTS = {
-       1: { 0: pygame.Rect(10, 10, 300, 80) },
-       2: { 0: pygame.Rect(10, 10, 280, 80),
-            1: pygame.Rect(SCREEN_WIDTH-290, 10, 280, 80) },
-       3: { 0: pygame.Rect(10, 10, 220, 70),
-            1: pygame.Rect(SCREEN_WIDTH//2-110, 10, 220, 70),
-            2: pygame.Rect(SCREEN_WIDTH-230, 10, 220, 70) },
-       4: { 0: pygame.Rect(10, 10, 200, 65),
-            1: pygame.Rect(SCREEN_WIDTH-210, 10, 200, 65),
-            2: pygame.Rect(10, SCREEN_HEIGHT-75, 200, 65),
-            3: pygame.Rect(SCREEN_WIDTH-210, SCREEN_HEIGHT-75, 200, 65) },
+   # In settings.py — plain tuples, no pygame import needed
+   HUD_PANEL_TUPLES = {
+       1: { 0: (10, 10, 300, 80) },
+       2: { 0: (10, 10, 280, 80),
+            1: (SCREEN_WIDTH-290, 10, 280, 80) },
+       3: { 0: (10, 10, 220, 70),
+            1: (SCREEN_WIDTH//2-110, 10, 220, 70),
+            2: (SCREEN_WIDTH-230, 10, 220, 70) },
+       4: { 0: (10, 10, 200, 65),
+            1: (SCREEN_WIDTH-210, 10, 200, 65),
+            2: (10, SCREEN_HEIGHT-75, 200, 65),
+            3: (SCREEN_WIDTH-210, SCREEN_HEIGHT-75, 200, 65) },
    }
+   # In hud.py — convert at use time
+   # rect = pygame.Rect(HUD_PANEL_TUPLES[player_count][slot_index])
    ```
-   Move this constant to `settings.py`.
 
 3. `_draw_player_panel(screen, player, xp_sys, rect, slot)` draws one panel.
    Downed: gray HP bar + "DOWNED" text + revive progress arc.
@@ -652,12 +742,12 @@ Changes:
 
 | File | Change Type | Notes |
 |---|---|---|
-| `settings.py` | Add constants | `MAX_PLAYERS`, `PLAYER_COLORS`, `SPAWN_OFFSETS`, `CAMERA_ZOOM_MIN`, `CAMERA_ZOOM_LERP`, `CAMERA_PLAYER_MARGIN`, `HUD_PANEL_RECTS`. Remove `PLAYER_COUNT`, `COOP_CAMERA_ZOOM`, `COOP_LEASH_DISTANCE`. |
-| `src/core/player_slot.py` | New file | `PlayerSlot` dataclass. No pygame dependency — importable anywhere. |
+| `settings.py` | Add constants | `MAX_PLAYERS`, `PLAYER_COLORS`, `SPAWN_OFFSETS`, `CAMERA_ZOOM_MIN`, `CAMERA_ZOOM_LERP`, `CAMERA_PLAYER_MARGIN`, `HUD_PANEL_TUPLES` (plain tuples, not `pygame.Rect`). **Do not add** `PLAYER_COUNT`, `COOP_CAMERA_ZOOM`, or `COOP_LEASH_DISTANCE` — these were V1 artifacts never built. |
+| `src/core/player_slot.py` | New file | `PlayerSlot` dataclass. No pygame dependency — importable anywhere. Requires creating `src/core/` directory and updating `CLAUDE.md` project structure. |
 | `src/utils/input_manager.py` | Additive | Add 3 per-joystick methods. Existing `get_movement()` unchanged. |
-| `src/entities/player.py` | Modify | Add `slot` param, `_read_input()` dispatch, `is_downed`, `is_alive`, `revive_timer`. Death behavior conditioned on `self.slot is not None`. |
-| `src/entities/enemy.py` | Modify | Add `player_list`, `_pick_target()`, periodic retarget. |
-| `src/entities/enemies/*.py` | No change | Enemy subclasses don't set target directly — parent handles it. |
+| `src/entities/player.py` | Modify | Add `slot` param, `_read_input()` dispatch, `is_downed`, `revive_timer`. **Override** `is_alive` property (already defined in `BaseEntity` as `self.alive()` — player must override to add `and not self.is_downed`). Death behavior conditioned on `self.slot is not None`. |
+| `src/entities/enemy.py` | Modify | Add `player_list`, `_pick_target()`, `last_attacker` kill credit, periodic retarget. |
+| `src/entities/enemies/*.py` | `__init__` signature only | All 7 subclasses override `__init__` with a `target` parameter passed to `super().__init__()`. Each must rename `target` → `player_list` and update the `super().__init__()` call. The `update()` methods that reference `self.target` do **not** need changes — `_pick_target()` in the parent keeps `self.target` current. |
 | `src/weapons/*.py` | No change | Weapons operate on `self.player` reference already stored at construction. |
 | `src/systems/camera.py` | Modify | Add `update_multi()`, `zoom` field, zoom-aware `apply()`. 1P path unchanged via `len==1` branch. |
 | `src/systems/wave_manager.py` | Modify | Accept `player_list: list[Player]`, use `_nearest_alive()` for spawn targeting. |
@@ -667,7 +757,7 @@ Changes:
 | `src/game_scene.py` | Major modify | Slot list, player loop, camera `update_multi`, revive method, weapon loop, HUD call. |
 | `src/ui/lobby.py` | New file | Replaces `input_assign.py` from V1. 1–4 slot join screen. |
 | `src/ui/class_select.py` | Modify | Accept `slots / confirmed_slots` queue. Duplicate hero lock-out. |
-| `src/ui/hud.py` | Modify | `_draw_player_panel()`, N-player layout from `HUD_PANEL_RECTS`. |
+| `src/ui/hud.py` | Modify | `_draw_player_panel()`, N-player layout from `HUD_PANEL_TUPLES` (convert tuples to `pygame.Rect` at use time). Remove unused `player` param from `draw_threat_arrows`. |
 | `src/ui/upgrade_menu.py` | Minor modify | Header labels from `slot.index`, input dispatch from `slot.input_config`. |
 | `src/ui/game_over.py` | Minor modify | Accept optional `player_results` list. |
 | `src/ui/main_menu.py` | Minor modify | Route "New Run" to `STATE_LOBBY`. |
@@ -686,6 +776,7 @@ Changes:
 | `class_select.py` queue routing breaks if `ClassSelect` is cached by SceneManager | Medium | Ensure `ClassSelect` is in the always-create-fresh set |
 | `GameScene` shim removed too early | Low | Remove shim only after all `ClassSelect` → `GameScene` routes are updated |
 | Upgrade menu input bleeds between players | Medium | Explicitly read and discard non-active-player input during upgrade menu |
+| `ClassSelect` input bleeds between players during slot-queue hero selection | Medium | Filter `K_RETURN` and navigation events to the current slot's device; discard events from other devices during each selection pass |
 
 ### 7.2 Gameplay Edge Cases
 
