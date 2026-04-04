@@ -95,6 +95,16 @@ PAUSE_BUTTON_COLOR = (30, 20, 10)
 PAUSE_BUTTON_HOVER_COLOR = (40, 30, 20)
 PAUSE_BUTTON_TEXT_COLOR = (255, 255, 255)
 
+# MULTIPLAYER
+MAX_PLAYERS = 4
+# Per-slot color badges — index matches PlayerSlot.index (0–3)
+PLAYER_COLORS = [
+    (100, 180, 255),   # slot 0 — blue
+    (255, 140,  40),   # slot 1 — orange
+    ( 80, 220, 120),   # slot 2 — green
+    (255, 220,  60),   # slot 3 — yellow
+]
+
 # GAME STATES (string constants)
 STATE_MENU = "menu"
 STATE_CLASS_SELECT = "class_select"
