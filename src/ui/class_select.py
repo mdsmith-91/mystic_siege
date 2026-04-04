@@ -1,23 +1,221 @@
 import pygame
 import textwrap
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE, HUD_FONT_SIZE
+from settings import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
+    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING,
+    CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+)
+from src.core.player_slot import PlayerSlot
+from src.utils.input_manager import InputManager
 
 class ClassSelect:
-    def __init__(self, slots=None):
-        # slots is populated by LobbyScene and consumed fully in Phase 3.
-        # Stored here so SceneManager can pass it without a crash.
-        self._pending_slots = slots
+    def __init__(
+        self,
+        slots: list[PlayerSlot] | None = None,
+        confirmed_slots: list[PlayerSlot] | None = None,
+    ):
         self.next_scene = None
         self.next_scene_kwargs = {}
+        self.slots = list(slots or [])
+        self.confirmed_slots = list(confirmed_slots or [])
+        self.current_slot = self.slots[0] if self.slots else None
+        self.slot_queue_active = self.current_slot is not None
         self.selected_class = None
         self.hovered_card = None
         self.nav_index = 0  # keyboard nav index for hero cards (0–2)
         self.keyboard_active = False
+        self._controller_nav_dir = 0
+        self._controller_nav_timer = 0.0
 
         self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
         self.font_large = pygame.font.SysFont("serif", 28)
         self.font_medium = pygame.font.SysFont("serif", 20)
         self.font_small = pygame.font.SysFont("serif", 16)
+
+        initial_index = self._first_available_index()
+        if self.slot_queue_active and initial_index is not None:
+            self.nav_index = initial_index
+            self.selected_class = HERO_CLASSES[initial_index]
+
+    def _locked_hero_slots(self) -> dict[str, PlayerSlot]:
+        locked: dict[str, PlayerSlot] = {}
+        for slot in self.confirmed_slots:
+            if slot.hero_data is not None:
+                locked[slot.hero_data["name"]] = slot
+        return locked
+
+    def _is_hero_locked(self, hero: dict) -> bool:
+        return hero["name"] in self._locked_hero_slots()
+
+    def _first_available_index(self) -> int | None:
+        for i, hero in enumerate(HERO_CLASSES):
+            if not self._is_hero_locked(hero):
+                return i
+        return None
+
+    def _move_selection(self, step: int) -> None:
+        if self.selected_class is None:
+            return
+
+        for offset in range(1, len(HERO_CLASSES) + 1):
+            next_index = (self.nav_index + step * offset) % len(HERO_CLASSES)
+            if not self._is_hero_locked(HERO_CLASSES[next_index]):
+                self.nav_index = next_index
+                self.selected_class = HERO_CLASSES[next_index]
+                return
+
+    def _route_to_game_or_next_slot(self) -> None:
+        if self.selected_class is None:
+            return
+
+        if not self.slot_queue_active:
+            self.next_scene = STATE_PLAYING
+            self.next_scene_kwargs = {"hero": self.selected_class}
+            return
+
+        self.current_slot.hero_data = self.selected_class
+        resolved_slots = self.confirmed_slots + [self.current_slot]
+        remaining_slots = self.slots[1:]
+
+        if remaining_slots:
+            self.next_scene = STATE_CLASS_SELECT
+            self.next_scene_kwargs = {
+                "slots": remaining_slots,
+                "confirmed_slots": resolved_slots,
+            }
+            return
+
+        self.next_scene = STATE_PLAYING
+        if len(resolved_slots) == 1:
+            # Preserve the current 1P GameScene handoff until Phase 4 lands.
+            self.next_scene_kwargs = {"hero": self.selected_class}
+        else:
+            self.next_scene_kwargs = {"slots": resolved_slots}
+
+    def _handle_back(self) -> None:
+        self.next_scene = STATE_MENU
+
+    def _keyboard_event_matches_current_slot(self, event: pygame.event.Event) -> bool:
+        if not self.slot_queue_active:
+            return True
+
+        cfg = self.current_slot.input_config
+        if cfg is None or cfg["type"] != "keyboard":
+            return False
+        keys = cfg["keys"]
+        return event.key in {
+            keys["left"],
+            keys["right"],
+            keys["confirm"],
+            pygame.K_ESCAPE,
+        }
+
+    def _handle_keyboard_event(self, event: pygame.event.Event) -> None:
+        if not self._keyboard_event_matches_current_slot(event):
+            return
+
+        if not self.slot_queue_active:
+            if event.key in (pygame.K_LEFT, pygame.K_a):
+                self.keyboard_active = True
+                self.nav_index = max(0, self.nav_index - 1)
+                self.selected_class = HERO_CLASSES[self.nav_index]
+            elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                self.keyboard_active = True
+                self.nav_index = min(len(HERO_CLASSES) - 1, self.nav_index + 1)
+                self.selected_class = HERO_CLASSES[self.nav_index]
+            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                self._route_to_game_or_next_slot()
+            elif event.key == pygame.K_ESCAPE:
+                self._handle_back()
+            return
+
+        cfg = self.current_slot.input_config
+        keys = cfg["keys"]
+        if event.key == keys["left"]:
+            self.keyboard_active = True
+            self._move_selection(-1)
+        elif event.key == keys["right"]:
+            self.keyboard_active = True
+            self._move_selection(1)
+        elif event.key == keys["confirm"]:
+            self._route_to_game_or_next_slot()
+        elif event.key == pygame.K_ESCAPE:
+            self._handle_back()
+
+    def _handle_mouse_click(self, mouse_pos: tuple[int, int]) -> None:
+        if self.slot_queue_active:
+            return
+
+        card_width = 260
+        card_height = 380
+        spacing = 40
+        total_width = len(HERO_CLASSES) * card_width + (len(HERO_CLASSES) - 1) * spacing
+        start_x = (SCREEN_WIDTH - total_width) // 2
+
+        for i, hero in enumerate(HERO_CLASSES):
+            card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
+            if card_rect.collidepoint(mouse_pos):
+                self.selected_class = hero
+                self.nav_index = i
+                return
+
+        if self.selected_class is not None:
+            confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
+            if confirm_rect.collidepoint(mouse_pos):
+                self._route_to_game_or_next_slot()
+                return
+
+        back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
+        if back_rect.collidepoint(mouse_pos):
+            self._handle_back()
+
+    def _handle_controller_button(self, event: pygame.event.Event) -> None:
+        if not self.slot_queue_active:
+            return
+
+        cfg = self.current_slot.input_config
+        if cfg is None or cfg["type"] != "controller":
+            return
+        if event.instance_id != cfg["joystick_id"]:
+            return
+
+        if event.button == 0:
+            self._route_to_game_or_next_slot()
+        elif event.button == 1:
+            self._handle_back()
+
+    def _poll_active_controller_navigation(self, dt: float) -> None:
+        if not self.slot_queue_active:
+            return
+
+        cfg = self.current_slot.input_config
+        if cfg is None or cfg["type"] != "controller":
+            return
+
+        move_x, _move_y = InputManager.instance().get_movement_for_joystick(cfg["joystick_id"])
+        if move_x <= -0.5:
+            new_dir = -1
+        elif move_x >= 0.5:
+            new_dir = 1
+        else:
+            new_dir = 0
+
+        if new_dir != self._controller_nav_dir:
+            self._controller_nav_dir = new_dir
+            if new_dir != 0:
+                self._controller_nav_timer = CONTROLLER_AXIS_REPEAT_DELAY
+                self._move_selection(new_dir)
+            else:
+                self._controller_nav_timer = 0.0
+            return
+
+        if new_dir == 0:
+            return
+
+        self._controller_nav_timer -= dt
+        if self._controller_nav_timer <= 0.0:
+            self._controller_nav_timer += CONTROLLER_AXIS_REPEAT_RATE
+            self._move_selection(new_dir)
 
     def handle_events(self, events):
         """Handle user input events."""
@@ -26,51 +224,22 @@ class ClassSelect:
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
-                    # Check if a hero card was clicked
-                    card_width = 260
-                    card_height = 380
-                    spacing = 40
-                    total_width = 3 * card_width + 2 * spacing
-                    start_x = (SCREEN_WIDTH - total_width) // 2
-
-                    for i in range(3):
-                        card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
-                        if card_rect.collidepoint(mouse_pos):
-                            self.selected_class = HERO_CLASSES[i]
-                            return
-
-                    # Check if "CONFIRM" button was clicked
-                    if self.selected_class is not None:
-                        confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
-                        if confirm_rect.collidepoint(mouse_pos):
-                            self.next_scene = "playing"
-                            self.next_scene_kwargs = {"hero": self.selected_class}
-                            return
-
-                    # Check if "BACK" button was clicked
-                    back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
-                    if back_rect.collidepoint(mouse_pos):
-                        self.next_scene = "menu"
+                    self._handle_mouse_click(mouse_pos)
+                    if self.next_scene is not None:
                         return
 
             elif event.type == pygame.MOUSEMOTION:
                 self.keyboard_active = False
 
             elif event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_LEFT, pygame.K_a):
-                    self.keyboard_active = True
-                    self.nav_index = max(0, self.nav_index - 1)
-                    self.selected_class = HERO_CLASSES[self.nav_index]
-                elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                    self.keyboard_active = True
-                    self.nav_index = min(2, self.nav_index + 1)
-                    self.selected_class = HERO_CLASSES[self.nav_index]
-                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                    if self.selected_class is not None:
-                        self.next_scene = "playing"
-                        self.next_scene_kwargs = {"hero": self.selected_class}
-                elif event.key == pygame.K_ESCAPE:
-                    self.next_scene = "menu"
+                self._handle_keyboard_event(event)
+                if self.next_scene is not None:
+                    return
+
+            elif event.type == pygame.JOYBUTTONDOWN:
+                self._handle_controller_button(event)
+                if self.next_scene is not None:
+                    return
 
             elif event.type == pygame.QUIT:
                 # Do NOT call pygame.quit() here — see game_scene.py for explanation.
@@ -80,16 +249,17 @@ class ClassSelect:
 
     def update(self, dt):
         """Update the class selection state."""
-        # No update needed for this scene
-        pass
+        self._poll_active_controller_navigation(dt)
 
     def draw(self, screen):
         """Draw the class selection screen."""
         # 1. Dark background (same as main menu)
         screen.fill((15, 10, 25))
 
-        # 2. Title "CHOOSE YOUR HERO" at top, centered
+        # 2. Title at top, centered
         title = "CHOOSE YOUR HERO"
+        if self.slot_queue_active:
+            title = f"PLAYER {self.current_slot.index + 1} - CHOOSE YOUR HERO"
         title_surface = self.font_title.render(title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
 
@@ -97,10 +267,11 @@ class ClassSelect:
         card_width = 260
         card_height = 380
         spacing = 40
-        total_width = 3 * card_width + 2 * spacing
+        total_width = len(HERO_CLASSES) * card_width + (len(HERO_CLASSES) - 1) * spacing
         start_x = (SCREEN_WIDTH - total_width) // 2
 
         mouse_pos = pygame.mouse.get_pos()
+        locked_hero_slots = self._locked_hero_slots()
 
         for i, hero in enumerate(HERO_CLASSES):
             # Calculate card position
@@ -111,9 +282,11 @@ class ClassSelect:
             card_rect = pygame.Rect(x, y, card_width, card_height)
 
             # Check hover state
-            hovered = card_rect.collidepoint(mouse_pos)
+            hovered = (not self.slot_queue_active) and card_rect.collidepoint(mouse_pos)
             if hovered:
                 self.hovered_card = i
+
+            is_locked = hero["name"] in locked_hero_slots
 
             # Draw card background
             if self.selected_class == hero:
@@ -126,6 +299,8 @@ class ClassSelect:
             # Draw gold border if hovered, keyboard-navigated, or selected
             if hovered or self.selected_class == hero or (self.keyboard_active and i == self.nav_index):
                 pygame.draw.rect(screen, (255, 215, 0), card_rect, 3)
+            elif is_locked:
+                pygame.draw.rect(screen, (110, 110, 110), card_rect, 3)
 
             # Top band filled with hero["color"] (40px tall)
             color_band = pygame.Rect(x, y, card_width, 40)
@@ -166,6 +341,27 @@ class ClassSelect:
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))
 
+            if is_locked:
+                overlay = pygame.Surface((card_width, card_height), pygame.SRCALPHA)
+                overlay.fill((40, 40, 40, 190))
+                screen.blit(overlay, (x, y))
+
+                owner_slot = locked_hero_slots[hero["name"]]
+                locked_text = self.font_medium.render("LOCKED", True, (220, 220, 220))
+                owner_text = self.font_small.render(
+                    f"Picked by Player {owner_slot.index + 1}",
+                    True,
+                    owner_slot.color,
+                )
+                screen.blit(
+                    locked_text,
+                    (x + card_width // 2 - locked_text.get_width() // 2, y + 160),
+                )
+                screen.blit(
+                    owner_text,
+                    (x + card_width // 2 - owner_text.get_width() // 2, y + 192),
+                )
+
         # 4. "CONFIRM" button (only shown if a card is selected) at bottom center
         if self.selected_class is not None:
             confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
@@ -183,3 +379,28 @@ class ClassSelect:
 
         back_text = self.font_small.render("BACK", True, (255, 255, 255))
         screen.blit(back_text, (20 + 50 - back_text.get_width() // 2, SCREEN_HEIGHT - 50))
+
+        if self.slot_queue_active:
+            cfg = self.current_slot.input_config
+            if cfg is not None and cfg["type"] == "keyboard":
+                prompt = "Use your assigned keyboard controls to choose"
+            elif cfg is not None and cfg["type"] == "controller":
+                prompt = f"Controller {cfg['joystick_id'] + 1} is selecting"
+            else:
+                prompt = "Use your assigned controls to choose"
+            prompt_surface = self.font_small.render(prompt, True, (180, 180, 180))
+            screen.blit(
+                prompt_surface,
+                (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, 108),
+            )
+
+            if self.selected_class is None:
+                warning_surface = self.font_small.render(
+                    "No heroes remain for this slot",
+                    True,
+                    (255, 120, 120),
+                )
+                screen.blit(
+                    warning_surface,
+                    (SCREEN_WIDTH // 2 - warning_surface.get_width() // 2, SCREEN_HEIGHT - 120),
+                )
