@@ -84,6 +84,32 @@ class InputManager:
                 return (x, y)
         return (0.0, 0.0)
 
+    def get_movement_for_joystick(self, joystick_id: int) -> tuple[float, float]:
+        """Analog movement vector for a specific joystick instance ID.
+
+        Values in [-1, 1] with deadzone applied.  Returns (0.0, 0.0) if the
+        joystick is not connected or the stick is centered.
+        """
+        joy = self._joysticks.get(joystick_id)
+        if joy is None or joy.get_numaxes() < 2:
+            return (0.0, 0.0)
+        x = joy.get_axis(0)
+        y = joy.get_axis(1)
+        x = x if abs(x) >= CONTROLLER_DEADZONE else 0.0
+        y = y if abs(y) >= CONTROLLER_DEADZONE else 0.0
+        return (x, y)
+
+    def get_confirm_for_joystick(self, joystick_id: int) -> bool:
+        """Return True if button 0 (A / Cross) is currently pressed on the given joystick."""
+        joy = self._joysticks.get(joystick_id)
+        if joy is None or joy.get_numbuttons() == 0:
+            return False
+        return bool(joy.get_button(0))
+
+    def get_connected_joysticks(self) -> list[int]:
+        """Return a list of currently connected joystick instance IDs."""
+        return list(self._joysticks.keys())
+
     @property
     def connected(self) -> bool:
         """True if at least one controller is connected."""

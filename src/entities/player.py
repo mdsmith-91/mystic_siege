@@ -5,6 +5,7 @@ from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS,
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
 from src.utils.spritesheet import Spritesheet
+from src.core.player_slot import PlayerSlot
 
 # Column indices matching DIRECTION_ORDER in generate_sprite.py
 _DIR_DOWN  = 0
@@ -13,7 +14,8 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class Player(BaseEntity):
-    def __init__(self, pos, hero_class_data: dict, groups):
+    def __init__(self, pos, hero_class_data: dict, groups,
+                 slot: PlayerSlot | None = None):
         super().__init__(pos, groups)
 
         # Store hero class name for passive checks
@@ -72,27 +74,19 @@ class Player(BaseEntity):
         # orbs_collected: int = 0  (for Friar passive)
         self.orbs_collected = 0
 
-        # Death state
+        # Slot metadata (None = legacy 1P path; set by GameScene when slots are used)
+        self.slot = slot
+
+        # Death / downed state
         self.dying = False
         self.death_timer = 0.0
+        # Downed state: player stays in sprite groups at 0 HP (enables future revive).
+        # Only active when slot is not None; 1P legacy path uses dying/death_timer instead.
+        self.is_downed = False
+        self.revive_timer = 0.0
 
     def update(self, dt):
-        # Read WASD/arrow keys and merge with analog stick input
-        direction = Vector2(0, 0)
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            direction.x -= 1
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            direction.x += 1
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            direction.y -= 1
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            direction.y += 1
-
-        # Add analog stick contribution (deadzone already applied in InputManager)
-        ax, ay = InputManager.instance().get_movement()
-        direction.x += ax
-        direction.y += ay
+        direction = self._read_input()
 
         # Normalize direction if moving
         if direction.length() > 0:
@@ -131,8 +125,8 @@ class Player(BaseEntity):
         for weapon in self.weapons:
             weapon.update(dt)
 
-        # Handle death fade
-        if self.hp <= 0 and not self.dying:
+        # Handle death fade (1P legacy path only; downed path is handled in take_damage)
+        if self.hp <= 0 and not self.dying and not self.is_downed:
             self.dying = True
             self.death_timer = 1.0
             self._alpha = 255
@@ -153,6 +147,59 @@ class Player(BaseEntity):
         # Sync rect
         self.rect.center = self.pos
 
+    @property
+    def is_alive(self) -> bool:
+        """Override: downed players remain in sprite groups but are not alive."""
+        return self.alive() and not self.is_downed
+
+    def _read_input(self) -> Vector2:
+        """Return the raw (un-normalized) movement direction for this player.
+
+        Dispatches on self.slot.input_config when a slot is assigned.
+        Falls back to the legacy global-keyboard + first-joystick behavior when
+        slot is None or input_config is None (temporary 1P migration shim).
+        """
+        cfg = self.slot.input_config if self.slot is not None else None
+
+        if cfg is None:
+            # Legacy 1P: global keyboard (WASD + arrows) + first active joystick
+            direction = Vector2(0, 0)
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                direction.x -= 1
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                direction.x += 1
+            if keys[pygame.K_UP] or keys[pygame.K_w]:
+                direction.y -= 1
+            if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                direction.y += 1
+            ax, ay = InputManager.instance().get_movement()
+            direction.x += ax
+            direction.y += ay
+            return direction
+
+        if cfg["type"] == "keyboard":
+            k = cfg["keys"]
+            direction = Vector2(0, 0)
+            keys = pygame.key.get_pressed()
+            if keys[k["left"]]:
+                direction.x -= 1
+            if keys[k["right"]]:
+                direction.x += 1
+            if keys[k["up"]]:
+                direction.y -= 1
+            if keys[k["down"]]:
+                direction.y += 1
+            return direction
+
+        if cfg["type"] == "controller":
+            ax, ay = InputManager.instance().get_movement_for_joystick(
+                cfg["joystick_id"]
+            )
+            return Vector2(ax, ay)
+
+        return Vector2(0, 0)
+
     def _frame_for_facing(self) -> pygame.Surface:
         """Pick the directional frame that best matches the current facing vector."""
         if abs(self.facing.x) >= abs(self.facing.y):
@@ -160,9 +207,24 @@ class Player(BaseEntity):
         return self._frames[_DIR_DOWN] if self.facing.y >= 0 else self._frames[_DIR_UP]
 
     def take_damage(self, amount: float):
-        """Play hit sound and apply damage."""
+        """Apply damage, intercepting lethal hits when a slot is assigned.
+
+        When slot is not None: armor is applied here and lethal damage sets
+        is_downed instead of removing the sprite from groups.  This is the
+        prerequisite for the Phase 13 revive mechanic.
+
+        When slot is None (legacy 1P path): delegates to BaseEntity which
+        calls kill() immediately, triggering the death-fade in update().
+        """
         AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
-        super().take_damage(amount)
+        if self.slot is not None:
+            armor = getattr(self, 'armor', 0)
+            damage = amount * (1.0 - armor / 100.0) if armor else amount
+            self.hp = max(0.0, self.hp - damage)
+            if self.hp <= 0:
+                self.is_downed = True
+        else:
+            super().take_damage(amount)
 
     def add_weapon(self, weapon_instance):
         """Add a weapon to the player's inventory if there's space."""
