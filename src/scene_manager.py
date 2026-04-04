@@ -1,16 +1,25 @@
 import pygame
 from src.ui.main_menu import MainMenu
 from src.ui.class_select import ClassSelect
+from src.ui.lobby_scene import LobbyScene
 from src.game_scene import GameScene
 from src.ui.game_over import GameOver
 from src.ui.settings_menu import SettingsMenu
 from src.ui.stats_menu import StatsMenu
-from settings import STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER, STATE_SETTINGS, STATE_STATS
+from settings import (
+    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER,
+    STATE_SETTINGS, STATE_STATS, STATE_LOBBY,
+)
+
+# Scenes recreated from scratch on every entry (never reuse stale instance)
+_ALWAYS_FRESH = frozenset({STATE_PLAYING, STATE_GAMEOVER, STATE_LOBBY, STATE_CLASS_SELECT})
+
 
 class SceneManager:
     def __init__(self):
         self.scenes = {
             STATE_MENU: None,
+            STATE_LOBBY: None,
             STATE_CLASS_SELECT: None,
             STATE_PLAYING: None,
             STATE_GAMEOVER: None,
@@ -25,16 +34,18 @@ class SceneManager:
         if scene_name not in self.scenes:
             raise ValueError(f"Unknown scene: {scene_name}")
 
-        # GameScene and GameOver are always created fresh (never reuse old run state)
-        if scene_name in (STATE_PLAYING, STATE_GAMEOVER):
+        # Always-fresh scenes are discarded before (re)creation
+        if scene_name in _ALWAYS_FRESH:
             self.scenes[scene_name] = None
 
         # Create the scene if it doesn't exist
         if self.scenes[scene_name] is None:
             if scene_name == STATE_MENU:
                 self.scenes[scene_name] = MainMenu()
+            elif scene_name == STATE_LOBBY:
+                self.scenes[scene_name] = LobbyScene()
             elif scene_name == STATE_CLASS_SELECT:
-                self.scenes[scene_name] = ClassSelect()
+                self.scenes[scene_name] = ClassSelect(**kwargs)
             elif scene_name == STATE_PLAYING:
                 self.scenes[scene_name] = GameScene(**kwargs)
             elif scene_name == STATE_GAMEOVER:

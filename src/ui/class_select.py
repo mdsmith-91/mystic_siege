@@ -3,7 +3,10 @@ import textwrap
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE, HUD_FONT_SIZE
 
 class ClassSelect:
-    def __init__(self):
+    def __init__(self, slots=None):
+        # slots is populated by LobbyScene and consumed fully in Phase 3.
+        # Stored here so SceneManager can pass it without a crash.
+        self._pending_slots = slots
         self.next_scene = None
         self.next_scene_kwargs = {}
         self.selected_class = None

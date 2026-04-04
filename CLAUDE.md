@@ -608,7 +608,7 @@ Track progress here as phases are completed:
 *(See MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
 
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
-- [ ] Phase 11 — Lobby and hero-selection migration (V2 Phases 2–3: LobbyScene + slot queue ClassSelect)
+- [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring; hero-selection slot queue V2 Phase 3 still pending)
 - [ ] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene core refactor)
 - [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7)
 - [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)

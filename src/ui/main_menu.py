@@ -1,7 +1,7 @@
 import pygame
 import sys
 import random
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE, STATE_LOBBY
 
 class MainMenu:
     def __init__(self):
@@ -34,7 +34,7 @@ class MainMenu:
                     # Check if "New Run" button was clicked
                     new_run_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 380, 240, 50)
                     if new_run_rect.collidepoint(mouse_pos):
-                        self.next_scene = "class_select"
+                        self.next_scene = STATE_LOBBY
                         return
 
                     # Check if "Stats" button was clicked
@@ -66,7 +66,7 @@ class MainMenu:
                     self.keyboard_active = True
                     self.selected_index = (self.selected_index + 1) % 4
                 elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                    actions = ["class_select", "stats", "settings", None]
+                    actions = [STATE_LOBBY, "stats", "settings", None]
                     action = actions[self.selected_index]
                     if action:
                         self.next_scene = action
