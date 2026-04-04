@@ -104,6 +104,12 @@ PLAYER_COLORS = [
     ( 80, 220, 120),   # slot 2 — green
     (255, 220,  60),   # slot 3 — yellow
 ]
+SPAWN_OFFSETS = [
+    (-80,   0),  # slot 0
+    ( 80,   0),  # slot 1
+    (  0,  80),  # slot 2
+    (  0, -80),  # slot 3
+]
 
 # GAME STATES (string constants)
 STATE_MENU = "menu"

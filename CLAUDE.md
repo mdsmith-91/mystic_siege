@@ -211,10 +211,23 @@ self.next_scene_kwargs = {"hero": selected_class_dict}
 self.next_scene = "class_select"
 self.next_scene_kwargs = {"slots": filled_slots}
 
+# Current transitional GameScene handoff:
+# preferred multiplayer-capable path
+self.next_scene = "playing"
+self.next_scene_kwargs = {"slots": resolved_slots}
+
+# temporary 1P migration shim still accepted by GameScene
+self.next_scene = "playing"
+self.next_scene_kwargs = {"hero": selected_class_dict}
+
 # SceneManager checks this each frame and calls switch_to()
 ```
 
 GameScene is always re-instantiated fresh on each new run.
+
+Current migration note: `GameScene` now accepts `slots: list[PlayerSlot]` as the
+primary constructor shape and keeps a temporary `hero` kwarg shim for the legacy
+single-slot handoff until the lobby/class-select path always emits concrete slots.
 
 **Important:** `next_scene_kwargs` must stay lightweight and serialization-friendly.
 Do not put live sprite references, `pygame.Surface` objects, open file handles,
@@ -610,7 +623,7 @@ Track progress here as phases are completed:
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [ ] Phase 11a — Hero-selection slot queue (V2 Phase 3; partial: duplicate prevention and active-slot input routing are implemented, but the final 1P handoff still uses `hero` instead of always emitting `slots`)
-- [ ] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene core refactor)
+- [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene now accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades; legacy `hero` constructor support remains as a temporary compatibility shim)
 - [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7)
 - [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)
 
