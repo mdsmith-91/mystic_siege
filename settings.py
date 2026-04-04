@@ -114,6 +114,7 @@ STATE_GAMEOVER = "gameover"
 STATE_VICTORY = "victory"
 STATE_SETTINGS = "settings"
 STATE_STATS = "stats"
+STATE_LOBBY = "lobby"
 
 # HERO_CLASSES list of 3 dicts, each with keys:
 # name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
