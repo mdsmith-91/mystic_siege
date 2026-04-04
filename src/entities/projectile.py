@@ -8,7 +8,8 @@ class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
                  color: tuple = (200, 100, 255), target_enemy=None,
-                 is_enemy_projectile: bool = False, owner_crit_chance: float = 0.0):
+                 is_enemy_projectile: bool = False, owner_crit_chance: float = 0.0,
+                 owner=None):
         super().__init__(groups)
 
         # image: 10x10 circle surface with given color
@@ -41,6 +42,7 @@ class Projectile(pygame.sprite.Sprite):
         self.is_enemy_projectile = is_enemy_projectile
 
         self.owner_crit_chance = owner_crit_chance
+        self.owner = owner
 
     def update(self, dt):
         # Home toward original target only while it's still alive — fly straight once it dies
@@ -84,7 +86,7 @@ class Projectile(pygame.sprite.Sprite):
         actual_damage = self.damage * (CRIT_MULTIPLIER if is_crit else 1.0)
 
         # hit_direction: from enemy back toward the projectile source, for shield checks
-        enemy.take_damage(actual_damage, hit_direction=-self.direction)
+        enemy.take_damage(actual_damage, hit_direction=-self.direction, attacker=self.owner)
 
         if effect_group is not None:
             from src.entities.effects import DamageNumber, HitSpark

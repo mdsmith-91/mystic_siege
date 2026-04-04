@@ -50,8 +50,14 @@ class GameScene:
         # 3. camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        # Phase 5 will generalize this to the full player list.
-        self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group, self.projectile_group, self.effect_group)
+        self.wave_manager = WaveManager(
+            self.players,
+            self.all_sprites,
+            self.enemy_group,
+            self.xp_orb_group,
+            self.projectile_group,
+            self.effect_group,
+        )
 
         # Per-player XP state is required before multiplayer collision/camera/HUD land.
         self.xp_systems = [XPSystem() for _ in self.players]
@@ -331,8 +337,12 @@ class GameScene:
         # wave_manager.update(dt)
         self.wave_manager.update(dt)
 
-        # collision_system.check_all(player, enemy_group, projectile_group, effect_group)
-        self.collision_system.check_all(self.player, self.enemy_group, self.projectile_group, self.effect_group)
+        self.collision_system.check_all(
+            self.players,
+            self.enemy_group,
+            self.projectile_group,
+            self.effect_group,
+        )
 
         # Update effect_group AFTER collision so spawned effects move in the same frame
         self.effect_group.update(dt)
@@ -341,8 +351,8 @@ class GameScene:
         for player, xp_system in zip(self.players, self.xp_systems):
             xp_system.update(dt, player, self.xp_orb_group)
 
-        # camera.update(player.pos, dt)
-        self.camera.update(self.player.pos, dt)
+        camera_targets = [player.pos for player in self.players if player.is_alive]
+        self.camera.update_multi(camera_targets, dt)
 
         self._complete_upgrade_menu()
         self._queue_pending_levelups()
@@ -362,19 +372,11 @@ class GameScene:
 
     def draw(self, screen):
         """Draw the game scene."""
-        # 1. Blit background with camera offset (only the visible portion — use subsurface or clip)
-        # Get visible portion of background
-        camera_offset_x = int(self.camera.offset.x)
-        camera_offset_y = int(self.camera.offset.y)
-
-        # Calculate visible rect
-        visible_rect = pygame.Rect(camera_offset_x, camera_offset_y, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-        # Ensure we don't go out of bounds
+        visible_rect = self.camera.get_view_rect()
         visible_rect.clamp_ip(pygame.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT))
-
-        # Blit the visible portion
-        screen.blit(self.background, (0, 0), visible_rect)
+        world_surface = pygame.Surface(visible_rect.size).convert()
+        world_surface.blit(self.background, (0, 0), visible_rect)
+        local_offset = Vector2(visible_rect.x, visible_rect.y)
 
         # 2. For each sprite in all_sprites + projectile_group (sorted by rect.bottom for depth):
         #    screen.blit(sprite.image, camera.apply(sprite))
@@ -387,29 +389,35 @@ class GameScene:
 
         for sprite in sorted_sprites:
             # Apply camera offset
-            screen_pos = self.camera.apply(sprite)
-            screen.blit(sprite.image, screen_pos)
+            screen_pos = sprite.rect.move(-local_offset)
+            world_surface.blit(sprite.image, screen_pos)
 
             # Draw health bar if it's an enemy
             if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite not in self.player_group:
-                sprite.draw_health_bar(screen, self.camera.offset)
+                sprite.draw_health_bar(world_surface, local_offset)
 
         # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
         for player in self.players:
             for weapon in player.weapons:
                 if hasattr(weapon, 'draw'):
-                    weapon.draw(screen, self.camera.offset)
+                    weapon.draw(world_surface, local_offset)
                 if hasattr(weapon, 'draw_effect'):
-                    weapon.draw_effect(screen, self.camera.offset)
+                    weapon.draw_effect(world_surface, local_offset)
 
         # 4. Draw effects (damage numbers, sparks, explosions) on top of sprites
         for sprite in self.effect_group:
-            screen_pos = self.camera.apply(sprite)
-            screen.blit(sprite.image, screen_pos)
+            screen_pos = sprite.rect.move(-local_offset)
+            world_surface.blit(sprite.image, screen_pos)
+
+        if world_surface.get_size() == (SCREEN_WIDTH, SCREEN_HEIGHT):
+            screen.blit(world_surface, (0, 0))
+        else:
+            scaled_world = pygame.transform.smoothscale(world_surface, (SCREEN_WIDTH, SCREEN_HEIGHT))
+            screen.blit(scaled_world, (0, 0))
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
-        self.hud.draw_threat_arrows(screen, self.player, self.enemy_group, self.camera)
+        self.hud.draw_threat_arrows(screen, self.enemy_group, self.camera)
         self.hud.draw(screen, self.player, self.xp_systems[0], self.wave_manager, self.show_fps, fps)
 
         # 7. If upgrade_menu: upgrade_menu.draw(screen)

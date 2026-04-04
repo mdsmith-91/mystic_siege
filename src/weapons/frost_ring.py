@@ -89,7 +89,7 @@ class FrostRing(BaseWeapon):
                         damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        enemy.take_damage(damage, hit_direction=hit_dir)
+                        enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
                             DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)

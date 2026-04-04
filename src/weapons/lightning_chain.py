@@ -89,7 +89,7 @@ class LightningChain(BaseWeapon):
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
             hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-            enemy.take_damage(damage, hit_direction=hit_dir)
+            enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
             if self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
                 DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)

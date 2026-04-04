@@ -12,7 +12,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class LichFamiliar(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, projectile_group=None, xp_orb_group=None, effect_group=None):
+    def __init__(self, pos, player_list, all_groups: tuple, projectile_group=None, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Lich",
             "hp": 35,
@@ -21,7 +21,7 @@ class LichFamiliar(Enemy):
             "xp_value": 12,
             "behavior": "orbit"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Maintains orbit distance of ~200px from player, fires slow orb every 2.5s
         self.projectile_group = projectile_group
@@ -55,7 +55,15 @@ class LichFamiliar(Enemy):
         # Increment orbit angle and move toward orbit position around player
         self.orbit_angle += 45 * dt  # 45 degrees per second
 
-        target_pos = self.target.pos + Vector2(1, 0).rotate(self.orbit_angle) * self.orbit_radius
+        target = self.target
+        if target is None:
+            self.vel = Vector2(0, 0)
+            super().update(dt)
+            self.image = self._frame_for_velocity()
+            self.rect = self.image.get_rect(center=self.pos)
+            return
+
+        target_pos = target.pos + Vector2(1, 0).rotate(self.orbit_angle) * self.orbit_radius
 
         direction = target_pos - self.pos
         if direction.length() > 0:
@@ -72,9 +80,9 @@ class LichFamiliar(Enemy):
         # the projectile (speed=120, lifetime=4s, range=480px) to actually reach them
         self.fire_timer -= dt
         if self.fire_timer <= 0:
-            dist = (self.target.pos - self.pos).length()
+            dist = (target.pos - self.pos).length()
             if 0 < dist < LICH_FIRE_RANGE:
-                direction_to_player = (self.target.pos - self.pos) / dist
+                direction_to_player = (target.pos - self.pos) / dist
                 proj_groups = [self.projectile_group] if self.projectile_group is not None else []
                 Projectile(
                     pos=self.pos,

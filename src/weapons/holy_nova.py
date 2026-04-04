@@ -72,7 +72,7 @@ class HolyNova(BaseWeapon):
                         damage = ring["damage"] * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = self.owner.pos - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        enemy.take_damage(damage, hit_direction=hit_dir)
+                        enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
                         ring["enemies_hit"].add(enemy.sprite_id)
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark

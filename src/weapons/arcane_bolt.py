@@ -47,7 +47,8 @@ class ArcaneBolt(BaseWeapon):
             homing=self.homing,
             color=self.projectile_color,
             target_enemy=target,
-            owner_crit_chance=self.owner.crit_chance
+            owner_crit_chance=self.owner.crit_chance,
+            owner=self.owner,
         )
 
     def fire(self):

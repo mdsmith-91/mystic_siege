@@ -21,12 +21,13 @@ class HUD:
         self.font_20 = pygame.font.SysFont("serif", 20)
         self.font_48 = pygame.font.SysFont("serif", 48)
 
-    def draw_threat_arrows(self, screen, player, enemy_group, camera):
+    def draw_threat_arrows(self, screen, enemy_group, camera):
         """Draw arrows at screen edges pointing toward offscreen enemies."""
-        screen_left = camera.offset.x
-        screen_right = camera.offset.x + SCREEN_WIDTH
-        screen_top = camera.offset.y
-        screen_bottom = camera.offset.y + SCREEN_HEIGHT
+        view_rect = camera.get_view_rect()
+        screen_left = view_rect.left
+        screen_right = view_rect.right
+        screen_top = view_rect.top
+        screen_bottom = view_rect.bottom
 
         # Sliding-axis clamps — keep arrow body inside safe zones on each edge
         clamp_x_min = HUD_SAFE_LEFT   + _ARROW_TIP + _ARROW_HALF
@@ -47,8 +48,9 @@ class HUD:
             if not (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
                 continue
 
-            cx = (enemy.rect.left + enemy.rect.right) / 2 - camera.offset.x
-            cy = (enemy.rect.top + enemy.rect.bottom) / 2 - camera.offset.y
+            screen_pos = camera.world_to_screen(enemy.pos)
+            cx = screen_pos.x
+            cy = screen_pos.y
 
             if offscreen_left:
                 # Arrow on left edge, tip points left

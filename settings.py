@@ -110,6 +110,9 @@ SPAWN_OFFSETS = [
     (  0,  80),  # slot 2
     (  0, -80),  # slot 3
 ]
+CAMERA_ZOOM_MIN = 0.45
+CAMERA_ZOOM_LERP = 2.0
+CAMERA_PLAYER_MARGIN = 200
 
 # GAME STATES (string constants)
 STATE_MENU = "menu"
