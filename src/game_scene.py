@@ -4,7 +4,9 @@ from pygame.math import Vector2
 from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        STATE_MENU, STATE_CLASS_SELECT, GOLD,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
-                       PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR)
+                       PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR,
+                       PLAYER_COLORS, SPAWN_OFFSETS)
+from src.core.player_slot import PlayerSlot
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader, _get_base_path
 from src.entities.player import Player
@@ -18,7 +20,7 @@ from src.ui.upgrade_menu import UpgradeMenu
 from src.utils.audio_manager import AudioManager
 
 class GameScene:
-    def __init__(self, hero: dict):
+    def __init__(self, slots: list[PlayerSlot] | None = None, hero: dict | None = None):
         # Create groups: all_sprites, player_group, enemy_group, projectile_group,
         #                 xp_orb_group, effect_group
         self.all_sprites = pygame.sprite.Group()
@@ -28,49 +30,31 @@ class GameScene:
         self.xp_orb_group = pygame.sprite.Group()
         self.effect_group = pygame.sprite.Group()
 
-        # Instantiate in this order:
-        # 1. player = Player(center_of_world, hero, (all_sprites, player_group))
+        self.slots = self._resolve_slots(slots, hero)
+
+        # Instantiate players from slot metadata. Keep a legacy player alias below
+        # until collision, camera, HUD, and wave systems are migrated in later phases.
         center_of_world = Vector2(WORLD_WIDTH // 2, WORLD_HEIGHT // 2)
-        self.player = Player(center_of_world, hero, (self.all_sprites, self.player_group))
-
-        # 2. Give player its starting weapon:
-        #    Import the correct weapon class from hero["starting_weapon"]
-        #    Instantiate it with (player, projectile_group, enemy_group)
-        #    player.add_weapon(weapon)
-        starting_weapon = hero["starting_weapon"]
-        if starting_weapon == "ArcaneBolt":
-            from src.weapons.arcane_bolt import ArcaneBolt
-            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        elif starting_weapon == "HolyNova":
-            from src.weapons.holy_nova import HolyNova
-            weapon = HolyNova(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        elif starting_weapon == "SpectralBlade":
-            from src.weapons.spectral_blade import SpectralBlade
-            weapon = SpectralBlade(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        elif starting_weapon == "FlameWhip":
-            from src.weapons.flame_whip import FlameWhip
-            weapon = FlameWhip(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        elif starting_weapon == "FrostRing":
-            from src.weapons.frost_ring import FrostRing
-            weapon = FrostRing(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        elif starting_weapon == "LightningChain":
-            from src.weapons.lightning_chain import LightningChain
-            weapon = LightningChain(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-        else:
-            # Default to ArcaneBolt if unknown
-            from src.weapons.arcane_bolt import ArcaneBolt
-            weapon = ArcaneBolt(self.player, self.projectile_group, self.enemy_group, self.effect_group)
-
-        self.player.add_weapon(weapon)
+        self.players: list[Player] = []
+        for slot in self.slots:
+            spawn_offset = Vector2(SPAWN_OFFSETS[slot.index])
+            player = Player(
+                center_of_world + spawn_offset,
+                slot.hero_data,
+                (self.all_sprites, self.player_group),
+                slot=slot,
+            )
+            player.add_weapon(self._create_starting_weapon(player, slot.hero_data))
+            self.players.append(player)
 
         # 3. camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        # 4. wave_manager = WaveManager(player, all_sprites, enemy_group, xp_orb_group, projectile_group, effect_group)
+        # Phase 5 will generalize this to the full player list.
         self.wave_manager = WaveManager(self.player, self.all_sprites, self.enemy_group, self.xp_orb_group, self.projectile_group, self.effect_group)
 
-        # 5. xp_system = XPSystem()
-        self.xp_system = XPSystem()
+        # Per-player XP state is required before multiplayer collision/camera/HUD land.
+        self.xp_systems = [XPSystem() for _ in self.players]
 
         # 6. upgrade_system = UpgradeSystem()
         self.upgrade_system = UpgradeSystem(self.projectile_group, self.enemy_group, self.effect_group)
@@ -97,6 +81,8 @@ class GameScene:
 
         # 9. upgrade_menu = None  (created when leveling up)
         self.upgrade_menu = None
+        self.active_upgrade_context: tuple[Player, XPSystem] | None = None
+        self.upgrade_queue: list[tuple[Player, XPSystem]] = []
 
         # 10. paused = False
         self.paused = False
@@ -137,6 +123,107 @@ class GameScene:
             pygame.draw.rect(tile_pattern, (30, 35, 25), (tile_size, tile_size, tile_size, tile_size))
             scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
             self.background.blit(scaled_pattern, (0, 0))
+
+    @property
+    def player(self) -> Player:
+        return self.players[0]
+
+    def _resolve_slots(
+        self,
+        slots: list[PlayerSlot] | None,
+        hero: dict | None,
+    ) -> list[PlayerSlot]:
+        if slots is not None:
+            return slots
+        if hero is None:
+            raise ValueError("GameScene requires either slots or hero")
+        return [
+            PlayerSlot(
+                index=0,
+                input_config=None,
+                hero_data=hero,
+                color=PLAYER_COLORS[0],
+            )
+        ]
+
+    def _create_starting_weapon(self, player: Player, hero_data: dict):
+        starting_weapon = hero_data["starting_weapon"]
+
+        if starting_weapon == "ArcaneBolt":
+            from src.weapons.arcane_bolt import ArcaneBolt
+            return ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "HolyNova":
+            from src.weapons.holy_nova import HolyNova
+            return HolyNova(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "SpectralBlade":
+            from src.weapons.spectral_blade import SpectralBlade
+            return SpectralBlade(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "FlameWhip":
+            from src.weapons.flame_whip import FlameWhip
+            return FlameWhip(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "FrostRing":
+            from src.weapons.frost_ring import FrostRing
+            return FrostRing(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "LightningChain":
+            from src.weapons.lightning_chain import LightningChain
+            return LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
+
+        from src.weapons.arcane_bolt import ArcaneBolt
+        return ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
+
+    def _queue_pending_levelups(self) -> None:
+        for player, xp_system in zip(self.players, self.xp_systems):
+            queued_count = sum(1 for _player, queued_xp in self.upgrade_queue if queued_xp is xp_system)
+            if (
+                self.active_upgrade_context is not None
+                and self.active_upgrade_context[1] is xp_system
+                and self.upgrade_menu is not None
+                and not self.upgrade_menu.done
+            ):
+                queued_count += 1
+
+            for _ in range(max(0, xp_system.levelup_count - queued_count)):
+                self.upgrade_queue.append((player, xp_system))
+
+    def _start_next_upgrade_menu(self) -> None:
+        if self.upgrade_menu is not None or not self.upgrade_queue:
+            return
+
+        player, xp_system = self.upgrade_queue.pop(0)
+        choices = self.upgrade_system.get_random_choices(player)
+        self.upgrade_menu = UpgradeMenu(choices, self.upgrade_system, player)
+        self.active_upgrade_context = (player, xp_system)
+
+    def _complete_upgrade_menu(self) -> None:
+        if self.upgrade_menu is None or not self.upgrade_menu.done or self.active_upgrade_context is None:
+            return
+
+        from src.entities.effects import LevelUpEffect
+
+        player, xp_system = self.active_upgrade_context
+        LevelUpEffect(player.pos, [self.effect_group])
+        xp_system.consume_levelup()
+        self.upgrade_menu = None
+        self.active_upgrade_context = None
+
+    def _build_gameover_stats(self) -> dict:
+        weapons: list[str] = []
+        for player in self.players:
+            if len(self.players) == 1:
+                weapons.extend(weapon.name for weapon in player.weapons)
+            else:
+                weapons.extend(
+                    f"P{player.slot.index + 1}: {weapon.name}"
+                    for weapon in player.weapons
+                )
+
+        return {
+            "time_str": self.wave_manager.get_elapsed_str(),
+            "time_survived": self.wave_manager.elapsed,
+            "kills": sum(player.kill_count for player in self.players),
+            "level": max(xp_system.current_level for xp_system in self.xp_systems),
+            "weapons": weapons,
+        }
 
     def _pause_button_rects(self):
         """Return (resume_rect, settings_rect, restart_rect, menu_rect) for the pause menu buttons."""
@@ -251,45 +338,27 @@ class GameScene:
         self.effect_group.update(dt)
 
         # xp_system.update(dt, player, xp_orb_group)
-        self.xp_system.update(dt, self.player, self.xp_orb_group)
+        for player, xp_system in zip(self.players, self.xp_systems):
+            xp_system.update(dt, player, self.xp_orb_group)
 
         # camera.update(player.pos, dt)
         self.camera.update(self.player.pos, dt)
 
-        # Show upgrade menu for each pending levelup
-        if self.xp_system.levelup_count > 0 and self.upgrade_menu is None:
-            choices = self.upgrade_system.get_random_choices(self.player)
-            self.upgrade_menu = UpgradeMenu(choices, self.upgrade_system, self.player)
+        self._complete_upgrade_menu()
+        self._queue_pending_levelups()
+        self._start_next_upgrade_menu()
 
         # Check win: if wave_manager.victory_flag: transition to game_over with victory=True
         if self.wave_manager.victory_flag:
             self.next_scene = "gameover"
-            self.next_scene_kwargs = {"victory": True, "stats": {
-                "time_str": self.wave_manager.get_elapsed_str(),
-                "time_survived": self.wave_manager.elapsed,
-                "kills": self.player.kill_count,
-                "level": self.xp_system.current_level,
-                "weapons": [w.name for w in self.player.weapons]
-            }}
+            self.next_scene_kwargs = {"victory": True, "stats": self._build_gameover_stats()}
             return
 
-        # Check lose: if not player.is_alive: transition to game_over with victory=False
-        if not self.player.is_alive:
+        # Game over remains "all players defeated". Phase 6 will distinguish reviveable downed states.
+        if all(not player.is_alive for player in self.players):
             self.next_scene = "gameover"
-            self.next_scene_kwargs = {"victory": False, "stats": {
-                "time_str": self.wave_manager.get_elapsed_str(),
-                "time_survived": self.wave_manager.elapsed,
-                "kills": self.player.kill_count,
-                "level": self.xp_system.current_level,
-                "weapons": [w.name for w in self.player.weapons]
-            }}
-
-        # Handle upgrade menu completion (apply already happened inside upgrade_menu)
-        if self.upgrade_menu and self.upgrade_menu.done:
-            from src.entities.effects import LevelUpEffect
-            LevelUpEffect(self.player.pos, [self.effect_group])
-            self.upgrade_menu = None
-            self.xp_system.consume_levelup()
+            self.next_scene_kwargs = {"victory": False, "stats": self._build_gameover_stats()}
+            return
 
     def draw(self, screen):
         """Draw the game scene."""
@@ -322,15 +391,16 @@ class GameScene:
             screen.blit(sprite.image, screen_pos)
 
             # Draw health bar if it's an enemy
-            if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite != self.player:
+            if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite not in self.player_group:
                 sprite.draw_health_bar(screen, self.camera.offset)
 
         # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
-        for weapon in self.player.weapons:
-            if hasattr(weapon, 'draw'):
-                weapon.draw(screen, self.camera.offset)
-            if hasattr(weapon, 'draw_effect'):
-                weapon.draw_effect(screen, self.camera.offset)
+        for player in self.players:
+            for weapon in player.weapons:
+                if hasattr(weapon, 'draw'):
+                    weapon.draw(screen, self.camera.offset)
+                if hasattr(weapon, 'draw_effect'):
+                    weapon.draw_effect(screen, self.camera.offset)
 
         # 4. Draw effects (damage numbers, sparks, explosions) on top of sprites
         for sprite in self.effect_group:
@@ -340,7 +410,7 @@ class GameScene:
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
         self.hud.draw_threat_arrows(screen, self.player, self.enemy_group, self.camera)
-        self.hud.draw(screen, self.player, self.xp_system, self.wave_manager, self.show_fps, fps)
+        self.hud.draw(screen, self.player, self.xp_systems[0], self.wave_manager, self.show_fps, fps)
 
         # 7. If upgrade_menu: upgrade_menu.draw(screen)
         if self.upgrade_menu:
