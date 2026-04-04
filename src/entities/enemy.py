@@ -6,14 +6,15 @@ from settings import WORLD_WIDTH, WORLD_HEIGHT, ENEMY_KNOCKBACK_FORCE
 from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
-    def __init__(self, pos, target, all_groups: tuple, enemy_data: dict, xp_orb_group=None, effect_group=None):
+    def __init__(self, pos, player_list, all_groups: tuple, enemy_data: dict, xp_orb_group=None, effect_group=None):
         super().__init__(pos, all_groups)
         self.all_groups = all_groups
         self.xp_orb_group = xp_orb_group
         self.effect_group = effect_group
 
-        # target = player reference
-        self.target = target
+        self.player_list = player_list
+        self._target = None
+        self.last_attacker = None
 
         # enemy_data keys: name, hp, speed, damage, xp_value, behavior ("chase" or "ranged")
         self.name = enemy_data["name"]
@@ -50,21 +51,40 @@ class Enemy(BaseEntity):
         # Set the enemy's hp to the value from enemy_data
         self.hp = enemy_data["hp"]
         self.max_hp = enemy_data["hp"]
+        self.target = self._pick_target()
+
+    @property
+    def target(self):
+        self._target = self._pick_target()
+        return self._target
+
+    @target.setter
+    def target(self, value):
+        self._target = value
+
+    def _pick_target(self):
+        alive_players = [player for player in self.player_list if player.is_alive]
+        if not alive_players:
+            return None
+        return min(alive_players, key=lambda player: (player.pos - self.pos).length_squared())
 
     def update(self, dt):
         # Apply knockback: pos += knockback_vel * dt, knockback_vel *= (1 - 8*dt) clamped to 0
         self.pos += self.knockback_vel * dt
         self.knockback_vel *= max(0, 1 - 8 * dt)
+        target = self.target
 
         # If behavior == "chase": direction toward target, move
         # If behavior == "ranged": stop at 200px from target, face target
-        if self.behavior == "chase":
-            direction = self.target.pos - self.pos
+        if target is None:
+            self.vel = Vector2(0, 0)
+        elif self.behavior == "chase":
+            direction = target.pos - self.pos
             if direction.length() > 0:
                 direction = direction.normalize()
                 self.vel = direction * self.speed
         elif self.behavior == "ranged":
-            direction = self.target.pos - self.pos
+            direction = target.pos - self.pos
             distance = direction.length()
             if distance > 0:
                 direction = direction.normalize()
@@ -83,10 +103,12 @@ class Enemy(BaseEntity):
         if self.attack_timer <= 0:
             self.attack_timer = self.attack_cooldown
 
-    def take_damage(self, amount, hit_direction=None):
+    def take_damage(self, amount, hit_direction=None, attacker=None):
         """Override to trigger on_death after the entity is killed."""
         if self._death_handled:
             return
+        if attacker is not None:
+            self.last_attacker = attacker
         super().take_damage(amount)
         if hit_direction is not None and hit_direction.length() > 0:
             self.apply_knockback(-hit_direction, ENEMY_KNOCKBACK_FORCE)
@@ -101,7 +123,9 @@ class Enemy(BaseEntity):
     def on_death(self, xp_orb_group):
         """Handle enemy death by spawning an XP orb and crediting the player."""
         AudioManager.instance().play_sfx(AudioManager.ENEMY_DEATH)
-        self.target.kill_count += 1
+        credited_player = self.last_attacker or self.target
+        if credited_player is not None:
+            credited_player.kill_count += 1
         all_sprites = self.all_groups[0]
         XPOrb(self.pos, self.xp_value, (all_sprites, xp_orb_group))
         if self.effect_group is not None:

@@ -21,8 +21,8 @@ KNIGHT_DATA = {"name":"Knight", "hp":80, "speed":110, "damage":20, "xp_value":15
 LICH_DATA = {"name":"Lich", "hp":35, "speed":90, "damage":12, "xp_value":12, "behavior":"orbit"}
 
 class WaveManager:
-    def __init__(self, player, all_sprites, enemy_group, xp_orb_group, projectile_group=None, effect_group=None):
-        self.player = player
+    def __init__(self, players, all_sprites, enemy_group, xp_orb_group, projectile_group=None, effect_group=None):
+        self.players = players
         self.all_sprites = all_sprites
         self.enemy_group = enemy_group
         self.xp_orb_group = xp_orb_group
@@ -176,21 +176,21 @@ class WaveManager:
             groups = (self.all_sprites, self.enemy_group)
             eg = self.effect_group
             if data["name"] == "Skeleton":
-                enemy = Skeleton(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = Skeleton(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Goblin":
-                enemy = DarkGoblin(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = DarkGoblin(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Wraith":
-                enemy = Wraith(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = Wraith(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Bat":
-                enemy = PlagueBat(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = PlagueBat(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Golem":
-                enemy = StoneGolem(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = StoneGolem(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Knight":
-                enemy = CursedKnight(pos, self.player, groups, self.xp_orb_group, eg)
+                enemy = CursedKnight(pos, self.players, groups, self.xp_orb_group, eg)
             elif data["name"] == "Lich":
-                enemy = LichFamiliar(pos, self.player, groups, self.projectile_group, self.xp_orb_group, eg)
+                enemy = LichFamiliar(pos, self.players, groups, self.projectile_group, self.xp_orb_group, eg)
             else:
-                enemy = Enemy(pos, self.player, groups, data, self.xp_orb_group, eg)
+                enemy = Enemy(pos, self.players, groups, data, self.xp_orb_group, eg)
 
             # If elite_mode: multiply hp and damage by 1.5
             if self.elite_mode:
@@ -198,14 +198,22 @@ class WaveManager:
                 enemy.hp = enemy.max_hp
                 enemy.damage = int(enemy.damage * 1.5)
 
+    def _alive_players(self):
+        return [player for player in self.players if player.is_alive]
+
     def _get_spawn_pos(self) -> Vector2:
-        """Get a random point just outside the visible screen, relative to the player."""
+        """Get a random point just outside the visible screen, relative to alive players."""
         # Margin beyond the screen half-extents so enemies spawn off-screen
         margin = 150
         half_w = SCREEN_WIDTH // 2 + margin
         half_h = SCREEN_HEIGHT // 2 + margin
 
-        px, py = self.player.pos
+        alive_players = self._alive_players()
+        if alive_players:
+            anchor = sum((player.pos for player in alive_players), Vector2()) / len(alive_players)
+        else:
+            anchor = Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
+        px, py = anchor
 
         edge = random.randint(0, 3)
         if edge == 0:  # Top

@@ -11,7 +11,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class CursedKnight(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
+    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Knight",
             "hp": 80,
@@ -20,7 +20,7 @@ class CursedKnight(Enemy):
             "xp_value": 15,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # Shield mechanic — faces toward player each frame
         self.shield_facing = Vector2(1, 0)
@@ -45,14 +45,14 @@ class CursedKnight(Enemy):
             return self._frames[_DIR_RIGHT] if self.vel.x > 0 else self._frames[_DIR_LEFT]
         return self._frames[_DIR_DOWN] if self.vel.y > 0 else self._frames[_DIR_UP]
 
-    def take_damage(self, amount, hit_direction=None):
+    def take_damage(self, amount, hit_direction=None, attacker=None):
         """Apply damage with frontal shield mechanic — 80% reduction when hit from the front."""
         if hit_direction is not None and hasattr(self, 'shield_facing'):
             angle = self.shield_facing.angle_to(hit_direction)
             if abs(angle) < 60:
                 amount = amount * 0.2
 
-        super().take_damage(amount)
+        super().take_damage(amount, hit_direction=hit_direction, attacker=attacker)
 
     def update(self, dt):
         # Keep shield facing toward player

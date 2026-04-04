@@ -67,11 +67,11 @@ mystic_siege/
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   └── lightning_chain.py     # Chains between enemies, jagged arc visual
 │   ├── systems/
-│   │   ├── wave_manager.py        # Enemy spawning timeline, elite mode, warnings
+│   │   ├── wave_manager.py        # Enemy spawning timeline, elite mode, multiplayer spawn anchoring
 │   │   ├── xp_system.py           # XP collection, leveling, orb pickup radius
 │   │   ├── upgrade_system.py      # Upgrade card pool, passive/weapon choices
-│   │   ├── collision.py           # All collision detection — iframes, knockback
-│   │   ├── camera.py              # Lerp follow camera, world bounds clamping
+│   │   ├── collision.py           # All collision detection — iframes, knockback, multiplayer player loops
+│   │   ├── camera.py              # Single-target follow + multi-target zoomed camera
 │   │   └── save_system.py         # JSON meta-progression in saves/progress.json
 │   ├── ui/
 │   │   ├── hud.py                 # HP bar, XP bar, timer, kill count, weapon slots
@@ -192,9 +192,10 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 - Projectiles: use `enemies_hit` set to track pierce
 - SpectralBlade: per-enemy 0.5s hit cooldown dict
 - HolyNova/FrostRing: `damage_done` set per ring instance
-- `enemy.take_damage(amount, hit_direction=None)` — all weapons and projectiles pass
+- `enemy.take_damage(amount, hit_direction=None, attacker=None)` — all weapons and projectiles pass
   `hit_direction` (Vector2 from enemy back toward the attacker) so CursedKnight's
-  frontal shield mechanic correctly reduces damage by 80% on hits from the front
+  frontal shield mechanic correctly reduces damage by 80% on hits from the front,
+  and `attacker` enables correct kill credit attribution in multiplayer
 
 ---
 
@@ -624,7 +625,7 @@ Track progress here as phases are completed:
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [ ] Phase 11a — Hero-selection slot queue (V2 Phase 3; partial: duplicate prevention and active-slot input routing are implemented, but the final 1P handoff still uses `hero` instead of always emitting `slots`)
 - [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene now accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades; legacy `hero` constructor support remains as a temporary compatibility shim)
-- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7)
+- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. HUD layout scaling and revive work remain open)
 - [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)
 
 Update the checkboxes as phases are completed.

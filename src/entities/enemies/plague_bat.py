@@ -13,7 +13,7 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class PlagueBat(Enemy):
-    def __init__(self, pos, target, all_groups: tuple, xp_orb_group=None, effect_group=None):
+    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
         enemy_data = {
             "name": "Bat",
             "hp": 15,
@@ -22,7 +22,7 @@ class PlagueBat(Enemy):
             "xp_value": 6,
             "behavior": "chase"
         }
-        super().__init__(pos, target, all_groups, enemy_data, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
 
         # split_chance = 0.4  — on death, 40% chance to spawn 2 mini bats
         self.split_chance = 0.4
@@ -59,8 +59,9 @@ class PlagueBat(Enemy):
         self._t += dt
 
         # Movement: arc pattern — add sine wave offset perpendicular to direction
-        if hasattr(self, 'target') and self.target:
-            direction = self.target.pos - self.pos
+        target = self.target
+        if target:
+            direction = target.pos - self.pos
             if direction.length() > 0:
                 direction = direction.normalize()
 
@@ -90,14 +91,14 @@ class PlagueBat(Enemy):
         super().on_death(xp_orb_group)
 
         if random.random() < self.split_chance and not self.is_mini:
-            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group, self.effect_group)
-            MiniBat(self.pos, self.target, self.all_groups, xp_orb_group, self.effect_group)
+            MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
+            MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
 
 class MiniBat(PlagueBat):
     """Mini bat spawned on PlagueBat death."""
 
-    def __init__(self, pos, target, groups, xp_orb_group=None, effect_group=None):
-        super().__init__(pos, target, groups, xp_orb_group, effect_group)
+    def __init__(self, pos, player_list, groups, xp_orb_group=None, effect_group=None):
+        super().__init__(pos, player_list, groups, xp_orb_group, effect_group)
         self.is_mini = True
 
         # Override with mini bat stats

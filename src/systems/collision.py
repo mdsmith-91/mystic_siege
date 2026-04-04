@@ -5,28 +5,31 @@ from settings import SCREEN_WIDTH, SCREEN_HEIGHT, ENEMY_MIN_SEPARATION
 IFRAME_DURATION = 0.5  # seconds of invincibility after player takes a hit
 
 class CollisionSystem:
-    def check_all(self, player, enemy_group, projectile_group, effect_group=None):
+    def check_all(self, players, enemy_group, projectile_group, effect_group=None):
         """Handle all collision detection."""
-        self.check_player_enemy_contact(player, enemy_group, effect_group)
+        self.check_player_enemy_contact(players, enemy_group, effect_group)
         self.check_projectile_enemies(projectile_group, enemy_group, effect_group)
-        self.check_enemy_projectiles_player(projectile_group, player, effect_group)
-        self.check_weapon_hits(player, enemy_group)
+        self.check_enemy_projectiles_player(projectile_group, players, effect_group)
+        self.check_weapon_hits(players, enemy_group)
         self.check_enemy_separation(enemy_group)
 
-    def check_player_enemy_contact(self, player, enemy_group, effect_group=None):
+    def check_player_enemy_contact(self, players, enemy_group, effect_group=None):
         """Check for player-enemy contact collisions."""
-        for enemy in enemy_group:
-            if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
-                player.take_damage(enemy.damage)
-                player.iframes = IFRAME_DURATION
-                if player.hero_class != "Knight":
-                    diff = player.pos - enemy.pos
-                    knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                    player.knockback_vel = knockback_dir * 300
-                if effect_group is not None:
-                    from src.entities.effects import DamageNumber
-                    DamageNumber(player.pos - Vector2(0, 30), enemy.damage,
-                                 [effect_group], is_player_damage=True)
+        for player in players:
+            if not player.is_alive:
+                continue
+            for enemy in enemy_group:
+                if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
+                    player.take_damage(enemy.damage)
+                    player.iframes = IFRAME_DURATION
+                    if player.hero_class != "Knight":
+                        diff = player.pos - enemy.pos
+                        knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        player.knockback_vel = knockback_dir * 300
+                    if effect_group is not None:
+                        from src.entities.effects import DamageNumber
+                        DamageNumber(player.pos - Vector2(0, 30), enemy.damage,
+                                     [effect_group], is_player_damage=True)
 
     def check_projectile_enemies(self, projectile_group, enemy_group, effect_group=None):
         """Check for player-projectile-enemy collisions (skips enemy projectiles)."""
@@ -37,27 +40,29 @@ class CollisionSystem:
             for enemy in enemy_list:
                 projectile.on_hit(enemy, effect_group)
 
-    def check_enemy_projectiles_player(self, projectile_group, player, effect_group=None):
+    def check_enemy_projectiles_player(self, projectile_group, players, effect_group=None):
         """Check for enemy-projectile-player collisions."""
         for projectile in projectile_group:
             if not projectile.is_enemy_projectile:
                 continue
-            if player.iframes > 0:
-                continue
-            if projectile.rect.colliderect(player.rect):
-                player.take_damage(projectile.damage)
-                player.iframes = IFRAME_DURATION
-                if player.hero_class != "Knight":
-                    diff = player.pos - projectile.pos
-                    knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                    player.knockback_vel = knockback_dir * 300
-                if effect_group is not None:
-                    from src.entities.effects import DamageNumber
-                    DamageNumber(player.pos - Vector2(0, 30), projectile.damage,
-                                 [effect_group], is_player_damage=True)
-                projectile.kill()
+            for player in players:
+                if not player.is_alive or player.iframes > 0:
+                    continue
+                if projectile.rect.colliderect(player.rect):
+                    player.take_damage(projectile.damage)
+                    player.iframes = IFRAME_DURATION
+                    if player.hero_class != "Knight":
+                        diff = player.pos - projectile.pos
+                        knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        player.knockback_vel = knockback_dir * 300
+                    if effect_group is not None:
+                        from src.entities.effects import DamageNumber
+                        DamageNumber(player.pos - Vector2(0, 30), projectile.damage,
+                                     [effect_group], is_player_damage=True)
+                    projectile.kill()
+                    break
 
-    def check_weapon_hits(self, player, enemy_group):
+    def check_weapon_hits(self, players, enemy_group):
         """Check for weapon collisions."""
         # For orbit weapons (SpectralBlade): handled internally in weapon.update()
         # For area weapons (HolyNova, FrostRing): handled internally in weapon.update()
