@@ -5,7 +5,9 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        STATE_MENU, STATE_CLASS_SELECT, GOLD,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR,
-                       PLAYER_COLORS, SPAWN_OFFSETS)
+                       PLAYER_COLORS, SPAWN_OFFSETS, STATE_GAMEOVER,
+                       REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
+                       REVIVE_IFRAME_DURATION)
 from src.core.player_slot import PlayerSlot
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader, _get_base_path
@@ -231,6 +233,51 @@ class GameScene:
             "weapons": weapons,
         }
 
+    def _trigger_gameover(self, victory: bool) -> None:
+        self.next_scene = STATE_GAMEOVER
+        self.next_scene_kwargs = {"victory": victory, "stats": self._build_gameover_stats()}
+
+    def _revive_player(self, player: Player) -> None:
+        player.hp = max(1.0, player.max_hp * REVIVE_HEALTH_FRACTION)
+        player.is_downed = False
+        player.revive_timer = 0.0
+        player.iframes = REVIVE_IFRAME_DURATION
+        player.flash_timer = 0.0
+        player.knockback_vel = Vector2(0, 0)
+        player.vel = Vector2(0, 0)
+        player._alpha = 255
+
+    def _update_revive(self, dt: float) -> None:
+        downed_players = [player for player in self.players if player.is_downed]
+        alive_players = [player for player in self.players if player.is_alive]
+
+        if not downed_players:
+            return
+
+        revive_radius_sq = REVIVE_RADIUS * REVIVE_RADIUS
+        for downed_player in downed_players:
+            rescuer = next(
+                (
+                    player for player in alive_players
+                    if (player.pos - downed_player.pos).length_squared() <= revive_radius_sq
+                ),
+                None,
+            )
+
+            if rescuer is None:
+                downed_player.revive_timer = max(0.0, downed_player.revive_timer - dt)
+                continue
+
+            downed_player.revive_timer = min(
+                REVIVE_DURATION,
+                downed_player.revive_timer + dt,
+            )
+            if downed_player.revive_timer >= REVIVE_DURATION:
+                self._revive_player(downed_player)
+
+        if downed_players and not alive_players:
+            self._trigger_gameover(victory=False)
+
     def _pause_button_rects(self):
         """Return (resume_rect, settings_rect, restart_rect, menu_rect) for the pause menu buttons."""
         cx = SCREEN_WIDTH // 2
@@ -357,17 +404,18 @@ class GameScene:
         self._complete_upgrade_menu()
         self._queue_pending_levelups()
         self._start_next_upgrade_menu()
+        self._update_revive(dt)
 
         # Check win: if wave_manager.victory_flag: transition to game_over with victory=True
         if self.wave_manager.victory_flag:
-            self.next_scene = "gameover"
-            self.next_scene_kwargs = {"victory": True, "stats": self._build_gameover_stats()}
+            self._trigger_gameover(victory=True)
             return
 
-        # Game over remains "all players defeated". Phase 6 will distinguish reviveable downed states.
+        if self.next_scene == STATE_GAMEOVER:
+            return
+
         if all(not player.is_alive for player in self.players):
-            self.next_scene = "gameover"
-            self.next_scene_kwargs = {"victory": False, "stats": self._build_gameover_stats()}
+            self._trigger_gameover(victory=False)
             return
 
     def draw(self, screen):

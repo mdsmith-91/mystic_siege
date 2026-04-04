@@ -566,10 +566,11 @@ For audit/planning tasks, prefer this output order:
 - HUD and camera changes must remain readable in 1P
 - Save/progression behavior must remain sane if a multiplayer run is introduced later
 - Pause/menu ownership should be explicit, not accidental
-- **Revive/downed requires intercepting lethal damage before `BaseEntity.kill()` runs.**
-  `BaseEntity.take_damage()` calls `self.kill()` immediately when HP hits 0. `Player.take_damage()`
-  must override this to set `is_downed = True` instead — otherwise the sprite is removed from its
-  groups before any downed state can begin. This is a prerequisite for Phase 13, not an afterthought.
+- **Revive/downed depends on `Player.take_damage()` intercepting lethal damage before `BaseEntity.kill()` runs.**
+  `BaseEntity.take_damage()` calls `self.kill()` immediately when HP hits 0. The current
+  `Player.take_damage()` override now sets `is_downed = True` for slot-backed players instead,
+  keeping the sprite in its groups so Phase 13 revive flow can operate. Treat this override as a
+  requirement whenever player death logic is touched.
 - **InputManager synthetic events carry no joystick identity (hidden menu blocker).** `_post_key()` /
   `_post_keyup()` emit plain `KEYDOWN`/`KEYUP` events with no `joystick_id` in the payload. Menu code
   cannot tell which controller fired `K_RETURN` or `K_ESCAPE`. Owned multiplayer menus (ClassSelect
@@ -625,7 +626,7 @@ Track progress here as phases are completed:
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [ ] Phase 11a — Hero-selection slot queue (V2 Phase 3; partial: duplicate prevention and active-slot input routing are implemented, but the final 1P handoff still uses `hero` instead of always emitting `slots`)
 - [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene now accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades; legacy `hero` constructor support remains as a temporary compatibility shim)
-- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. HUD layout scaling and revive work remain open)
+- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. Phase 6 revive logic is now implemented in `GameScene` with downed-state recovery and revive-triggered defeat checks, while HUD layout scaling and revive feedback/polish remain open)
 - [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)
 
 Update the checkboxes as phases are completed.
