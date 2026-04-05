@@ -25,7 +25,7 @@ class CollisionSystem:
         for player in active_players:
             for enemy in enemy_group:
                 if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
-                    player.take_damage(enemy.damage)
+                    actual_damage = player.take_damage(enemy.damage)
                     player.iframes = IFRAME_DURATION
                     if player.hero_class != "Knight":
                         diff = player.pos - enemy.pos
@@ -33,7 +33,7 @@ class CollisionSystem:
                         player.knockback_vel = knockback_dir * 300
                     if effect_group is not None:
                         from src.entities.effects import DamageNumber
-                        DamageNumber(player.pos - Vector2(0, 30), enemy.damage,
+                        DamageNumber(player.pos - Vector2(0, 30), actual_damage,
                                      [effect_group], is_player_damage=True)
 
     def check_projectile_enemies(self, projectile_group, enemy_group, effect_group=None):
@@ -59,7 +59,7 @@ class CollisionSystem:
                 continue
             for player in active_players:
                 if projectile.rect.colliderect(player.rect):
-                    player.take_damage(projectile.damage)
+                    actual_damage = player.take_damage(projectile.damage)
                     player.iframes = IFRAME_DURATION
                     if player.hero_class != "Knight":
                         diff = player.pos - projectile.pos
@@ -67,7 +67,7 @@ class CollisionSystem:
                         player.knockback_vel = knockback_dir * 300
                     if effect_group is not None:
                         from src.entities.effects import DamageNumber
-                        DamageNumber(player.pos - Vector2(0, 30), projectile.damage,
+                        DamageNumber(player.pos - Vector2(0, 30), actual_damage,
                                      [effect_group], is_player_damage=True)
                     projectile.kill()
                     break

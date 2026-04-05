@@ -247,15 +247,17 @@ class Player(BaseEntity):
             return self._frames[_DIR_RIGHT] if self.facing.x >= 0 else self._frames[_DIR_LEFT]
         return self._frames[_DIR_DOWN] if self.facing.y >= 0 else self._frames[_DIR_UP]
 
-    def take_damage(self, amount: float):
-        """Apply damage, branching to 1P death fade or multiplayer downed flow."""
+    def take_damage(self, amount: float) -> float:
+        """Apply damage and return the actual HP removed after mitigation."""
         if self.is_downed or self.dying:
-            return
+            return 0.0
 
         AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
         armor = getattr(self, 'armor', 0)
         damage = amount * (1.0 - armor / 100.0) if armor else amount
+        previous_hp = self.hp
         self.hp = max(0.0, self.hp - damage)
+        actual_damage = previous_hp - self.hp
 
         if self.supports_revive:
             if self.hp <= 0:
@@ -267,7 +269,7 @@ class Player(BaseEntity):
                 self.vel = Vector2(0, 0)
                 self._alpha = DOWNED_ALPHA
                 AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
-            return
+            return actual_damage
 
         if self.hp <= 0:
             self.dying = True
@@ -278,6 +280,8 @@ class Player(BaseEntity):
             self.vel = Vector2(0, 0)
             self._alpha = 255
             AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
+
+        return actual_damage
 
     def add_weapon(self, weapon_instance):
         """Add a weapon to the player's inventory if there's space."""

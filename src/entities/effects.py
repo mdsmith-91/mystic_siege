@@ -7,8 +7,8 @@ class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, pos, amount: float, groups, is_player_damage=False, is_crit=False):
         super().__init__(groups)
 
-        # Text: str(int(amount))
-        self.text = str(int(amount))
+        # Display nearest-integer damage instead of truncating fractional hits.
+        self.text = str(int(amount + 0.5))
 
         # Color: red for player damage, gold for crits, white for regular hits
         if is_player_damage:
