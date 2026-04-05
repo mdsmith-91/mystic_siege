@@ -2,6 +2,8 @@ import pygame
 import math
 import textwrap
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE
+from src.utils.input_manager import InputManager
+
 
 class UpgradeMenu:
     def __init__(self, choices: list[dict], upgrade_system, player):
@@ -27,6 +29,84 @@ class UpgradeMenu:
         self.font_desc = pygame.font.SysFont("serif", 14)
         self.font_symbol = pygame.font.SysFont("serif", 36)
         self.font_hint = pygame.font.SysFont("serif", 16)
+        self._controller_nav_dir = 0
+        self._controller_confirm_was_pressed = False
+
+    def _input_config(self) -> dict | None:
+        slot = getattr(self.player, "slot", None)
+        return None if slot is None else slot.input_config
+
+    def _keyboard_event_matches_owner(self, event: pygame.event.Event) -> bool:
+        cfg = self._input_config()
+        if cfg is None:
+            return event.key in {
+                pygame.K_LEFT,
+                pygame.K_RIGHT,
+                pygame.K_a,
+                pygame.K_d,
+                pygame.K_RETURN,
+                pygame.K_KP_ENTER,
+                pygame.K_1,
+                pygame.K_2,
+                pygame.K_3,
+            }
+
+        if cfg["type"] != "keyboard":
+            return False
+
+        keys = cfg["keys"]
+        return event.key in {
+            keys["left"],
+            keys["right"],
+            keys["confirm"],
+            pygame.K_1,
+            pygame.K_2,
+            pygame.K_3,
+        }
+
+    def _handle_keyboard_event(self, event: pygame.event.Event) -> None:
+        if not self._keyboard_event_matches_owner(event):
+            return
+
+        cfg = self._input_config()
+        if cfg is None or cfg["type"] != "keyboard":
+            left_keys = {pygame.K_LEFT, pygame.K_a}
+            right_keys = {pygame.K_RIGHT, pygame.K_d}
+            confirm_keys = {pygame.K_RETURN, pygame.K_KP_ENTER}
+        else:
+            keys = cfg["keys"]
+            left_keys = {keys["left"]}
+            right_keys = {keys["right"]}
+            confirm_keys = {keys["confirm"]}
+
+        if event.key in left_keys:
+            self.keyboard_active = True
+            self.hovered = max(0, self.hovered - 1)
+        elif event.key in right_keys:
+            self.keyboard_active = True
+            self.hovered = min(len(self.choices) - 1, self.hovered + 1)
+        elif event.key in confirm_keys:
+            self._apply_choice(self.hovered)
+            self.done = True
+        elif event.key == pygame.K_1:
+            self._apply_choice(0)
+            self.done = True
+        elif event.key == pygame.K_2:
+            self._apply_choice(1)
+            self.done = True
+        elif event.key == pygame.K_3:
+            self._apply_choice(2)
+            self.done = True
+
+    def _handle_controller_button(self, event: pygame.event.Event) -> None:
+        cfg = self._input_config()
+        if cfg is None or cfg["type"] != "controller":
+            return
+        if event.instance_id != cfg["joystick_id"]:
+            return
+        if event.button == 0:
+            self._apply_choice(self.hovered)
+            self.done = True
 
     def handle_events(self, events):
         """Handle user input events."""
@@ -53,24 +133,14 @@ class UpgradeMenu:
                             return
 
             elif event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_LEFT, pygame.K_a):
-                    self.keyboard_active = True
-                    self.hovered = max(0, self.hovered - 1)
-                elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                    self.keyboard_active = True
-                    self.hovered = min(len(self.choices) - 1, self.hovered + 1)
-                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                    self._apply_choice(self.hovered)
-                    self.done = True
-                elif event.key == pygame.K_1:
-                    self._apply_choice(0)
-                    self.done = True
-                elif event.key == pygame.K_2:
-                    self._apply_choice(1)
-                    self.done = True
-                elif event.key == pygame.K_3:
-                    self._apply_choice(2)
-                    self.done = True
+                self._handle_keyboard_event(event)
+                if self.done:
+                    return
+
+            elif event.type == pygame.JOYBUTTONDOWN:
+                self._handle_controller_button(event)
+                if self.done:
+                    return
 
     def _apply_choice(self, index):
         """Apply the chosen upgrade."""
@@ -79,8 +149,28 @@ class UpgradeMenu:
 
     def update(self, dt):
         """Update the upgrade menu state."""
-        # No update needed for this menu
-        pass
+        cfg = self._input_config()
+        if cfg is None or cfg["type"] != "controller":
+            return
+
+        move_x, _move_y = InputManager.instance().get_movement_for_joystick(cfg["joystick_id"])
+        if move_x <= -0.5:
+            new_dir = -1
+        elif move_x >= 0.5:
+            new_dir = 1
+        else:
+            new_dir = 0
+
+        if new_dir != self._controller_nav_dir:
+            self._controller_nav_dir = new_dir
+            if new_dir != 0:
+                self.hovered = max(0, min(len(self.choices) - 1, self.hovered + new_dir))
+
+        confirm_pressed = InputManager.instance().get_confirm_for_joystick(cfg["joystick_id"])
+        if confirm_pressed and not self._controller_confirm_was_pressed:
+            self._apply_choice(self.hovered)
+            self.done = True
+        self._controller_confirm_was_pressed = confirm_pressed
 
     def draw(self, screen):
         """Draw the upgrade menu overlay."""
@@ -91,7 +181,11 @@ class UpgradeMenu:
         #    (scale the text size slightly with sin(pygame.time.get_ticks()/300))
         pulse = (math.sin(pygame.time.get_ticks() / 300) + 1) / 2  # Value between 0 and 1
         scale = 1.0 + pulse * 0.1  # Scale from 1.0 to 1.1
-        text = "LEVEL UP!"
+        slot = getattr(self.player, "slot", None)
+        if slot is None:
+            text = "LEVEL UP!"
+        else:
+            text = f"PLAYER {slot.index + 1} LEVEL UP!"
         text_surface = self.font_title.render(text, True, GOLD)
         text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
 
@@ -180,6 +274,10 @@ class UpgradeMenu:
                 screen.blit(card_surface, (x, y))
 
         # 4. Hint text at bottom
-        hint_text = "1 / 2 / 3  or  Arrow keys / click  •  Enter to confirm"
+        cfg = self._input_config()
+        if cfg is None or cfg["type"] != "controller":
+            hint_text = "1 / 2 / 3  or  Arrow keys / click  •  Enter to confirm"
+        else:
+            hint_text = "Left stick to choose  •  A / Cross to confirm"
         hint_surface = self.font_hint.render(hint_text, True, (200, 200, 200))
         screen.blit(hint_surface, (SCREEN_WIDTH // 2 - hint_surface.get_width() // 2, SCREEN_HEIGHT - 40))
