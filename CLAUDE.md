@@ -292,6 +292,9 @@ keyboard ownership bindings are:
 - `Arrows`: `Left/Right` navigate, `Enter` confirm, `Right Shift` back
 - Solo keyboard-owned menus still accept `Enter` as a compatibility confirm path
   for the single joined slot
+- `ClassSelect` also accepts mouse hero selection / Confirm / Back clicks and `ESC`
+  as UI-level overrides in both solo and multiplayer, while keeping owned keyboard
+  and controller routing intact for normal slot input
 
 Call `InputManager.instance().scan()` once after `pygame.init()` to register
 already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
