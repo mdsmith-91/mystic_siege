@@ -1,6 +1,7 @@
 import os
 import json
 from typing import Dict, Any
+from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT
 
 DEFAULT_SAVE = {
     "total_runs": 0,
@@ -13,6 +14,7 @@ DEFAULT_SAVE = {
         "music_volume": 0.5,
         "sfx_volume": 0.8,
         "show_fps": False,
+        "controller_bindings": CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
     }
 }
 
@@ -31,12 +33,14 @@ def _merge_save_data(defaults: Dict[str, Any], loaded: Any) -> Dict[str, Any]:
         return _deep_copy(defaults)
 
     merged = _deep_copy(defaults)
-    for key, default_value in defaults.items():
-        loaded_value = loaded.get(key, default_value)
+    for key, loaded_value in loaded.items():
+        default_value = defaults.get(key)
         if isinstance(default_value, dict) and isinstance(loaded_value, dict):
             merged[key] = _merge_save_data(default_value, loaded_value)
-        else:
+        elif key in defaults:
             merged[key] = loaded_value
+        else:
+            merged[key] = _deep_copy(loaded_value)
     return merged
 
 class SaveSystem:

@@ -37,6 +37,14 @@ class ClassSelect:
             self.nav_index = initial_index
             self.selected_class = HERO_CLASSES[initial_index]
 
+    def _mouse_input_enabled(self) -> bool:
+        """Mouse hero selection is available in both solo and multiplayer."""
+        return True
+
+    def _mouse_button_input_enabled(self) -> bool:
+        """Mouse confirm/back buttons remain available in both solo and multiplayer."""
+        return True
+
     def _locked_hero_slots(self) -> dict[str, PlayerSlot]:
         locked: dict[str, PlayerSlot] = {}
         for slot in self.confirmed_slots:
@@ -109,31 +117,38 @@ class ClassSelect:
 
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "keyboard":
-            return "Use your assigned controls or click  -  ESC backs"
+            return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
 
         total_slots = len(self.slots) + len(self.confirmed_slots)
         if cfg.get("scheme") == "wasd":
             if total_slots == 1:
                 return "A/D to choose  -  Enter or click confirms  -  ESC, Left Shift, or Back click backs"
-            return "A/D to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
+            return "A/D or click to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
 
         if cfg.get("scheme") == "arrows":
-            return "Left/Right to choose  -  Enter or click confirms  -  ESC, Right Shift, or Back click backs"
+            return "Left/Right or click to choose  -  Enter or click confirms  -  ESC, Right Shift, or Back click backs"
 
-        return "Use your assigned keyboard controls or click  -  ESC backs"
+        return "Use your assigned keyboard controls or click to choose  -  Click Confirm/Back or press ESC"
 
     def _controller_hint_text(self) -> str:
         cfg = self.current_slot.input_config
         if cfg is not None and cfg["type"] == "controller":
+            input_manager = InputManager.instance()
             return (
-                f"Controller {cfg['joystick_id'] + 1}: stick or D-pad to choose"
-                f"  -  A or click confirms  -  B, ESC, or Back click backs"
+                f"Controller {cfg['joystick_id'] + 1}: stick, D-pad, or click to choose"
+                f"  -  {input_manager.describe_binding('confirm', joystick_id=cfg['joystick_id'])} or click confirms"
+                f"  -  {input_manager.describe_binding('back', joystick_id=cfg['joystick_id'])}, ESC, or Back click backs"
             )
-        return "Use your assigned controls or click  -  ESC backs"
+        return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
 
     def _keyboard_event_matches_current_slot(self, event: pygame.event.Event) -> bool:
         if not self.slot_queue_active:
             return True
+
+        # Owned multiplayer menus must not trust synthetic controller KEYDOWNs;
+        # they lose ownership semantics and can bleed into keyboard-owned slots.
+        if getattr(event, "synthetic_controller_event", False):
+            return False
 
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "keyboard":
@@ -187,22 +202,24 @@ class ClassSelect:
         total_width = len(HERO_CLASSES) * card_width + (len(HERO_CLASSES) - 1) * spacing
         start_x = (SCREEN_WIDTH - total_width) // 2
 
-        for i, hero in enumerate(HERO_CLASSES):
-            card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
-            if card_rect.collidepoint(mouse_pos):
-                self.selected_class = hero
-                self.nav_index = i
-                return
+        if self._mouse_input_enabled():
+            for i, hero in enumerate(HERO_CLASSES):
+                card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
+                if card_rect.collidepoint(mouse_pos):
+                    self.selected_class = hero
+                    self.nav_index = i
+                    return
 
-        if self.selected_class is not None:
+        if self._mouse_button_input_enabled() and self.selected_class is not None:
             confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
             if confirm_rect.collidepoint(mouse_pos):
                 self._route_to_game_or_next_slot()
                 return
 
-        back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
-        if back_rect.collidepoint(mouse_pos):
-            self._handle_back()
+        if self._mouse_button_input_enabled():
+            back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
+            if back_rect.collidepoint(mouse_pos):
+                self._handle_back()
 
     def _handle_controller_button(self, event: pygame.event.Event) -> None:
         if not self.slot_queue_active:
@@ -214,9 +231,10 @@ class ClassSelect:
         if event.instance_id != cfg["joystick_id"]:
             return
 
-        if event.button == 0:
+        input_manager = InputManager.instance()
+        if input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
             self._route_to_game_or_next_slot()
-        elif event.button == 1:
+        elif input_manager.button_matches("back", event.button, joystick_id=event.instance_id):
             self._handle_back()
 
     def _poll_active_controller_navigation(self, dt: float) -> None:
@@ -227,13 +245,9 @@ class ClassSelect:
         if cfg is None or cfg["type"] != "controller":
             return
 
-        move_x, _move_y = InputManager.instance().get_movement_for_joystick(cfg["joystick_id"])
-        if move_x <= -0.5:
-            new_dir = -1
-        elif move_x >= 0.5:
-            new_dir = 1
-        else:
-            new_dir = 0
+        new_dir, _unused_y = InputManager.instance().get_menu_navigation_for_joystick(
+            cfg["joystick_id"]
+        )
 
         if new_dir != self._controller_nav_dir:
             self._controller_nav_dir = new_dir
@@ -258,13 +272,14 @@ class ClassSelect:
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left mouse button
+                if event.button == 1 and self._mouse_button_input_enabled():  # Left mouse button
                     self._handle_mouse_click(mouse_pos)
                     if self.next_scene is not None:
                         return
 
             elif event.type == pygame.MOUSEMOTION:
-                self.keyboard_active = False
+                if self._mouse_input_enabled():
+                    self.keyboard_active = False
 
             elif event.type == pygame.KEYDOWN:
                 self._handle_keyboard_event(event)

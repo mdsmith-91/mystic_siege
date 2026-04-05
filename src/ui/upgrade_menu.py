@@ -1,7 +1,10 @@
 import pygame
 import math
 import textwrap
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE
+from settings import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE,
+    CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+)
 from src.utils.input_manager import InputManager
 
 
@@ -30,11 +33,16 @@ class UpgradeMenu:
         self.font_symbol = pygame.font.SysFont("serif", 36)
         self.font_hint = pygame.font.SysFont("serif", 16)
         self._controller_nav_dir = 0
+        self._controller_nav_timer = 0.0
         self._controller_confirm_was_pressed = False
 
     def _input_config(self) -> dict | None:
         slot = getattr(self.player, "slot", None)
         return None if slot is None else slot.input_config
+
+    def _mouse_input_enabled(self) -> bool:
+        """Keep mouse upgrade selection as a solo-only compatibility path."""
+        return not getattr(self.player, "supports_revive", False)
 
     def _solo_owned_keyboard_confirm_keys(self) -> set[int]:
         if not getattr(self.player, "supports_revive", False):
@@ -62,7 +70,10 @@ class UpgradeMenu:
     def _controller_hint_text(self) -> str:
         cfg = self._input_config()
         if cfg is not None and cfg["type"] == "controller":
-            return f"Controller {cfg['joystick_id'] + 1}: stick to choose  -  A confirms"
+            return (
+                f"Controller {cfg['joystick_id'] + 1}: stick or D-pad to choose"
+                f"  -  {InputManager.instance().describe_binding('confirm', joystick_id=cfg['joystick_id'])} confirms"
+            )
         return "Choose and confirm with the owning input device"
 
     def _keyboard_event_matches_owner(self, event: pygame.event.Event) -> bool:
@@ -130,7 +141,7 @@ class UpgradeMenu:
             return
         if event.instance_id != cfg["joystick_id"]:
             return
-        if event.button == 0:
+        if InputManager.instance().button_matches("confirm", event.button, joystick_id=event.instance_id):
             self._apply_choice(self.hovered)
             self.done = True
 
@@ -139,7 +150,7 @@ class UpgradeMenu:
         mouse_pos = pygame.mouse.get_pos()
 
         for event in events:
-            if event.type == pygame.MOUSEMOTION:
+            if event.type == pygame.MOUSEMOTION and self._mouse_input_enabled():
                 self.keyboard_active = False
                 self.hovered = -1
                 for i in range(3):
@@ -148,7 +159,7 @@ class UpgradeMenu:
                         self.hovered = i
                         break
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and self._mouse_input_enabled():
                 if event.button == 1:  # Left mouse button
                     # Check if a card was clicked
                     for i in range(3):
@@ -179,17 +190,21 @@ class UpgradeMenu:
         if cfg is None or cfg["type"] != "controller":
             return
 
-        move_x, _move_y = InputManager.instance().get_movement_for_joystick(cfg["joystick_id"])
-        if move_x <= -0.5:
-            new_dir = -1
-        elif move_x >= 0.5:
-            new_dir = 1
-        else:
-            new_dir = 0
+        new_dir, _unused_y = InputManager.instance().get_menu_navigation_for_joystick(
+            cfg["joystick_id"]
+        )
 
         if new_dir != self._controller_nav_dir:
             self._controller_nav_dir = new_dir
             if new_dir != 0:
+                self._controller_nav_timer = CONTROLLER_AXIS_REPEAT_DELAY
+                self.hovered = max(0, min(len(self.choices) - 1, self.hovered + new_dir))
+            else:
+                self._controller_nav_timer = 0.0
+        elif new_dir != 0:
+            self._controller_nav_timer -= dt
+            if self._controller_nav_timer <= 0.0:
+                self._controller_nav_timer += CONTROLLER_AXIS_REPEAT_RATE
                 self.hovered = max(0, min(len(self.choices) - 1, self.hovered + new_dir))
 
         confirm_pressed = InputManager.instance().get_confirm_for_joystick(cfg["joystick_id"])

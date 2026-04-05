@@ -7,7 +7,8 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR,
                        SPAWN_OFFSETS, STATE_GAMEOVER,
                        REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
-                       REVIVE_IFRAME_DURATION)
+                       REVIVE_IFRAME_DURATION,
+                       CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE)
 from src.core.player_slot import PlayerSlot
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader, _get_base_path
@@ -20,6 +21,7 @@ from src.systems.collision import CollisionSystem
 from src.ui.hud import HUD
 from src.ui.upgrade_menu import UpgradeMenu
 from src.utils.audio_manager import AudioManager
+from src.utils.input_manager import InputManager
 
 class GameScene:
     def __init__(self, slots: list[PlayerSlot]):
@@ -102,6 +104,8 @@ class GameScene:
         self.pause_keyboard_active = False
         self._settings_open = False
         self._settings_menu = None
+        self._pause_controller_nav_dir: dict[int, int] = {}
+        self._pause_controller_nav_timer: dict[int, float] = {}
 
         # 11. next_scene: str = None
         self.next_scene = None
@@ -325,6 +329,131 @@ class GameScene:
         elif index == 3:
             self.next_scene = STATE_MENU
 
+    def _owned_keyboard_pause_bindings(self) -> dict[int, dict[str, set[int]]]:
+        """Return per-joined-keyboard pause bindings keyed by slot index."""
+        bindings: dict[int, dict[str, set[int]]] = {}
+
+        if len(self.players) == 1 and self.player.slot is None:
+            bindings[0] = {
+                "toggle": {pygame.K_ESCAPE},
+                "up": {pygame.K_UP, pygame.K_w},
+                "down": {pygame.K_DOWN, pygame.K_s},
+                "confirm": {pygame.K_RETURN, pygame.K_KP_ENTER},
+            }
+            return bindings
+
+        for player in self.players:
+            slot = player.slot
+            if slot is None or slot.input_config is None:
+                continue
+            cfg = slot.input_config
+            if cfg.get("type") != "keyboard":
+                continue
+            keys = cfg["keys"]
+            # ESC remains a global keyboard pause toggle in-game for compatibility.
+            toggle_keys = {keys["back"], pygame.K_ESCAPE}
+            confirm_keys = {keys["confirm"]}
+            if len(self.players) == 1:
+                confirm_keys.update({pygame.K_RETURN, pygame.K_KP_ENTER})
+            bindings[slot.index] = {
+                "toggle": toggle_keys,
+                "up": {keys["up"]},
+                "down": {keys["down"]},
+                "confirm": confirm_keys,
+            }
+
+        return bindings
+
+    def _claimed_controller_ids(self) -> set[int]:
+        controller_ids: set[int] = set()
+        for player in self.players:
+            slot = player.slot
+            if slot is None or slot.input_config is None:
+                continue
+            cfg = slot.input_config
+            if cfg.get("type") == "controller":
+                controller_ids.add(cfg["joystick_id"])
+        return controller_ids
+
+    def _toggle_pause(self) -> None:
+        was_paused = self.paused
+        self.paused = not self.paused
+        if not was_paused and self.paused:
+            self.pause_selected = 0
+            self.pause_keyboard_active = False
+            self._pause_controller_nav_dir.clear()
+            self._pause_controller_nav_timer.clear()
+
+    def _handle_keyboard_pause_event(self, event: pygame.event.Event) -> bool:
+        if getattr(event, "synthetic_controller_event", False):
+            # Pause ownership for controllers is handled via JOYBUTTONDOWN so a
+            # Start press cannot also re-toggle pause through a synthetic ESC.
+            return False
+
+        if event.key == pygame.K_F3:
+            self.show_fps = not self.show_fps
+            return True
+
+        for binding in self._owned_keyboard_pause_bindings().values():
+            if event.key in binding["toggle"]:
+                self._toggle_pause()
+                return True
+            if self.paused and event.key in binding["up"]:
+                self.pause_keyboard_active = True
+                self.pause_selected = max(0, self.pause_selected - 1)
+                return True
+            if self.paused and event.key in binding["down"]:
+                self.pause_keyboard_active = True
+                self.pause_selected = min(3, self.pause_selected + 1)
+                return True
+            if self.paused and event.key in binding["confirm"]:
+                self._activate_pause_button(self.pause_selected)
+                return True
+
+        return False
+
+    def _handle_controller_pause_button(self, event: pygame.event.Event) -> bool:
+        if event.instance_id not in self._claimed_controller_ids():
+            return False
+
+        input_manager = InputManager.instance()
+        if input_manager.button_matches("start", event.button, joystick_id=event.instance_id):
+            self._toggle_pause()
+            return True
+        if self.paused and input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
+            self._activate_pause_button(self.pause_selected)
+            return True
+        return False
+
+    def _update_pause_controller_navigation(self, dt: float) -> None:
+        if not self.paused or self._settings_open:
+            return
+
+        input_manager = InputManager.instance()
+        for joystick_id in self._claimed_controller_ids():
+            _unused_x, vertical_dir = input_manager.get_menu_navigation_for_joystick(joystick_id)
+            prev_dir = self._pause_controller_nav_dir.get(joystick_id, 0)
+
+            if vertical_dir != prev_dir:
+                self._pause_controller_nav_dir[joystick_id] = vertical_dir
+                if vertical_dir != 0:
+                    self.pause_keyboard_active = True
+                    self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+                    self._pause_controller_nav_timer[joystick_id] = CONTROLLER_AXIS_REPEAT_DELAY
+                else:
+                    self._pause_controller_nav_timer.pop(joystick_id, None)
+                continue
+
+            if vertical_dir == 0:
+                continue
+
+            timer = self._pause_controller_nav_timer.get(joystick_id, 0.0) - dt
+            if timer <= 0.0:
+                timer += CONTROLLER_AXIS_REPEAT_RATE
+                self.pause_keyboard_active = True
+                self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+            self._pause_controller_nav_timer[joystick_id] = timer
+
     def handle_events(self, events):
         """Handle user input events."""
         # When settings overlay is open, delegate entirely to it
@@ -337,25 +466,18 @@ class GameScene:
                 self._settings_menu.next_scene = None
             return
 
+        if self.upgrade_menu and not self.upgrade_menu.done:
+            for event in events:
+                if event.type == pygame.QUIT:
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+                    self.show_fps = not self.show_fps
+            self.upgrade_menu.handle_events(events)
+            return
+
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    was_paused = self.paused
-                    self.paused = not self.paused
-                    if not was_paused:
-                        self.pause_selected = 0
-                        self.pause_keyboard_active = False
-                elif self.paused and event.key in (pygame.K_UP, pygame.K_w):
-                    self.pause_keyboard_active = True
-                    self.pause_selected = max(0, self.pause_selected - 1)
-                elif self.paused and event.key in (pygame.K_DOWN, pygame.K_s):
-                    self.pause_keyboard_active = True
-                    self.pause_selected = min(3, self.pause_selected + 1)
-                elif self.paused and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                    self._activate_pause_button(self.pause_selected)
-                elif event.key == pygame.K_F3:
-                    # F3: toggle show_fps
-                    self.show_fps = not self.show_fps
+                self._handle_keyboard_pause_event(event)
             elif event.type == pygame.MOUSEMOTION and self.paused:
                 self.pause_keyboard_active = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.paused:
@@ -371,6 +493,8 @@ class GameScene:
                     self.next_scene = STATE_LOBBY
                 elif menu_rect.collidepoint(event.pos):
                     self.next_scene = STATE_MENU
+            elif event.type == pygame.JOYBUTTONDOWN:
+                self._handle_controller_pause_button(event)
             elif event.type == pygame.QUIT:
                 # Do NOT call pygame.quit() here. game.py already sets running=False
                 # when it sees this event, so the main loop exits cleanly after this
@@ -378,9 +502,6 @@ class GameScene:
                 # Calling it here would deinitialize pygame mid-frame, causing hangs
                 # on Linux and swallowing crash tracebacks on all platforms.
                 return
-
-        if self.upgrade_menu and not self.upgrade_menu.done:
-            self.upgrade_menu.handle_events(events)
 
     def update(self, dt):
         """Update the game scene."""
@@ -391,6 +512,7 @@ class GameScene:
 
         # If paused or upgrade_menu is open (and not yet dismissed): return
         if self.paused:
+            self._update_pause_controller_navigation(dt)
             return
         if self.upgrade_menu and not self.upgrade_menu.done:
             self.upgrade_menu.update(dt)
