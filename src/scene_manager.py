@@ -61,6 +61,15 @@ class SceneManager:
         """Switch to a new scene, passing kwargs to scene constructor if needed."""
         self._switch_to(scene_name, **kwargs)
 
+    @staticmethod
+    def _discard_pending_synthetic_controller_keys() -> None:
+        """Prevent controller button bleed into the next scene after a transition."""
+        pending_key_events = pygame.event.get((pygame.KEYDOWN, pygame.KEYUP))
+        for event in pending_key_events:
+            if getattr(event, "synthetic_controller_event", False):
+                continue
+            pygame.event.post(event)
+
     def update(self, dt, events=None):
         """Update the current scene."""
         if self.current_scene is None:
@@ -76,12 +85,14 @@ class SceneManager:
 
         # Check for scene transition
         if hasattr(self.current_scene, 'next_scene') and self.current_scene.next_scene is not None:
+            previous_scene = self.current_scene
             next_scene = self.current_scene.next_scene
             next_scene_kwargs = getattr(self.current_scene, 'next_scene_kwargs', {})
             self._switch_to(next_scene, **next_scene_kwargs)
-            # Clear the transition flags after switching
-            self.current_scene.next_scene = None
-            self.current_scene.next_scene_kwargs = {}
+            self._discard_pending_synthetic_controller_keys()
+            # Clear the transition flags on the scene that requested the switch.
+            previous_scene.next_scene = None
+            previous_scene.next_scene_kwargs = {}
 
     def draw(self, screen):
         """Draw the current scene."""
