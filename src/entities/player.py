@@ -1,7 +1,15 @@
 import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
-from settings import PICKUP_RADIUS, WORLD_WIDTH, WORLD_HEIGHT, MAX_WEAPON_SLOTS, CRIT_CHANCE_BASE, WIZARD_SPELL_DAMAGE_BONUS
+from settings import (
+    PICKUP_RADIUS,
+    WORLD_WIDTH,
+    WORLD_HEIGHT,
+    MAX_WEAPON_SLOTS,
+    CRIT_CHANCE_BASE,
+    WIZARD_SPELL_DAMAGE_BONUS,
+    DOWNED_ALPHA,
+)
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
 from src.utils.spritesheet import Spritesheet
@@ -86,59 +94,64 @@ class Player(BaseEntity):
         self.revive_timer = 0.0
 
     def update(self, dt):
-        direction = self._read_input()
+        if self.is_downed:
+            self.vel = Vector2(0, 0)
+            self.knockback_vel = Vector2(0, 0)
+            self._alpha = DOWNED_ALPHA
+        else:
+            direction = self._read_input()
 
-        # Normalize direction if moving
-        if direction.length() > 0:
-            direction = direction.normalize()
-            # Update facing if moving
-            self.facing = direction
+            # Normalize direction if moving
+            if direction.length() > 0:
+                direction = direction.normalize()
+                # Update facing if moving
+                self.facing = direction
 
-        # pos += direction * speed * dt, plus decaying knockback
-        self.vel = direction * self.speed + self.knockback_vel
-        self.knockback_vel *= max(0.0, 1.0 - 8.0 * dt)
-        super().update(dt)
+            # pos += direction * speed * dt, plus decaying knockback
+            self.vel = direction * self.speed + self.knockback_vel
+            self.knockback_vel *= max(0.0, 1.0 - 8.0 * dt)
+            super().update(dt)
 
-        # Clamp pos to world bounds (WORLD_WIDTH, WORLD_HEIGHT from settings)
-        self.pos.x = max(0, min(WORLD_WIDTH - self.rect.width, self.pos.x))
-        self.pos.y = max(0, min(WORLD_HEIGHT - self.rect.height, self.pos.y))
+            # Clamp pos to world bounds (WORLD_WIDTH, WORLD_HEIGHT from settings)
+            self.pos.x = max(0, min(WORLD_WIDTH - self.rect.width, self.pos.x))
+            self.pos.y = max(0, min(WORLD_HEIGHT - self.rect.height, self.pos.y))
 
-        # Regen tick: heal(regen_rate * dt)
-        self.heal(self.regen_rate * dt)
+            # Regen tick: heal(regen_rate * dt)
+            self.heal(self.regen_rate * dt)
 
-        # Iframe countdown
-        prev_iframes = self.iframes
-        self.iframes = max(0, self.iframes - dt)
+            # Iframe countdown
+            prev_iframes = self.iframes
+            self.iframes = max(0, self.iframes - dt)
 
-        # Flash effect during iframes — track desired alpha, apply after frame swap
-        if self.iframes > 0:
-            self.flash_timer += dt
-            if self.flash_timer >= 0.1:
+            # Flash effect during iframes — track desired alpha, apply after frame swap
+            if self.iframes > 0:
+                self.flash_timer += dt
+                if self.flash_timer >= 0.1:
+                    self.flash_timer = 0
+                    self._alpha = 80 if self._alpha == 255 else 255
+            elif prev_iframes > 0:
+                # Iframes just expired — restore full opacity
+                self._alpha = 255
                 self.flash_timer = 0
-                self._alpha = 80 if self._alpha == 255 else 255
-        elif prev_iframes > 0:
-            # Iframes just expired — restore full opacity
-            self._alpha = 255
-            self.flash_timer = 0
 
-        # Update all weapons
-        for weapon in self.weapons:
-            weapon.update(dt)
+            # Update all weapons
+            for weapon in self.weapons:
+                weapon.update(dt)
 
-        # Handle death fade (1P legacy path only; downed path is handled in take_damage)
-        if self.hp <= 0 and not self.dying and not self.is_downed:
-            self.dying = True
-            self.death_timer = 1.0
-            self._alpha = 255
-            AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
+            # Handle death fade (1P legacy path only; downed path is handled in take_damage)
+            if self.hp <= 0 and not self.dying and not self.is_downed:
+                self.dying = True
+                self.death_timer = 1.0
+                self._alpha = 255
+                AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
 
-        if self.dying:
-            self.death_timer -= dt
-            if self.death_timer > 0:
-                self._alpha = int(255 * self.death_timer)
-            else:
-                # Death complete — kill() removes from groups; is_alive property returns False automatically
-                super().kill()
+            if self.dying:
+                self.death_timer -= dt
+                if self.death_timer > 0:
+                    self._alpha = int(255 * self.death_timer)
+                else:
+                    # Death complete — kill() removes from groups; is_alive property returns False automatically
+                    super().kill()
 
         # Select directional frame then apply current alpha
         self.image = self._frame_for_facing()
@@ -216,6 +229,9 @@ class Player(BaseEntity):
         When slot is None (legacy 1P path): delegates to BaseEntity which
         calls kill() immediately, triggering the death-fade in update().
         """
+        if self.is_downed:
+            return
+
         AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
         if self.slot is not None:
             armor = getattr(self, 'armor', 0)
@@ -223,6 +239,13 @@ class Player(BaseEntity):
             self.hp = max(0.0, self.hp - damage)
             if self.hp <= 0:
                 self.is_downed = True
+                self.revive_timer = 0.0
+                self.iframes = 0.0
+                self.flash_timer = 0.0
+                self.knockback_vel = Vector2(0, 0)
+                self.vel = Vector2(0, 0)
+                self._alpha = DOWNED_ALPHA
+                AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
         else:
             super().take_damage(amount)
 
