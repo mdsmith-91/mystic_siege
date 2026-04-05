@@ -2,10 +2,10 @@ import os
 import pygame
 from pygame.math import Vector2
 from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
-                       STATE_MENU, STATE_CLASS_SELECT, GOLD,
+                       STATE_MENU, STATE_LOBBY, GOLD,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR,
-                       PLAYER_COLORS, SPAWN_OFFSETS, STATE_GAMEOVER,
+                       SPAWN_OFFSETS, STATE_GAMEOVER,
                        REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
                        REVIVE_IFRAME_DURATION)
 from src.core.player_slot import PlayerSlot
@@ -22,7 +22,7 @@ from src.ui.upgrade_menu import UpgradeMenu
 from src.utils.audio_manager import AudioManager
 
 class GameScene:
-    def __init__(self, slots: list[PlayerSlot] | None = None, hero: dict | None = None):
+    def __init__(self, slots: list[PlayerSlot]):
         # Create groups: all_sprites, player_group, enemy_group, projectile_group,
         #                 xp_orb_group, effect_group
         self.all_sprites = pygame.sprite.Group()
@@ -32,7 +32,10 @@ class GameScene:
         self.xp_orb_group = pygame.sprite.Group()
         self.effect_group = pygame.sprite.Group()
 
-        self.slots = self._resolve_slots(slots, hero)
+        if not slots:
+            raise ValueError("GameScene requires at least one PlayerSlot")
+
+        self.slots = list(slots)
 
         # Instantiate players from slot metadata. Keep a legacy player alias below
         # until collision, camera, HUD, and wave systems are migrated in later phases.
@@ -136,24 +139,6 @@ class GameScene:
     def player(self) -> Player:
         return self.players[0]
 
-    def _resolve_slots(
-        self,
-        slots: list[PlayerSlot] | None,
-        hero: dict | None,
-    ) -> list[PlayerSlot]:
-        if slots is not None:
-            return slots
-        if hero is None:
-            raise ValueError("GameScene requires either slots or hero")
-        return [
-            PlayerSlot(
-                index=0,
-                input_config=None,
-                hero_data=hero,
-                color=PLAYER_COLORS[0],
-            )
-        ]
-
     def _create_starting_weapon(self, player: Player, hero_data: dict):
         starting_weapon = hero_data["starting_weapon"]
 
@@ -233,9 +218,28 @@ class GameScene:
             "weapons": weapons,
         }
 
+    def _build_player_results(self) -> list[dict]:
+        return [
+            {
+                "slot_index": player.slot.index,
+                "hero_name": player.hero_class,
+                "kills": player.kill_count,
+                "level": xp_system.current_level,
+                "weapons": [weapon.name for weapon in player.weapons],
+                "color": player.slot.color,
+            }
+            for player, xp_system in zip(self.players, self.xp_systems)
+        ]
+
     def _trigger_gameover(self, victory: bool) -> None:
         self.next_scene = STATE_GAMEOVER
-        self.next_scene_kwargs = {"victory": victory, "stats": self._build_gameover_stats()}
+        stats = self._build_gameover_stats()
+        player_results = self._build_player_results()
+        self.next_scene_kwargs = {
+            "victory": victory,
+            "stats": stats,
+            "player_results": player_results if len(player_results) > 1 else None,
+        }
 
     def _revive_player(self, player: Player) -> None:
         player.hp = max(1.0, player.max_hp * REVIVE_HEALTH_FRACTION)
@@ -301,7 +305,7 @@ class GameScene:
             self._settings_menu = SettingsMenu()
             self._settings_open = True
         elif index == 2:
-            self.next_scene = STATE_CLASS_SELECT
+            self.next_scene = STATE_LOBBY
         elif index == 3:
             self.next_scene = STATE_MENU
 
@@ -348,7 +352,7 @@ class GameScene:
                     self._settings_menu = SettingsMenu()
                     self._settings_open = True
                 elif restart_rect.collidepoint(event.pos):
-                    self.next_scene = STATE_CLASS_SELECT
+                    self.next_scene = STATE_LOBBY
                 elif menu_rect.collidepoint(event.pos):
                     self.next_scene = STATE_MENU
             elif event.type == pygame.QUIT:

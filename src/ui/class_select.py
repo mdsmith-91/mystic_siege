@@ -2,7 +2,7 @@ import pygame
 import textwrap
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
-    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING,
+    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, PLAYER_COLORS,
     CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
 )
 from src.core.player_slot import PlayerSlot
@@ -69,8 +69,14 @@ class ClassSelect:
             return
 
         if not self.slot_queue_active:
+            resolved_slot = PlayerSlot(
+                index=0,
+                input_config=None,
+                hero_data=self.selected_class,
+                color=PLAYER_COLORS[0],
+            )
             self.next_scene = STATE_PLAYING
-            self.next_scene_kwargs = {"hero": self.selected_class}
+            self.next_scene_kwargs = {"slots": [resolved_slot]}
             return
 
         self.current_slot.hero_data = self.selected_class
@@ -86,11 +92,7 @@ class ClassSelect:
             return
 
         self.next_scene = STATE_PLAYING
-        if len(resolved_slots) == 1:
-            # Preserve the current 1P GameScene handoff until Phase 4 lands.
-            self.next_scene_kwargs = {"hero": self.selected_class}
-        else:
-            self.next_scene_kwargs = {"slots": resolved_slots}
+        self.next_scene_kwargs = {"slots": resolved_slots}
 
     def _handle_back(self) -> None:
         self.next_scene = STATE_MENU

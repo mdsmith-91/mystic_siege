@@ -165,7 +165,7 @@ Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settin
 Current single-player runtime:
 
 ```text
-Menu → Class Select → Game → (die or 30 min) → Game Over → Menu
+Menu → Lobby → Class Select → Game → (die or 30 min) → Game Over → Menu
 ```
 
 Planned multiplayer-capable flow:
@@ -204,31 +204,22 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 Scenes communicate transitions via `.next_scene` and `.next_scene_kwargs`:
 
 ```python
-# Current single-player example:
-self.next_scene = "game"
-self.next_scene_kwargs = {"hero": selected_class_dict}
-
-# Planned multiplayer example:
+# Lobby handoff:
 self.next_scene = "class_select"
 self.next_scene_kwargs = {"slots": filled_slots}
 
-# Current transitional GameScene handoff:
-# preferred multiplayer-capable path
+# ClassSelect -> GameScene handoff:
 self.next_scene = "playing"
 self.next_scene_kwargs = {"slots": resolved_slots}
 
-# temporary 1P migration shim still accepted by GameScene
-self.next_scene = "playing"
-self.next_scene_kwargs = {"hero": selected_class_dict}
+# GameOver / replay path:
+self.next_scene = "lobby"
 
 # SceneManager checks this each frame and calls switch_to()
 ```
 
-GameScene is always re-instantiated fresh on each new run.
-
-Current migration note: `GameScene` now accepts `slots: list[PlayerSlot]` as the
-primary constructor shape and keeps a temporary `hero` kwarg shim for the legacy
-single-slot handoff until the lobby/class-select path always emits concrete slots.
+GameScene is always re-instantiated fresh on each new run and now accepts
+`slots: list[PlayerSlot]` as its only constructor shape.
 
 **Important:** `next_scene_kwargs` must stay lightweight and serialization-friendly.
 Do not put live sprite references, `pygame.Surface` objects, open file handles,
@@ -452,7 +443,7 @@ These rules apply to all multiplayer-related changes.
    the game still works in 1P:
 
    ```text
-   Current 1P: Menu → Class Select → Game → Level Up → Death/Game Over
+   Current 1P: Menu → Lobby → Class Select → Game → Level Up → Death/Game Over
    Planned multiplayer-capable path: Menu → Lobby → Class Select (queued) → Game → Level Up → Death/Game Over
    ```
 
@@ -630,9 +621,9 @@ Track progress here as phases are completed:
 
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
-- [ ] Phase 11a — Hero-selection slot queue (V2 Phase 3; partial: duplicate prevention and active-slot input routing are implemented, but the final 1P handoff still uses `hero` instead of always emitting `slots`)
-- [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene now accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades; legacy `hero` constructor support remains as a temporary compatibility shim)
+- [x] Phase 11a — Hero-selection slot queue (V2 Phase 3: duplicate prevention and active-slot input routing are implemented, and ClassSelect now always emits `slots` for gameplay handoff)
+- [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades)
 - [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. Phase 6 revive logic is now implemented in `GameScene` with downed-state recovery and revive-triggered defeat checks. Phase 7 HUD work is now partially implemented: `HUD` renders 1P unchanged, supports multiplayer slot-based player panels for 2–4 players, draws revive progress feedback in screen space, and `UpgradeMenu` now routes input only from the leveling player's device. Remaining work is runtime verification/polish of HUD spacing/readability and any further revive/HUD feedback tuning.)
-- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8)
+- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8; partial: `GameOver` now accepts optional `player_results`, replay/restart paths route back through the lobby, and the legacy `hero` GameScene handoff shim has been removed. Remaining work is runtime verification and any follow-up polish.)
 
 Update the checkboxes as phases are completed.
