@@ -55,3 +55,13 @@ that preserves the solo experience.
 2. `input_config=None` is only a temporary migration shim for the old 1P path.
 3. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
 4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
+
+## Review guidelines
+
+- Prioritize correctness, regression risk, and maintainability over style nits.
+- Preserve single-player behavior as the baseline.
+- Flag any new hard-coded P1/P2 assumptions as high-priority issues.
+- Verify multiplayer input ownership and menu device identity carefully.
+- Treat stale README or misleading project documentation as a real issue.
+- Call out unverified behavior explicitly instead of assuming it works.
+- When reviewing, report findings first with file references, then risks, then verification gaps.
