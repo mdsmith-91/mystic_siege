@@ -43,12 +43,12 @@ class GameScene:
         self.players: list[Player] = []
         for slot in self.slots:
             spawn_offset = Vector2(SPAWN_OFFSETS[slot.index])
-            runtime_slot = None if len(self.slots) == 1 else slot
             player = Player(
                 center_of_world + spawn_offset,
                 slot.hero_data,
                 (self.all_sprites, self.player_group),
-                slot=runtime_slot,
+                slot=slot,
+                supports_revive=len(self.slots) > 1,
             )
             player.add_weapon(self._create_starting_weapon(player, slot.hero_data))
             self.players.append(player)
@@ -167,6 +167,9 @@ class GameScene:
 
     def _queue_pending_levelups(self) -> None:
         for player, xp_system in zip(self.players, self.xp_systems):
+            if not player.can_collect_xp:
+                continue
+
             queued_count = sum(1 for _player, queued_xp in self.upgrade_queue if queued_xp is xp_system)
             if (
                 self.active_upgrade_context is not None
@@ -183,7 +186,17 @@ class GameScene:
         if self.upgrade_menu is not None or not self.upgrade_queue:
             return
 
-        player, xp_system = self.upgrade_queue.pop(0)
+        next_index = next(
+            (
+                index for index, (player, _xp_system) in enumerate(self.upgrade_queue)
+                if player.can_collect_xp
+            ),
+            None,
+        )
+        if next_index is None:
+            return
+
+        player, xp_system = self.upgrade_queue.pop(next_index)
         choices = self.upgrade_system.get_random_choices(player)
         self.upgrade_menu = UpgradeMenu(choices, self.upgrade_system, player)
         self.active_upgrade_context = (player, xp_system)
@@ -222,15 +235,14 @@ class GameScene:
     def _build_player_results(self) -> list[dict]:
         player_results: list[dict] = []
         for player, xp_system, slot in zip(self.players, self.xp_systems, self.slots):
-            runtime_slot = player.slot or slot
             player_results.append(
                 {
-                    "slot_index": runtime_slot.index,
+                    "slot_index": slot.index,
                     "hero_name": player.hero_class,
                     "kills": player.kill_count,
                     "level": xp_system.current_level,
                     "weapons": [weapon.name for weapon in player.weapons],
-                    "color": runtime_slot.color,
+                    "color": slot.color,
                 }
             )
         return player_results

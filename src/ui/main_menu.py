@@ -23,6 +23,25 @@ class MainMenu:
                 "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50))  # Ember colors
             })
 
+    def _spawn_particle(self, from_top: bool) -> None:
+        if from_top:
+            self.particles.append({
+                "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), -10),
+                "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 200)),
+                "size": random.randint(1, 2),
+                "alpha": random.randint(10, 100),
+                "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50)),
+            })
+            return
+
+        self.particles.append({
+            "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 10),
+            "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-50, -200)),
+            "size": random.randint(1, 2),
+            "alpha": random.randint(10, 100),
+            "color": (random.randint(0, 50), random.randint(50, 150), random.randint(200, 255)),
+        })
+
     def handle_events(self, events):
         """Handle user input events."""
         mouse_pos = pygame.mouse.get_pos()
@@ -86,23 +105,8 @@ class MainMenu:
             # Fade out (alpha decreases)
             particle["alpha"] = max(0, particle["alpha"] - 100 * dt)
 
-            # Spawn 2 new particles per frame at random x, top of screen
-            if random.random() < 0.02:  # 2% chance per frame
-                self.particles.append({
-                    "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), -10),
-                    "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 200)),
-                    "size": random.randint(1, 2),
-                    "alpha": random.randint(10, 100),
-                    "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50))  # Ember colors
-                })
-            if random.random() < 0.02:  # 2% chance per frame
-                self.particles.append({
-                    "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), 730),
-                    "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-50, -200)),
-                    "size": random.randint(1, 2),
-                    "alpha": random.randint(10, 100),
-                    "color": (random.randint(0, 50), random.randint(50, 150), random.randint(200, 255))  # Mist colors
-                })
+        self._spawn_particle(from_top=True)
+        self._spawn_particle(from_top=False)
 
         # Remove particles that are off-screen or have alpha <= 0
         self.particles = [

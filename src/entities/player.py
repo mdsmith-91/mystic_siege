@@ -23,7 +23,8 @@ _DIR_UP    = 3
 
 class Player(BaseEntity):
     def __init__(self, pos, hero_class_data: dict, groups,
-                 slot: PlayerSlot | None = None):
+                 slot: PlayerSlot | None = None,
+                 supports_revive: bool = False):
         super().__init__(pos, groups)
 
         # Store hero class name for passive checks
@@ -82,14 +83,14 @@ class Player(BaseEntity):
         # orbs_collected: int = 0  (for Friar passive)
         self.orbs_collected = 0
 
-        # Slot metadata (None = legacy 1P path; set by GameScene when slots are used)
+        # Slot metadata from the lobby path.
         self.slot = slot
+        self.supports_revive = supports_revive
 
         # Death / downed state
         self.dying = False
         self.death_timer = 0.0
-        # Downed state: player stays in sprite groups at 0 HP (enables future revive).
-        # Only active when slot is not None; 1P legacy path uses dying/death_timer instead.
+        # Downed state: player stays in sprite groups at 0 HP for revive flow.
         self.is_downed = False
         self.revive_timer = 0.0
 
@@ -98,6 +99,14 @@ class Player(BaseEntity):
             self.vel = Vector2(0, 0)
             self.knockback_vel = Vector2(0, 0)
             self._alpha = DOWNED_ALPHA
+        elif self.dying:
+            self.vel = Vector2(0, 0)
+            self.knockback_vel = Vector2(0, 0)
+            self.death_timer -= dt
+            if self.death_timer > 0:
+                self._alpha = int(255 * self.death_timer)
+            else:
+                super().kill()
         else:
             direction = self._read_input()
 
@@ -138,21 +147,6 @@ class Player(BaseEntity):
             for weapon in self.weapons:
                 weapon.update(dt)
 
-            # Handle death fade (1P legacy path only; downed path is handled in take_damage)
-            if self.hp <= 0 and not self.dying and not self.is_downed:
-                self.dying = True
-                self.death_timer = 1.0
-                self._alpha = 255
-                AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
-
-            if self.dying:
-                self.death_timer -= dt
-                if self.death_timer > 0:
-                    self._alpha = int(255 * self.death_timer)
-                else:
-                    # Death complete — kill() removes from groups; is_alive property returns False automatically
-                    super().kill()
-
         # Select directional frame then apply current alpha
         self.image = self._frame_for_facing()
         self.image.set_alpha(self._alpha)
@@ -165,12 +159,17 @@ class Player(BaseEntity):
         """Override: downed players remain in sprite groups but are not alive."""
         return self.alive() and not self.is_downed
 
+    @property
+    def can_collect_xp(self) -> bool:
+        """Whether the player can currently collect XP and queue upgrades."""
+        return self.alive() and not self.is_downed and not self.dying
+
     def _read_input(self) -> Vector2:
         """Return the raw (un-normalized) movement direction for this player.
 
         Dispatches on self.slot.input_config when a slot is assigned.
-        Falls back to the legacy global-keyboard + first-joystick behavior when
-        slot is None or input_config is None (temporary 1P migration shim).
+        Falls back to the legacy global-keyboard + first-joystick behavior only
+        when no concrete input_config is available.
         """
         cfg = self.slot.input_config if self.slot is not None else None
 
@@ -220,23 +219,16 @@ class Player(BaseEntity):
         return self._frames[_DIR_DOWN] if self.facing.y >= 0 else self._frames[_DIR_UP]
 
     def take_damage(self, amount: float):
-        """Apply damage, intercepting lethal hits when a slot is assigned.
-
-        When slot is not None: armor is applied here and lethal damage sets
-        is_downed instead of removing the sprite from groups.  This is the
-        prerequisite for the Phase 13 revive mechanic.
-
-        When slot is None (legacy 1P path): delegates to BaseEntity which
-        calls kill() immediately, triggering the death-fade in update().
-        """
-        if self.is_downed:
+        """Apply damage, branching to 1P death fade or multiplayer downed flow."""
+        if self.is_downed or self.dying:
             return
 
         AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
-        if self.slot is not None:
-            armor = getattr(self, 'armor', 0)
-            damage = amount * (1.0 - armor / 100.0) if armor else amount
-            self.hp = max(0.0, self.hp - damage)
+        armor = getattr(self, 'armor', 0)
+        damage = amount * (1.0 - armor / 100.0) if armor else amount
+        self.hp = max(0.0, self.hp - damage)
+
+        if self.supports_revive:
             if self.hp <= 0:
                 self.is_downed = True
                 self.revive_timer = 0.0
@@ -246,8 +238,17 @@ class Player(BaseEntity):
                 self.vel = Vector2(0, 0)
                 self._alpha = DOWNED_ALPHA
                 AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
-        else:
-            super().take_damage(amount)
+            return
+
+        if self.hp <= 0:
+            self.dying = True
+            self.death_timer = 1.0
+            self.iframes = 0.0
+            self.flash_timer = 0.0
+            self.knockback_vel = Vector2(0, 0)
+            self.vel = Vector2(0, 0)
+            self._alpha = 255
+            AudioManager.instance().play_sfx(AudioManager.PLAYER_DEATH)
 
     def add_weapon(self, weapon_instance):
         """Add a weapon to the player's inventory if there's space."""
