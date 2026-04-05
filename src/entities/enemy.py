@@ -2,7 +2,7 @@ import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from src.entities.xp_orb import XPOrb
-from settings import WORLD_WIDTH, WORLD_HEIGHT, ENEMY_KNOCKBACK_FORCE
+from settings import WORLD_WIDTH, WORLD_HEIGHT, ENEMY_KNOCKBACK_FORCE, ENEMY_RETARGET_INTERVAL
 from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
@@ -14,6 +14,7 @@ class Enemy(BaseEntity):
 
         self.player_list = player_list
         self._target = None
+        self._retarget_timer = 0.0
         self.last_attacker = None
 
         # enemy_data keys: name, hp, speed, damage, xp_value, behavior ("chase" or "ranged")
@@ -51,11 +52,12 @@ class Enemy(BaseEntity):
         # Set the enemy's hp to the value from enemy_data
         self.hp = enemy_data["hp"]
         self.max_hp = enemy_data["hp"]
-        self.target = self._pick_target()
+        self._refresh_target()
 
     @property
     def target(self):
-        self._target = self._pick_target()
+        if self._target is None or not self._target.is_alive:
+            self._refresh_target()
         return self._target
 
     @target.setter
@@ -68,10 +70,21 @@ class Enemy(BaseEntity):
             return None
         return min(alive_players, key=lambda player: (player.pos - self.pos).length_squared())
 
+    def _refresh_target(self) -> None:
+        """Refresh the cached target on demand instead of on every access."""
+        self._target = self._pick_target()
+        self._retarget_timer = ENEMY_RETARGET_INTERVAL
+
     def update(self, dt):
         # Apply knockback: pos += knockback_vel * dt, knockback_vel *= (1 - 8*dt) clamped to 0
         self.pos += self.knockback_vel * dt
         self.knockback_vel *= max(0, 1 - 8 * dt)
+        if self._target is None or not self._target.is_alive:
+            self._refresh_target()
+        else:
+            self._retarget_timer -= dt
+            if self._retarget_timer <= 0.0:
+                self._refresh_target()
         target = self.target
 
         # If behavior == "chase": direction toward target, move

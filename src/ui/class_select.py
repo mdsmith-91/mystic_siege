@@ -72,8 +72,12 @@ class ClassSelect:
                 self.selected_class = HERO_CLASSES[next_index]
                 return
 
+    def _can_confirm_selected_class(self) -> bool:
+        """Return whether the current selection is still valid for confirmation."""
+        return self.selected_class is not None and not self._is_hero_locked(self.selected_class)
+
     def _route_to_game_or_next_slot(self) -> None:
-        if self.selected_class is None:
+        if not self._can_confirm_selected_class():
             return
 
         if not self.slot_queue_active:
@@ -206,6 +210,8 @@ class ClassSelect:
             for i, hero in enumerate(HERO_CLASSES):
                 card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
                 if card_rect.collidepoint(mouse_pos):
+                    if self._is_hero_locked(hero):
+                        return
                     self.selected_class = hero
                     self.nav_index = i
                     return
@@ -413,7 +419,7 @@ class ClassSelect:
                 )
 
         # 4. "CONFIRM" button (only shown if a card is selected) at bottom center
-        if self.selected_class is not None:
+        if self._can_confirm_selected_class():
             confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
             confirm_color = (80, 60, 30) if confirm_rect.collidepoint(mouse_pos) else (40, 30, 20)
             pygame.draw.rect(screen, confirm_color, confirm_rect)
