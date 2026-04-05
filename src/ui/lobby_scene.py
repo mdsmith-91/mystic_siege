@@ -2,28 +2,20 @@ import pygame
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, MAX_PLAYERS, PLAYER_COLORS,
     HERO_CLASSES,
+    KEYBOARD_WASD_BINDINGS, KEYBOARD_ARROW_BINDINGS,
     STATE_CLASS_SELECT, STATE_MENU,
 )
 from src.core.player_slot import PlayerSlot
 
-# Fixed keyboard input configs — not tunable, so defined here rather than settings.py
 _WASD_CONFIG: dict = {
     "type": "keyboard",
     "scheme": "wasd",
-    "keys": {
-        "up": pygame.K_w, "down": pygame.K_s,
-        "left": pygame.K_a, "right": pygame.K_d,
-        "confirm": pygame.K_RETURN,
-    },
+    "keys": dict(KEYBOARD_WASD_BINDINGS),
 }
 _ARROW_CONFIG: dict = {
     "type": "keyboard",
     "scheme": "arrows",
-    "keys": {
-        "up": pygame.K_UP, "down": pygame.K_DOWN,
-        "left": pygame.K_LEFT, "right": pygame.K_RIGHT,
-        "confirm": pygame.K_RETURN,
-    },
+    "keys": dict(KEYBOARD_ARROW_BINDINGS),
 }
 
 _WASD_KEYS: frozenset = frozenset({pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d})
@@ -175,7 +167,7 @@ class LobbyScene:
         screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, 30))
 
         # Instructions
-        inst = "Press WASD / Arrow keys / controller button to join"
+        inst = "Press WASD, Arrow keys, or controller A to join or leave"
         inst_surf = self.font_small.render(inst, True, (150, 150, 150))
         screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 92))
 
@@ -244,7 +236,7 @@ class LobbyScene:
         filled_count = sum(1 for s in self.slots if s is not None)
         if filled_count > 0:
             start_surf = self.font_medium.render(
-                "Press ENTER or Start button to begin", True, GOLD
+                "Press Enter or controller Start to begin", True, GOLD
             )
             screen.blit(start_surf, (SCREEN_WIDTH // 2 - start_surf.get_width() // 2, 600))
 
@@ -262,5 +254,5 @@ class LobbyScene:
             screen.blit(flash_surf, (SCREEN_WIDTH // 2 - flash_surf.get_width() // 2, 648))
 
         # Back hint
-        back_surf = self.font_small.render("ESC — Back to Menu", True, (100, 100, 100))
+        back_surf = self.font_small.render("ESC or controller B - Back to Menu", True, (100, 100, 100))
         screen.blit(back_surf, (20, SCREEN_HEIGHT - 28))

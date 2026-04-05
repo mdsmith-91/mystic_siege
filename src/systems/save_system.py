@@ -1,9 +1,6 @@
 import os
 import json
-from datetime import datetime
 from typing import Dict, Any
-
-from src.utils.resource_loader import ResourceLoader
 
 DEFAULT_SAVE = {
     "total_runs": 0,
@@ -15,9 +12,32 @@ DEFAULT_SAVE = {
     "settings": {
         "music_volume": 0.5,
         "sfx_volume": 0.8,
-"show_fps": False
+        "show_fps": False,
     }
 }
+
+
+def _deep_copy(value: Any) -> Any:
+    return json.loads(json.dumps(value))
+
+
+def _deep_copy_default_save() -> Dict[str, Any]:
+    return _deep_copy(DEFAULT_SAVE)
+
+
+def _merge_save_data(defaults: Dict[str, Any], loaded: Any) -> Dict[str, Any]:
+    """Merge loaded save data onto defaults without dropping new fields."""
+    if not isinstance(loaded, dict):
+        return _deep_copy(defaults)
+
+    merged = _deep_copy(defaults)
+    for key, default_value in defaults.items():
+        loaded_value = loaded.get(key, default_value)
+        if isinstance(default_value, dict) and isinstance(loaded_value, dict):
+            merged[key] = _merge_save_data(default_value, loaded_value)
+        else:
+            merged[key] = loaded_value
+    return merged
 
 class SaveSystem:
     def __init__(self):
@@ -28,10 +48,11 @@ class SaveSystem:
         """Load save data from file or return default if not found"""
         try:
             with open(self.save_path, 'r') as f:
-                return json.load(f)
+                loaded_data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            # Return a copy of the default save if file doesn't exist or is invalid
-            return json.loads(json.dumps(DEFAULT_SAVE))
+            loaded_data = {}
+
+        return _merge_save_data(DEFAULT_SAVE, loaded_data)
 
     def save(self, data: Dict[str, Any]) -> None:
         """Write data to save file, creating directory if needed"""
@@ -63,14 +84,18 @@ class SaveSystem:
 
     def reset(self) -> None:
         """Reset save data to default"""
-        self.data = json.loads(json.dumps(DEFAULT_SAVE))
+        self.data = _deep_copy_default_save()
         self.save(self.data)
 
     def get_setting(self, key: str) -> Any:
         """Get a setting value"""
-        return self.data["settings"][key]
+        settings = self.data.get("settings", {})
+        if key in settings:
+            return settings[key]
+        return DEFAULT_SAVE["settings"][key]
 
     def set_setting(self, key: str, value: Any) -> None:
         """Set a setting value and save immediately"""
+        self.data.setdefault("settings", {})
         self.data["settings"][key] = value
         self.save(self.data)

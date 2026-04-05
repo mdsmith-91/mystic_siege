@@ -1,4 +1,6 @@
-# Mystic Siege — Game Constants
+import pygame
+
+# Mystic Siege - Game Constants
 # All values defined here, never hardcode anywhere else
 
 # SCREEN
@@ -110,6 +112,24 @@ HUD_PANEL_TUPLES = {
 CONTROLLER_DEADZONE = 0.2
 CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
+
+# KEYBOARD INPUT SCHEMES
+KEYBOARD_WASD_BINDINGS = {
+    "up": pygame.K_w,
+    "down": pygame.K_s,
+    "left": pygame.K_a,
+    "right": pygame.K_d,
+    "confirm": pygame.K_SPACE,
+    "back": pygame.K_LSHIFT,
+}
+KEYBOARD_ARROW_BINDINGS = {
+    "up": pygame.K_UP,
+    "down": pygame.K_DOWN,
+    "left": pygame.K_LEFT,
+    "right": pygame.K_RIGHT,
+    "confirm": pygame.K_RETURN,
+    "back": pygame.K_RSHIFT,
+}
 
 # MOUSE CURSOR — hide after this many seconds of no movement
 MOUSE_HIDE_DELAY = 2.0

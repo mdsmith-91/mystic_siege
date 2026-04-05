@@ -36,6 +36,35 @@ class UpgradeMenu:
         slot = getattr(self.player, "slot", None)
         return None if slot is None else slot.input_config
 
+    def _solo_owned_keyboard_confirm_keys(self) -> set[int]:
+        if not getattr(self.player, "supports_revive", False):
+            return {pygame.K_RETURN, pygame.K_KP_ENTER}
+        return set()
+
+    def _keyboard_hint_text(self) -> str:
+        cfg = self._input_config()
+        if cfg is None:
+            return "1 / 2 / 3, Arrow keys, A/D, or click  -  Enter confirms"
+
+        if cfg["type"] != "keyboard":
+            return "Use the owning input device to choose and confirm"
+
+        if cfg.get("scheme") == "wasd":
+            if not getattr(self.player, "supports_revive", False):
+                return "A/D to choose  -  Enter confirms"
+            return "A/D to choose  -  Space confirms"
+
+        if cfg.get("scheme") == "arrows":
+            return "Left/Right to choose  -  Enter confirms"
+
+        return "Use your assigned keyboard controls to choose and confirm"
+
+    def _controller_hint_text(self) -> str:
+        cfg = self._input_config()
+        if cfg is not None and cfg["type"] == "controller":
+            return f"Controller {cfg['joystick_id'] + 1}: stick to choose  -  A confirms"
+        return "Choose and confirm with the owning input device"
+
     def _keyboard_event_matches_owner(self, event: pygame.event.Event) -> bool:
         cfg = self._input_config()
         if cfg is None:
@@ -59,7 +88,7 @@ class UpgradeMenu:
             keys["left"],
             keys["right"],
             keys["confirm"],
-        }
+        } | self._solo_owned_keyboard_confirm_keys()
 
     def _handle_keyboard_event(self, event: pygame.event.Event) -> None:
         if not self._keyboard_event_matches_owner(event):
@@ -74,7 +103,7 @@ class UpgradeMenu:
             keys = cfg["keys"]
             left_keys = {keys["left"]}
             right_keys = {keys["right"]}
-            confirm_keys = {keys["confirm"]}
+            confirm_keys = {keys["confirm"]} | self._solo_owned_keyboard_confirm_keys()
 
         if event.key in left_keys:
             self.keyboard_active = True
@@ -272,9 +301,13 @@ class UpgradeMenu:
 
         # 4. Hint text at bottom
         cfg = self._input_config()
-        if cfg is None or cfg["type"] != "controller":
-            hint_text = "1 / 2 / 3  or  Arrow keys / click  •  Enter to confirm"
+        if cfg is None:
+            hint_text = self._keyboard_hint_text()
+        elif cfg["type"] == "keyboard":
+            hint_text = self._keyboard_hint_text()
+        elif cfg["type"] == "controller":
+            hint_text = self._controller_hint_text()
         else:
-            hint_text = "Left stick to choose  •  A / Cross to confirm"
+            hint_text = "Choose and confirm with the owning input device"
         hint_surface = self.font_hint.render(hint_text, True, (200, 200, 200))
         screen.blit(hint_surface, (SCREEN_WIDTH // 2 - hint_surface.get_width() // 2, SCREEN_HEIGHT - 40))

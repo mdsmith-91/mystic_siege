@@ -10,13 +10,18 @@ class XPSystem:
 
     def update(self, dt, player, xp_orb_group):
         """Handle XP collection and orb pickup."""
+        if not getattr(player, "can_collect_xp", player.is_alive):
+            return
+
+        pickup_radius_sq = player.pickup_radius * player.pickup_radius
+
         # For each orb in xp_orb_group:
         for orb in xp_orb_group:
-            # dist = distance from player.pos to orb.rect.center
-            dist = (player.pos - orb.rect.center).length()
+            # dist_sq = squared distance from player.pos to orb.rect.center
+            dist_sq = (player.pos - orb.rect.center).length_squared()
 
-            # if dist <= player.pickup_radius and not orb.collected:
-            if dist <= player.pickup_radius and not orb.collected:
+            # if dist_sq <= pickup_radius_sq and not orb.collected:
+            if dist_sq <= pickup_radius_sq and not orb.collected:
                 self.collect_orb(orb, player)
 
     def collect_orb(self, orb, player):

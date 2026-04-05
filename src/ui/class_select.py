@@ -97,6 +97,37 @@ class ClassSelect:
     def _handle_back(self) -> None:
         self.next_scene = STATE_MENU if not self.slot_queue_active else STATE_LOBBY
 
+    def _solo_owned_keyboard_confirm_keys(self) -> set[int]:
+        total_slots = len(self.slots) + len(self.confirmed_slots)
+        if total_slots == 1:
+            return {pygame.K_RETURN, pygame.K_KP_ENTER}
+        return set()
+
+    def _keyboard_hint_text(self) -> str:
+        if not self.slot_queue_active:
+            return "Left/Right or A/D to choose  -  Enter confirms  -  ESC backs"
+
+        cfg = self.current_slot.input_config
+        if cfg is None or cfg["type"] != "keyboard":
+            return "Use your assigned keyboard controls to choose"
+
+        total_slots = len(self.slots) + len(self.confirmed_slots)
+        if cfg.get("scheme") == "wasd":
+            if total_slots == 1:
+                return "A/D to choose  -  Enter confirms  -  Left Shift backs"
+            return "A/D to choose  -  Space confirms  -  Left Shift backs"
+
+        if cfg.get("scheme") == "arrows":
+            return "Left/Right to choose  -  Enter confirms  -  Right Shift backs"
+
+        return "Use your assigned keyboard controls to choose"
+
+    def _controller_hint_text(self) -> str:
+        cfg = self.current_slot.input_config
+        if cfg is not None and cfg["type"] == "controller":
+            return f"Controller {cfg['joystick_id'] + 1}: stick or D-pad to choose  -  A confirms  -  B backs"
+        return "Use your assigned controls to choose"
+
     def _keyboard_event_matches_current_slot(self, event: pygame.event.Event) -> bool:
         if not self.slot_queue_active:
             return True
@@ -109,8 +140,8 @@ class ClassSelect:
             keys["left"],
             keys["right"],
             keys["confirm"],
-            pygame.K_ESCAPE,
-        }
+            keys["back"],
+        } | self._solo_owned_keyboard_confirm_keys()
 
     def _handle_keyboard_event(self, event: pygame.event.Event) -> None:
         if not self._keyboard_event_matches_current_slot(event):
@@ -133,15 +164,16 @@ class ClassSelect:
 
         cfg = self.current_slot.input_config
         keys = cfg["keys"]
+        confirm_keys = {keys["confirm"]} | self._solo_owned_keyboard_confirm_keys()
         if event.key == keys["left"]:
             self.keyboard_active = True
             self._move_selection(-1)
         elif event.key == keys["right"]:
             self.keyboard_active = True
             self._move_selection(1)
-        elif event.key == keys["confirm"]:
+        elif event.key in confirm_keys:
             self._route_to_game_or_next_slot()
-        elif event.key == pygame.K_ESCAPE:
+        elif event.key == keys["back"]:
             self._handle_back()
 
     def _handle_mouse_click(self, mouse_pos: tuple[int, int]) -> None:
@@ -385,9 +417,9 @@ class ClassSelect:
         if self.slot_queue_active:
             cfg = self.current_slot.input_config
             if cfg is not None and cfg["type"] == "keyboard":
-                prompt = "Use your assigned keyboard controls to choose"
+                prompt = self._keyboard_hint_text()
             elif cfg is not None and cfg["type"] == "controller":
-                prompt = f"Controller {cfg['joystick_id'] + 1} is selecting"
+                prompt = self._controller_hint_text()
             else:
                 prompt = "Use your assigned controls to choose"
             prompt_surface = self.font_small.render(prompt, True, (180, 180, 180))

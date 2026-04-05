@@ -285,7 +285,13 @@ identity.
 Current migration note: owned multiplayer menus now bypass that limitation on a
 case-by-case basis. `ClassSelect` and `UpgradeMenu` filter keyboard input to the
 active slot's bound keys and use per-joystick polling / `JOYBUTTONDOWN` for the
-active controller instead of trusting global synthetic confirm events.
+active controller instead of trusting global synthetic confirm events. The current
+keyboard ownership bindings are:
+
+- `WASD`: `A/D` navigate, `Space` confirm, `Left Shift` back
+- `Arrows`: `Left/Right` navigate, `Enter` confirm, `Right Shift` back
+- Solo keyboard-owned menus still accept `Enter` as a compatibility confirm path
+  for the single joined slot
 
 Call `InputManager.instance().scan()` once after `pygame.init()` to register
 already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
@@ -477,7 +483,9 @@ These rules apply to all multiplayer-related changes.
    of saved data, preserve backward compatibility where practical.
 
 2. **Prefer additive save changes.** Add new fields with safe defaults rather than renaming
-   or removing old fields immediately.
+   or removing old fields immediately. The current `SaveSystem.load()` behavior deep-merges
+   loaded JSON onto `DEFAULT_SAVE`, including nested `settings`, so older saves missing
+   newer fields continue to load.
 
 3. **If a save-data migration is required, state it explicitly** and keep the migration logic simple.
 
@@ -571,8 +579,9 @@ For audit/planning tasks, prefer this output order:
 - Pause/menu ownership should be explicit, not accidental
 - **Revive/downed depends on `Player.take_damage()` intercepting lethal damage before `BaseEntity.kill()` runs.**
   `BaseEntity.take_damage()` calls `self.kill()` immediately when HP hits 0. The current
-  `Player.take_damage()` override now sets `is_downed = True` for slot-backed players instead,
-  keeping the sprite in its groups so Phase 13 revive flow can operate. Treat this override as a
+  `Player.take_damage()` override now branches by runtime mode: multiplayer players use
+  the downed/revive path, while solo players enter the legacy dying/fade flow without
+  delegating lethal damage to `BaseEntity.take_damage()`. Treat this override as a
   requirement whenever player death logic is touched.
 - **InputManager synthetic events carry no joystick identity (hidden menu blocker).** `_post_key()` /
   `_post_keyup()` emit plain `KEYDOWN`/`KEYUP` events with no `joystick_id` in the payload. Menu code
@@ -581,9 +590,8 @@ For audit/planning tasks, prefer this output order:
   or (b) bypassing synthetic events for owned menus and polling the assigned device directly. The
   current implementation uses option (b) for `ClassSelect` and `UpgradeMenu`.
 - **SceneManager caches ClassSelect — slot-queue routing requires a fresh instance per pass.**
-  The current `SceneManager` instantiates `STATE_CLASS_SELECT` once and reuses it. A slot-queue flow
-  (ClassSelect visited N times, once per player) will silently malfunction until `STATE_CLASS_SELECT`
-  is in the always-create-fresh set. Address this in Phase 11 before the queue routing is wired.
+  `STATE_CLASS_SELECT` is now in the always-create-fresh set, which is required for the slot-queue flow
+  (ClassSelect visited N times, once per player). Keep it that way unless the scene is redesigned.
 
 ---
 
