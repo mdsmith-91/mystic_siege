@@ -539,6 +539,15 @@ These rules apply to all multiplayer-related changes.
 5. **Be careful with camera, collision, and HUD changes.** These are likely to become more
    expensive first as multiplayer is added.
 
+6. **Prefer one-pass resolution for shared gameplay systems.** If a mechanic evaluates the same
+   shared world state for multiple players each frame (for example XP orbs, shared target queries,
+   or other pickup ownership decisions), prefer a single deterministic pass at the system or scene
+   level over repeated nested per-player scans.
+
+7. **Cache stable UI render results and prefer cheaper transforms in gameplay rendering.** Reuse
+   repeated HUD text surfaces where practical, and avoid expensive per-frame scaling/filtering in
+   the world draw path unless the visual quality difference is important enough to justify the cost.
+
 ---
 
 ## Temporary Debug Code

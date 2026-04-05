@@ -12,24 +12,55 @@ class XPSystem:
         slot = getattr(player, "slot", None)
         return slot.index if slot is not None else 0
 
-    def _eligible_collector_for_orb(self, orb, players):
-        """Choose a deterministic orb collector independent of update order."""
-        eligible_collectors: list[tuple[float, int, object]] = []
-        for player in players:
-            if not getattr(player, "can_collect_xp", player.is_alive):
-                continue
-            pickup_radius_sq = player.pickup_radius * player.pickup_radius
-            dist_sq = (player.pos - orb.rect.center).length_squared()
-            if dist_sq <= pickup_radius_sq:
-                eligible_collectors.append((dist_sq, self._slot_order(player), player))
+    @staticmethod
+    def _can_collect(player) -> bool:
+        return getattr(player, "can_collect_xp", player.is_alive)
 
-        if not eligible_collectors:
-            return None
-        return min(eligible_collectors, key=lambda item: (item[0], item[1]))[2]
+    @classmethod
+    def update_all(cls, players, xp_systems, xp_orb_group) -> None:
+        """Resolve orb collection in one pass to avoid repeated player-orb scans."""
+        collector_entries = [
+            (player, xp_system)
+            for player, xp_system in zip(players, xp_systems)
+            if cls._can_collect(player)
+        ]
+        if not collector_entries:
+            return
+
+        for orb in xp_orb_group:
+            if orb.collected:
+                continue
+
+            best_player = None
+            best_xp_system = None
+            best_dist_sq = 0.0
+            best_slot_order = 0
+            orb_center = orb.rect.center
+
+            for player, xp_system in collector_entries:
+                diff = player.pos - orb_center
+                dist_sq = diff.length_squared()
+                pickup_radius_sq = player.pickup_radius * player.pickup_radius
+                if dist_sq > pickup_radius_sq:
+                    continue
+
+                slot_order = xp_system._slot_order(player)
+                if (
+                    best_player is None
+                    or dist_sq < best_dist_sq
+                    or (dist_sq == best_dist_sq and slot_order < best_slot_order)
+                ):
+                    best_player = player
+                    best_xp_system = xp_system
+                    best_dist_sq = dist_sq
+                    best_slot_order = slot_order
+
+            if best_player is not None and best_xp_system is not None:
+                best_xp_system.collect_orb(orb, best_player)
 
     def update(self, dt, player, xp_orb_group, players=None):
         """Handle XP collection and orb pickup."""
-        if not getattr(player, "can_collect_xp", player.is_alive):
+        if not self._can_collect(player):
             return
 
         players = players or [player]
@@ -40,12 +71,32 @@ class XPSystem:
             if orb.collected:
                 continue
 
-            chosen_collector = self._eligible_collector_for_orb(orb, players)
+            # dist_sq = squared distance from player.pos to orb.rect.center
+            orb_center = orb.rect.center
+            dist_sq = (player.pos - orb_center).length_squared()
+
+            chosen_collector = None
+            chosen_dist_sq = 0.0
+            chosen_slot_order = 0
+            for candidate in players:
+                if not self._can_collect(candidate):
+                    continue
+                candidate_dist_sq = (candidate.pos - orb_center).length_squared()
+                candidate_radius_sq = candidate.pickup_radius * candidate.pickup_radius
+                if candidate_dist_sq > candidate_radius_sq:
+                    continue
+                slot_order = self._slot_order(candidate)
+                if (
+                    chosen_collector is None
+                    or candidate_dist_sq < chosen_dist_sq
+                    or (candidate_dist_sq == chosen_dist_sq and slot_order < chosen_slot_order)
+                ):
+                    chosen_collector = candidate
+                    chosen_dist_sq = candidate_dist_sq
+                    chosen_slot_order = slot_order
+
             if chosen_collector is not player:
                 continue
-
-            # dist_sq = squared distance from player.pos to orb.rect.center
-            dist_sq = (player.pos - orb.rect.center).length_squared()
 
             # if dist_sq <= pickup_radius_sq and not orb.collected:
             if dist_sq <= pickup_radius_sq:

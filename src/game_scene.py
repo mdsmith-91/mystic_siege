@@ -1,4 +1,5 @@
 import os
+from itertools import chain
 import pygame
 from pygame.math import Vector2
 from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
@@ -553,8 +554,7 @@ class GameScene:
         self.effect_group.update(dt)
 
         # xp_system.update(dt, player, xp_orb_group)
-        for player, xp_system in zip(self.players, self.xp_systems):
-            xp_system.update(dt, player, self.xp_orb_group, self.players)
+        XPSystem.update_all(self.players, self.xp_systems, self.xp_orb_group)
 
         camera_targets = [player.pos for player in self.players if player.is_alive]
         self.camera.update_multi(camera_targets, dt)
@@ -589,8 +589,8 @@ class GameScene:
         #    sprite.draw_health_bar(screen, camera.offset) if enemy
         # Sort sprites by y-position for proper drawing order (projectiles are not in all_sprites)
         sorted_sprites = sorted(
-            list(self.all_sprites) + list(self.projectile_group),
-            key=lambda s: s.rect.bottom,
+            chain(self.all_sprites, self.projectile_group),
+            key=lambda sprite: sprite.rect.bottom,
         )
 
         for sprite in sorted_sprites:
@@ -621,7 +621,7 @@ class GameScene:
             screen.blit(world_surface, (0, 0))
         else:
             scaled_world = self._get_cached_scaled_surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            pygame.transform.smoothscale(world_surface, (SCREEN_WIDTH, SCREEN_HEIGHT), scaled_world)
+            pygame.transform.scale(world_surface, (SCREEN_WIDTH, SCREEN_HEIGHT), scaled_world)
             screen.blit(scaled_world, (0, 0))
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)

@@ -62,11 +62,27 @@ class Camera:
             self.update(positions[0], dt)
             return
 
-        centroid = sum(positions, Vector2()) / len(positions)
-        xs = [pos.x for pos in positions]
-        ys = [pos.y for pos in positions]
-        bbox_w = max(xs) - min(xs) + CAMERA_PLAYER_MARGIN
-        bbox_h = max(ys) - min(ys) + CAMERA_PLAYER_MARGIN
+        min_x = max_x = positions[0].x
+        min_y = max_y = positions[0].y
+        sum_x = 0.0
+        sum_y = 0.0
+        for pos in positions:
+            x = pos.x
+            y = pos.y
+            sum_x += x
+            sum_y += y
+            if x < min_x:
+                min_x = x
+            elif x > max_x:
+                max_x = x
+            if y < min_y:
+                min_y = y
+            elif y > max_y:
+                max_y = y
+
+        centroid = Vector2(sum_x / len(positions), sum_y / len(positions))
+        bbox_w = max_x - min_x + CAMERA_PLAYER_MARGIN
+        bbox_h = max_y - min_y + CAMERA_PLAYER_MARGIN
 
         zoom_x = self.screen_w / max(1.0, bbox_w)
         zoom_y = self.screen_h / max(1.0, bbox_h)

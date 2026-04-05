@@ -72,12 +72,15 @@ class CollisionSystem:
     def check_enemy_separation(self, enemy_group):
         """Push overlapping enemies apart so they don't stack on each other."""
         enemies = enemy_group.sprites()
+        min_separation_sq = ENEMY_MIN_SEPARATION * ENEMY_MIN_SEPARATION
         for i, e1 in enumerate(enemies):
             for e2 in enemies[i + 1:]:
                 diff = e1.pos - e2.pos
-                dist = diff.length()
-                if 0 < dist < ENEMY_MIN_SEPARATION:
-                    push = diff.normalize() * (ENEMY_MIN_SEPARATION - dist) * 0.5
+                dist_sq = diff.length_squared()
+                if 0 < dist_sq < min_separation_sq:
+                    dist = dist_sq ** 0.5
+                    push_scale = ((ENEMY_MIN_SEPARATION - dist) * 0.5) / dist
+                    push = diff * push_scale
                     e1.pos += push
                     e2.pos -= push
                     e1.rect.center = (int(e1.pos.x), int(e1.pos.y))
