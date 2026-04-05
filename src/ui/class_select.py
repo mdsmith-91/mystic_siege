@@ -145,6 +145,11 @@ class ClassSelect:
         if not self.slot_queue_active:
             return True
 
+        # Owned multiplayer menus must not trust synthetic controller KEYDOWNs;
+        # they lose ownership semantics and can bleed into keyboard-owned slots.
+        if getattr(event, "synthetic_controller_event", False):
+            return False
+
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "keyboard":
             return False

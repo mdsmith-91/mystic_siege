@@ -385,6 +385,11 @@ class GameScene:
             self._pause_controller_nav_timer.clear()
 
     def _handle_keyboard_pause_event(self, event: pygame.event.Event) -> bool:
+        if getattr(event, "synthetic_controller_event", False):
+            # Pause ownership for controllers is handled via JOYBUTTONDOWN so a
+            # Start press cannot also re-toggle pause through a synthetic ESC.
+            return False
+
         if event.key == pygame.K_F3:
             self.show_fps = not self.show_fps
             return True
