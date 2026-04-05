@@ -8,7 +8,7 @@ from settings import (
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
-    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE,
+    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE, HUD_PANEL_WEAPON_SLOT_WIDTH,
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_PANEL_TUPLES,
 )
@@ -27,64 +27,113 @@ class HUD:
         self.font_20 = pygame.font.SysFont("serif", 20)
         self.font_48 = pygame.font.SysFont("serif", 48)
 
-    def draw_threat_arrows(self, screen, enemy_group, camera):
-        """Draw arrows at screen edges pointing toward offscreen enemies."""
-        view_rect = camera.get_view_rect()
+    def _build_edge_arrow(self, view_rect: pygame.Rect, screen_pos: pygame.Vector2):
         screen_left = view_rect.left
         screen_right = view_rect.right
         screen_top = view_rect.top
         screen_bottom = view_rect.bottom
-
         # Sliding-axis clamps — keep arrow body inside safe zones on each edge
         clamp_x_min = HUD_SAFE_LEFT   + _ARROW_TIP + _ARROW_HALF
         clamp_x_max = SCREEN_WIDTH  - HUD_SAFE_RIGHT  - _ARROW_TIP - _ARROW_HALF
         clamp_y_min = HUD_SAFE_TOP    + _ARROW_TIP + _ARROW_HALF
         clamp_y_max = SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_HALF
+        cx = screen_pos.x
+        cy = screen_pos.y
+
+        offscreen_left = cx < 0
+        offscreen_right = cx > SCREEN_WIDTH
+        offscreen_top = cy < 0
+        offscreen_bottom = cy > SCREEN_HEIGHT
+
+        if not (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
+            return None, None
+
+        if offscreen_left:
+            ay = max(clamp_y_min, min(clamp_y_max, cy))
+            tip = (HUD_SAFE_LEFT + _ARROW_TIP, ay)
+            poly = [
+                tip,
+                (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay - _ARROW_HALF),
+                (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay + _ARROW_HALF),
+            ]
+        elif offscreen_right:
+            ay = max(clamp_y_min, min(clamp_y_max, cy))
+            tip = (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP, ay)
+            poly = [
+                tip,
+                (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay - _ARROW_HALF),
+                (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay + _ARROW_HALF),
+            ]
+        elif offscreen_top:
+            ax = max(clamp_x_min, min(clamp_x_max, cx))
+            tip = (ax, HUD_SAFE_TOP + _ARROW_TIP)
+            poly = [
+                tip,
+                (ax - _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH),
+                (ax + _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH),
+            ]
+        else:
+            ax = max(clamp_x_min, min(clamp_x_max, cx))
+            tip = (ax, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP)
+            poly = [
+                tip,
+                (ax - _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH),
+                (ax + _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH),
+            ]
+
+        return poly, tip
+
+    def draw_threat_arrows(self, screen, enemy_group, camera, players=None):
+        """Draw arrows at screen edges pointing toward offscreen enemies and downed teammates."""
+        view_rect = camera.get_view_rect()
 
         arrows_drawn = 0
         for enemy in enemy_group:
             if arrows_drawn >= 8:
                 break
-
-            offscreen_left = enemy.rect.right < screen_left
-            offscreen_right = enemy.rect.left > screen_right
-            offscreen_top = enemy.rect.bottom < screen_top
-            offscreen_bottom = enemy.rect.top > screen_bottom
-
-            if not (offscreen_left or offscreen_right or offscreen_top or offscreen_bottom):
+            if (
+                enemy.rect.right >= view_rect.left
+                and enemy.rect.left <= view_rect.right
+                and enemy.rect.bottom >= view_rect.top
+                and enemy.rect.top <= view_rect.bottom
+            ):
                 continue
 
-            screen_pos = camera.world_to_screen(enemy.pos)
-            cx = screen_pos.x
-            cy = screen_pos.y
-
-            if offscreen_left:
-                # Arrow on left edge, tip points left
-                ay = max(clamp_y_min, min(clamp_y_max, cy))
-                tip = (HUD_SAFE_LEFT + _ARROW_TIP, ay)
-                poly = [tip, (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay - _ARROW_HALF),
-                              (HUD_SAFE_LEFT + _ARROW_TIP + _ARROW_DEPTH, ay + _ARROW_HALF)]
-            elif offscreen_right:
-                # Arrow on right edge, tip points right
-                ay = max(clamp_y_min, min(clamp_y_max, cy))
-                tip = (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP, ay)
-                poly = [tip, (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay - _ARROW_HALF),
-                              (SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - _ARROW_DEPTH, ay + _ARROW_HALF)]
-            elif offscreen_top:
-                # Arrow on top edge, tip points up
-                ax = max(clamp_x_min, min(clamp_x_max, cx))
-                tip = (ax, HUD_SAFE_TOP + _ARROW_TIP)
-                poly = [tip, (ax - _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH),
-                              (ax + _ARROW_HALF, HUD_SAFE_TOP + _ARROW_TIP + _ARROW_DEPTH)]
-            else:
-                # Arrow on bottom edge, tip points down
-                ax = max(clamp_x_min, min(clamp_x_max, cx))
-                tip = (ax, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP)
-                poly = [tip, (ax - _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH),
-                              (ax + _ARROW_HALF, SCREEN_HEIGHT - HUD_SAFE_BOTTOM - _ARROW_TIP - _ARROW_DEPTH)]
+            poly, _tip = self._build_edge_arrow(view_rect, camera.world_to_screen(enemy.pos))
+            if poly is None:
+                continue
 
             pygame.draw.polygon(screen, THREAT_ARROW_COLOR, poly)
             arrows_drawn += 1
+
+        if not players or len(players) <= 1:
+            return
+
+        for player in players:
+            if not player.is_downed:
+                continue
+
+            poly, tip = self._build_edge_arrow(view_rect, camera.world_to_screen(player.pos))
+            if poly is None or tip is None:
+                continue
+
+            slot = getattr(player, "slot", None)
+            slot_color = getattr(slot, "color", GOLD)
+            pygame.draw.polygon(screen, slot_color, poly)
+            pygame.draw.polygon(screen, WHITE, poly, 2)
+
+            label = self.font_14.render(f"P{slot.index + 1}" if slot is not None else "REV", True, WHITE)
+            label_rect = label.get_rect()
+            label_rect.center = (int(tip[0]), int(tip[1]))
+            if tip[0] <= HUD_SAFE_LEFT + _ARROW_TIP + 1:
+                label_rect.midleft = (int(poly[1][0] + 4), int(tip[1]))
+            elif tip[0] >= SCREEN_WIDTH - HUD_SAFE_RIGHT - _ARROW_TIP - 1:
+                label_rect.midright = (int(poly[1][0] - 4), int(tip[1]))
+            elif tip[1] <= HUD_SAFE_TOP + _ARROW_TIP + 1:
+                label_rect.midtop = (int(tip[0]), int(poly[1][1] + 2))
+            else:
+                label_rect.midbottom = (int(tip[0]), int(poly[1][1] - 2))
+            screen.blit(label, label_rect)
 
     def _draw_bar(
         self,
@@ -130,9 +179,10 @@ class HUD:
         top: int,
         slot_size: int,
     ) -> None:
+        slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
         for i in range(MAX_WEAPON_SLOTS):
-            slot_x = left + i * (slot_size + HUD_PANEL_WEAPON_SLOT_GAP)
-            slot_rect = pygame.Rect(slot_x, top, slot_size, slot_size)
+            slot_x = left + i * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
+            slot_rect = pygame.Rect(slot_x, top, slot_width, slot_size)
             pygame.draw.rect(screen, (40, 40, 40), slot_rect, border_radius=4)
 
             if i >= len(player.weapons):
@@ -147,7 +197,7 @@ class HUD:
             screen.blit(text, text.get_rect(center=slot_rect.center))
 
             pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
-            pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_size // 5))
+            pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_rect.width // 6))
             pip_y_offset = max(4, min(WEAPON_SLOT_PIP_Y_OFFSET, slot_size // 5))
             total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * pip_spacing
             pip_start_x = slot_rect.centerx - total_pip_width // 2
@@ -234,16 +284,13 @@ class HUD:
         class_text = self.font_14.render(player.hero_class.upper(), True, (180, 160, 120))
         screen.blit(class_text, (SCREEN_WIDTH - class_text.get_width() - 10, 40))
 
-        weapon_slots_x = SCREEN_WIDTH - (MAX_WEAPON_SLOTS * 45 + 5)
+        weapon_slot_width = max(40, HUD_PANEL_WEAPON_SLOT_WIDTH)
+        total_weapon_width = (MAX_WEAPON_SLOTS * weapon_slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
+        weapon_slots_x = SCREEN_WIDTH - total_weapon_width - 5
         weapon_slots_y = SCREEN_HEIGHT - 65
         self._draw_weapon_slots(screen, player, weapon_slots_x, weapon_slots_y, 40)
 
-        if show_fps:
-            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, WHITE)
-            fps_rect = fps_text.get_rect(centerx=lvl_rect.centerx, bottom=xp_bar_rect.top - 2)
-            screen.blit(fps_text, fps_rect)
-
-        self._draw_shared_info(screen, wave_manager, False, fps)
+        self._draw_shared_info(screen, wave_manager, show_fps, fps)
 
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera) -> None:
         panel_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
@@ -290,7 +337,8 @@ class HUD:
             screen.blit(revive_text, (rect.right - HUD_PANEL_PADDING - revive_text.get_width(), xp_rect.bottom + 2))
 
         slot_size = HUD_PANEL_WEAPON_SLOT_SIZE
-        total_slots_width = (MAX_WEAPON_SLOTS * slot_size) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
+        slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+        total_slots_width = (MAX_WEAPON_SLOTS * slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
         weapon_left = rect.centerx - total_slots_width // 2
         weapon_top = status_y + self.font_14.get_height() + 4
         self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)

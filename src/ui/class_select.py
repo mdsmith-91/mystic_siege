@@ -2,7 +2,7 @@ import pygame
 import textwrap
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
-    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, PLAYER_COLORS,
+    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_LOBBY, PLAYER_COLORS,
     CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
 )
 from src.core.player_slot import PlayerSlot
@@ -95,7 +95,7 @@ class ClassSelect:
         self.next_scene_kwargs = {"slots": resolved_slots}
 
     def _handle_back(self) -> None:
-        self.next_scene = STATE_MENU
+        self.next_scene = STATE_MENU if not self.slot_queue_active else STATE_LOBBY
 
     def _keyboard_event_matches_current_slot(self, event: pygame.event.Event) -> bool:
         if not self.slot_queue_active:

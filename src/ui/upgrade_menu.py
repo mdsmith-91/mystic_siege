@@ -59,9 +59,6 @@ class UpgradeMenu:
             keys["left"],
             keys["right"],
             keys["confirm"],
-            pygame.K_1,
-            pygame.K_2,
-            pygame.K_3,
         }
 
     def _handle_keyboard_event(self, event: pygame.event.Event) -> None:
@@ -88,13 +85,13 @@ class UpgradeMenu:
         elif event.key in confirm_keys:
             self._apply_choice(self.hovered)
             self.done = True
-        elif event.key == pygame.K_1:
+        elif cfg is None and event.key == pygame.K_1:
             self._apply_choice(0)
             self.done = True
-        elif event.key == pygame.K_2:
+        elif cfg is None and event.key == pygame.K_2:
             self._apply_choice(1)
             self.done = True
-        elif event.key == pygame.K_3:
+        elif cfg is None and event.key == pygame.K_3:
             self._apply_choice(2)
             self.done = True
 

@@ -1,6 +1,7 @@
 import pygame
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, MAX_PLAYERS, PLAYER_COLORS,
+    HERO_CLASSES,
     STATE_CLASS_SELECT, STATE_MENU,
 )
 from src.core.player_slot import PlayerSlot
@@ -59,7 +60,7 @@ class LobbyScene:
 
     def _slot_index_for_device(self, input_config: dict) -> int | None:
         """Return the slot index that owns this device, or None."""
-        for i, slot in enumerate(self.slots):
+        for i, slot in enumerate(self.slots[:self._supported_player_count()]):
             if slot is None:
                 continue
             ic = slot.input_config
@@ -75,10 +76,13 @@ class LobbyScene:
 
     def _next_open_index(self) -> int | None:
         """Return the lowest empty slot index, or None if all full."""
-        for i, slot in enumerate(self.slots):
+        for i, slot in enumerate(self.slots[:self._supported_player_count()]):
             if slot is None:
                 return i
         return None
+
+    def _supported_player_count(self) -> int:
+        return min(MAX_PLAYERS, len(HERO_CLASSES))
 
     def _flash(self, message: str) -> None:
         self.flash_message = message
@@ -98,7 +102,10 @@ class LobbyScene:
 
         idx = self._next_open_index()
         if idx is None:
-            self._flash("Lobby is full")
+            self._flash(
+                f"Current build supports up to {self._supported_player_count()} players "
+                f"({len(HERO_CLASSES)} heroes available)"
+            )
             return
 
         self.slots[idx] = PlayerSlot(
@@ -190,8 +197,18 @@ class LobbyScene:
             px, py = positions[i]
             rect = pygame.Rect(px, py, slot_w, slot_h)
             slot = self.slots[i]
+            supported = i < self._supported_player_count()
 
-            if slot is not None:
+            if not supported:
+                pygame.draw.rect(screen, (18, 18, 24), rect)
+                pygame.draw.rect(screen, (55, 55, 65), rect, 2)
+                p_surf = self.font_medium.render(f"PLAYER {i + 1}", True, (90, 90, 100))
+                screen.blit(p_surf, (px + slot_w // 2 - p_surf.get_width() // 2, py + 52))
+                limit_surf = self.font_small.render("Unavailable in current build", True, (130, 120, 120))
+                screen.blit(limit_surf, (px + slot_w // 2 - limit_surf.get_width() // 2, py + 92))
+                hero_surf = self.font_small.render("Need more unique heroes", True, (110, 100, 110))
+                screen.blit(hero_surf, (px + slot_w // 2 - hero_surf.get_width() // 2, py + 118))
+            elif slot is not None:
                 # Filled slot
                 pygame.draw.rect(screen, (30, 25, 40), rect)
                 pygame.draw.rect(screen, slot.color, rect, 3)
@@ -230,6 +247,14 @@ class LobbyScene:
                 "Press ENTER or Start button to begin", True, GOLD
             )
             screen.blit(start_surf, (SCREEN_WIDTH // 2 - start_surf.get_width() // 2, 600))
+
+        if self._supported_player_count() < MAX_PLAYERS:
+            limit_surf = self.font_small.render(
+                f"Current runtime cap: {self._supported_player_count()} players with unique heroes",
+                True,
+                (150, 140, 140),
+            )
+            screen.blit(limit_surf, (SCREEN_WIDTH // 2 - limit_surf.get_width() // 2, 624))
 
         # Flash message
         if self.flash_message:

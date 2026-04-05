@@ -54,10 +54,16 @@ class Skeleton(Enemy):
             self.angle_change_timer = 0.0
 
         # Apply the angle offset to movement
-        direction = self.target.pos - self.pos
-        if direction.length() > 0:
-            direction = direction.normalize().rotate(self.angle_offset)
-            self.vel = direction * self.speed
+        target = self.target
+        if target is None:
+            self.vel = Vector2(0, 0)
+        else:
+            direction = target.pos - self.pos
+            if direction.length() > 0:
+                direction = direction.normalize().rotate(self.angle_offset)
+                self.vel = direction * self.speed
+            else:
+                self.vel = Vector2(0, 0)
 
         super().update(dt)
 

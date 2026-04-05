@@ -43,11 +43,12 @@ class GameScene:
         self.players: list[Player] = []
         for slot in self.slots:
             spawn_offset = Vector2(SPAWN_OFFSETS[slot.index])
+            runtime_slot = None if len(self.slots) == 1 else slot
             player = Player(
                 center_of_world + spawn_offset,
                 slot.hero_data,
                 (self.all_sprites, self.player_group),
-                slot=slot,
+                slot=runtime_slot,
             )
             player.add_weapon(self._create_starting_weapon(player, slot.hero_data))
             self.players.append(player)
@@ -219,17 +220,20 @@ class GameScene:
         }
 
     def _build_player_results(self) -> list[dict]:
-        return [
-            {
-                "slot_index": player.slot.index,
-                "hero_name": player.hero_class,
-                "kills": player.kill_count,
-                "level": xp_system.current_level,
-                "weapons": [weapon.name for weapon in player.weapons],
-                "color": player.slot.color,
-            }
-            for player, xp_system in zip(self.players, self.xp_systems)
-        ]
+        player_results: list[dict] = []
+        for player, xp_system, slot in zip(self.players, self.xp_systems, self.slots):
+            runtime_slot = player.slot or slot
+            player_results.append(
+                {
+                    "slot_index": runtime_slot.index,
+                    "hero_name": player.hero_class,
+                    "kills": player.kill_count,
+                    "level": xp_system.current_level,
+                    "weapons": [weapon.name for weapon in player.weapons],
+                    "color": runtime_slot.color,
+                }
+            )
+        return player_results
 
     def _trigger_gameover(self, victory: bool) -> None:
         self.next_scene = STATE_GAMEOVER
@@ -472,7 +476,7 @@ class GameScene:
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
-        self.hud.draw_threat_arrows(screen, self.enemy_group, self.camera)
+        self.hud.draw_threat_arrows(screen, self.enemy_group, self.camera, self.players)
         self.hud.draw(
             screen,
             self.players,

@@ -10,9 +10,9 @@ Codex-friendly entry point for repository rules and should stay aligned with
 ## Project Summary
 
 Mystic Siege is a top-down medieval fantasy survivor game built in Python 3.12.13
-with pygame-ce. The current playable loop is single-player. Planned multiplayer
-is local co-op for 1–4 players on one machine, added through a phased migration
-that preserves the solo experience.
+with pygame-ce. The stable baseline is single-player. A local co-op migration is
+partially implemented for 1–4 players on one machine, but it is still in an
+incremental verification phase and must continue to preserve the solo experience.
 
 ## Core Rules
 
@@ -55,6 +55,8 @@ that preserves the solo experience.
 2. `input_config=None` is only a temporary migration shim for the old 1P path.
 3. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
 4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
+5. The long-term player-count target remains 4, but the current hero roster only
+   supports 3 unique simultaneous selections without duplicates.
 
 ## Review guidelines
 

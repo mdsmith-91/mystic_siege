@@ -9,9 +9,11 @@ escalating waves of enemies, collect XP orbs, level up, and pick upgrades — al
 
 Two developers, AI-assisted workflow, small scope first.
 
-**Current state:** the existing playable loop is single-player.
-**Planned direction:** local multiplayer may be added later, but only through a phased,
-low-regression migration that preserves the current single-player experience.
+**Current state:** the single-player baseline is playable, and the local multiplayer
+migration is partially implemented. New runs currently flow through a lobby and queued
+hero select, but multiplayer still needs broader runtime verification and hardening.
+**Planned direction:** finish the local co-op migration through phased, low-regression
+changes that continue to preserve the current single-player experience.
 
 ---
 
@@ -162,17 +164,22 @@ Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settin
 
 ### Game Loop
 
-Current single-player runtime:
+Current runtime:
 
 ```text
 Menu → Lobby → Class Select → Game → (die or 30 min) → Game Over → Menu
 ```
 
-Planned multiplayer-capable flow:
+Current multiplayer-capable flow:
 
 ```text
 Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Menu
 ```
+
+- The solo baseline is preserved inside `GameScene`; a single joined slot still uses
+  the legacy single-player runtime path for movement, death, and HUD behavior.
+- The practical current party cap is 3 unique players because there are 3 heroes and
+  duplicate hero picks are still blocked.
 
 - Time stops on level-up (upgrade menu open)
 - ESC pauses
@@ -623,7 +630,7 @@ Track progress here as phases are completed:
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [x] Phase 11a — Hero-selection slot queue (V2 Phase 3: duplicate prevention and active-slot input routing are implemented, and ClassSelect now always emits `slots` for gameplay handoff)
 - [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades)
-- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. Phase 6 revive logic is now implemented in `GameScene` with downed-state recovery and revive-triggered defeat checks. Phase 7 HUD work is now partially implemented: `HUD` renders 1P unchanged, supports multiplayer slot-based player panels for 2–4 players, draws revive progress feedback in screen space, and `UpgradeMenu` now routes input only from the leveling player's device. Remaining work is runtime verification/polish of HUD spacing/readability and any further revive/HUD feedback tuning.)
+- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. Phase 6 revive logic is now implemented in `GameScene` with downed-state recovery and revive-triggered defeat checks. Phase 7 HUD work is now partially implemented: `HUD` renders 1P unchanged, supports multiplayer slot-based player panels for 2–4 players, draws revive progress feedback in screen space, shows off-screen arrows for downed teammates, and `UpgradeMenu` now routes input only from the leveling player's device. Remaining work is runtime verification/polish of HUD spacing/readability and any further revive/HUD feedback tuning.)
 - [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8; partial: `GameOver` now accepts optional `player_results`, replay/restart paths route back through the lobby, and the legacy `hero` GameScene handoff shim has been removed. Remaining work is runtime verification and any follow-up polish.)
 
 Update the checkboxes as phases are completed.
