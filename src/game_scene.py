@@ -591,6 +591,8 @@ class GameScene:
 
         # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
         for player in self.players:
+            if player.is_downed:
+                continue
             for weapon in player.weapons:
                 if hasattr(weapon, 'draw'):
                     weapon.draw(world_surface, local_offset)
