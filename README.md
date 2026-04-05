@@ -20,7 +20,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 - XP orb collection and leveling system with 3-card upgrade choices
 - Visual effects: damage numbers, hit sparks, death explosions, level-up burst
 - Persistent meta-progression saved between sessions
-- Controller support with hot-plug detection and owned input routing for multiplayer-sensitive menus
+- Controller support with hot-plug detection, owned input routing for multiplayer-sensitive menus, and remappable bindings
 - Screenshot capture (F12), FPS counter (F3), always runs fullscreen for maximum compatibility
 - Full audio system with silent fallback — runs without any audio files
 
@@ -35,8 +35,9 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
   - lobby scene and per-player `PlayerSlot` metadata
   - queued hero select with duplicate-hero prevention
   - multi-player `GameScene` plumbing, HUD panels, camera zoom, and per-player XP state
-  - owned controller input in class select and upgrade menus
+  - owned controller input in class select, upgrade menus, and pause
   - downed / revive scaffolding for multiplayer runs
+  - controller bindings settings with global fallback plus per-controller profiles
 - Still in progress or not fully verified:
   - broad 2P/3P runtime verification
   - overall multiplayer balance and spawn scaling
@@ -100,9 +101,16 @@ Controllers are detected automatically at startup and on hot-plug.
 | Action | Input |
 |--------|-------|
 | Move | Left stick or D-pad |
-| Confirm / Select | A / Cross |
-| Back / Cancel / Pause | B / Circle or Start / Options |
+| Confirm / Select | Configurable in Settings |
+| Back / Cancel | Configurable in Settings |
+| Pause | Configurable in Settings |
 | Navigate menus | Left stick or D-pad (with key-repeat) |
+
+Controller binding notes:
+- `Settings -> Controller Bindings` includes a `Global Default` profile and per-controller profiles.
+- `Global Default` is the fallback for controllers without a customized profile.
+- Per-controller profiles override `Confirm`, `Back`, and `Pause / Start` and are saved in `saves/progress.json`.
+- Owned multiplayer flows still route by joystick ownership, even when multiple controllers share the same binding layout.
 
 ---
 
@@ -146,6 +154,8 @@ Manual smoke checks:
 2. Join two players with different input devices, pick two different heroes, start a run, and confirm both players move independently.
 3. Trigger a level-up in multiplayer and confirm only the owning player can confirm the upgrade on keyboard/controller.
 4. Back out of class select and confirm the flow returns to the lobby rather than dropping to an unrelated scene.
+5. Open `Settings -> Controller Bindings`, change `Global Default`, then change an individual controller profile and confirm they remain independent after reopening settings.
+6. With two controllers connected, select one controller profile and confirm only that controller can complete the remap capture for that profile.
 
 **Adding real sprites:** Drop a PNG at the correct path under `assets/sprites/` — `ResourceLoader` picks it up automatically. No code changes needed.
 

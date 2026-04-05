@@ -11,7 +11,9 @@ Two developers, AI-assisted workflow, small scope first.
 
 **Current state:** the single-player baseline is playable, and the local multiplayer
 migration is partially implemented. New runs currently flow through a lobby and queued
-hero select, but multiplayer still needs broader runtime verification and hardening.
+hero select, and controller ownership plus controller-binding settings have been
+hardened for local co-op, but multiplayer still needs broader runtime verification and
+hardening.
 **Planned direction:** finish the local co-op migration through phased, low-regression
 changes that continue to preserve the current single-player experience.
 
@@ -74,21 +76,21 @@ mystic_siege/
 │   │   ├── upgrade_system.py      # Upgrade card pool, passive/weapon choices
 │   │   ├── collision.py           # All collision detection — iframes, knockback, multiplayer player loops
 │   │   ├── camera.py              # Single-target follow + multi-target zoomed camera
-│   │   └── save_system.py         # JSON meta-progression in saves/progress.json
+│   │   └── save_system.py         # JSON meta-progression + controller binding persistence in saves/progress.json
 │   ├── ui/
 │   │   ├── hud.py                 # 1P HUD + multiplayer player panels, revive indicators, threat arrows
 │   │   ├── upgrade_menu.py        # 3-card level-up overlay, owned-player input routing
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
-│   │   ├── settings_menu.py       # Volume sliders, show FPS toggle, reset
+│   │   ├── settings_menu.py       # Volume sliders, FPS toggle, reset, controller binding profiles
 │   │   └── stats_menu.py          # Meta-progression stats viewer
 │   └── utils/
 │       ├── timer.py               # Reusable countdown/interval timer
 │       ├── resource_loader.py     # Singleton asset loader with fallback placeholders
 │       ├── spritesheet.py         # Spritesheet frame/animation extractor
 │       ├── audio_manager.py       # Singleton audio with silent fallback
-│       ├── input_manager.py       # Singleton controller input — synthetic key events + analog movement
+│       ├── input_manager.py       # Singleton controller input — owned routing, synthetic menu keys, per-profile bindings
 │       └── placeholder_assets.py  # Generates colored rect PNGs and sine-wave WAVs for all assets
 └── assets/
     ├── sprites/heroes|enemies|projectiles|effects|ui/
@@ -180,6 +182,15 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   the legacy single-player runtime path for movement, death, and HUD behavior.
 - The practical current party cap is 3 unique players because there are 3 heroes and
   duplicate hero picks are still blocked.
+- Owned multiplayer menu flows now enforce device identity:
+  - lobby claims devices by slot and rejects duplicate controller claims
+  - class select and upgrade menus route controller input by owned joystick instance
+  - pause only responds to joined keyboard schemes and claimed controllers
+  - disconnected claimed controllers are pruned or fail inertly instead of cross-controlling
+- Controller bindings are configurable from Settings:
+  - `Global Default` is the fallback mapping for unknown / untouched controllers
+  - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
+  - profile bindings are saved in `saves/progress.json`
 
 - Time stops on level-up (upgrade menu open)
 - ESC pauses
@@ -258,6 +269,20 @@ Always use `AudioManager` — never call `pygame.mixer` directly:
 ```python
 from src.utils.audio_manager import AudioManager
 AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
+
+---
+
+## Controller Binding Notes
+
+- `InputManager` is the single source of truth for controller button bindings.
+- Runtime resolution order is:
+  - controller-specific profile
+  - global controller fallback
+  - code defaults in `settings.py`
+- Use `button_matches(..., joystick_id=...)`, `describe_binding(..., joystick_id=...)`,
+  or `get_confirm_for_joystick()` instead of hardcoding controller button indices in scenes.
+- Synthetic controller `KEYDOWN` events are still acceptable for global menus, but owned
+  multiplayer menus must preserve joystick identity or poll the owning joystick directly.
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
 

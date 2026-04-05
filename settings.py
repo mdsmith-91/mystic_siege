@@ -112,6 +112,23 @@ HUD_PANEL_TUPLES = {
 CONTROLLER_DEADZONE = 0.2
 CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
+CONTROLLER_CONFIRM_BUTTON = 0        # A / Cross
+CONTROLLER_BACK_BUTTON = 1           # B / Circle
+CONTROLLER_START_BUTTONS = (7,)      # Start / Options; extend per-controller only if needed
+CONTROLLER_BINDINGS_DEFAULT = {
+    "confirm": CONTROLLER_CONFIRM_BUTTON,
+    "back": CONTROLLER_BACK_BUTTON,
+    "start": list(CONTROLLER_START_BUTTONS),
+}
+CONTROLLER_BINDINGS_SETTINGS_DEFAULT = {
+    "global_bindings": dict(CONTROLLER_BINDINGS_DEFAULT),
+    "profiles": {},
+}
+CONTROLLER_BINDING_LABELS = {
+    "confirm": "Confirm",
+    "back": "Back",
+    "start": "Pause / Start",
+}
 
 # KEYBOARD INPUT SCHEMES
 KEYBOARD_WASD_BINDINGS = {

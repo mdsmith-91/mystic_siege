@@ -6,6 +6,7 @@ from settings import (
     STATE_CLASS_SELECT, STATE_MENU,
 )
 from src.core.player_slot import PlayerSlot
+from src.utils.input_manager import InputManager
 
 _WASD_CONFIG: dict = {
     "type": "keyboard",
@@ -109,11 +110,31 @@ class LobbyScene:
 
     def _start_game(self) -> None:
         """Begin the run with all currently joined slots."""
+        self._prune_disconnected_controllers()
         filled = [s for s in self.slots if s is not None]
         if not filled:
             return
         self.next_scene = STATE_CLASS_SELECT
         self.next_scene_kwargs = {"slots": filled}
+
+    def _prune_disconnected_controllers(self) -> None:
+        """Drop any controller-owned slot whose claimed joystick is no longer connected."""
+        input_manager = InputManager.instance()
+        removed_slots: list[int] = []
+        for index, slot in enumerate(self.slots):
+            if slot is None or slot.input_config is None:
+                continue
+            if slot.input_config.get("type") != "controller":
+                continue
+            joystick_id = slot.input_config.get("joystick_id")
+            if input_manager.is_joystick_connected(joystick_id):
+                continue
+            self.slots[index] = None
+            removed_slots.append(index)
+
+        if removed_slots:
+            removed_labels = ", ".join(f"P{index + 1}" for index in removed_slots)
+            self._flash(f"Disconnected controller removed from {removed_labels}")
 
     # ------------------------------------------------------------------
     # Scene interface
@@ -125,6 +146,11 @@ class LobbyScene:
                 return
 
             elif event.type == pygame.KEYDOWN:
+                if getattr(event, "synthetic_controller_event", False):
+                    # Controller-owned lobby actions are handled via JOYBUTTONDOWN,
+                    # so synthetic controller key events must not claim keyboard
+                    # schemes or trigger menu-level back/start behavior here.
+                    continue
                 if event.key == pygame.K_ESCAPE:
                     self.next_scene = STATE_MENU
                     return
@@ -135,19 +161,23 @@ class LobbyScene:
                 elif event.key in _ARROW_KEYS:
                     self._try_join(dict(_ARROW_CONFIG))
 
+            elif event.type == pygame.JOYDEVICEREMOVED:
+                self._prune_disconnected_controllers()
+
             elif event.type == pygame.JOYBUTTONDOWN:
                 ic = {"type": "controller", "joystick_id": event.instance_id}
-                if event.button == 1:
+                input_manager = InputManager.instance()
+                if input_manager.button_matches("back", event.button, joystick_id=event.instance_id):
                     # B / Circle — leave slot or go back to menu
                     existing = self._slot_index_for_device(ic)
                     if existing is not None:
                         self.slots[existing] = None
                     else:
                         self.next_scene = STATE_MENU
-                elif event.button == 0:
+                elif input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
                     # A / Cross — join or leave
                     self._try_join(ic)
-                elif event.button in (7, 9):
+                elif input_manager.button_matches("start", event.button, joystick_id=event.instance_id):
                     # Start / Options — join if not yet joined, then start if possible
                     if self._slot_index_for_device(ic) is None:
                         self._try_join(ic)
@@ -166,8 +196,13 @@ class LobbyScene:
         title_surf = self.font_title.render("LOBBY", True, GOLD)
         screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, 30))
 
+        input_manager = InputManager.instance()
+        confirm_label = input_manager.describe_binding("confirm")
+        back_label = input_manager.describe_binding("back")
+        start_label = input_manager.describe_binding("start")
+
         # Instructions
-        inst = "Press WASD, Arrow keys, or controller A to join or leave"
+        inst = f"Press WASD, Arrow keys, or controller {confirm_label} to join or leave"
         inst_surf = self.font_small.render(inst, True, (150, 150, 150))
         screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 92))
 
@@ -236,7 +271,7 @@ class LobbyScene:
         filled_count = sum(1 for s in self.slots if s is not None)
         if filled_count > 0:
             start_surf = self.font_medium.render(
-                "Press Enter or controller Start to begin", True, GOLD
+                f"Press Enter or controller {start_label} to begin", True, GOLD
             )
             screen.blit(start_surf, (SCREEN_WIDTH // 2 - start_surf.get_width() // 2, 600))
 
@@ -254,5 +289,9 @@ class LobbyScene:
             screen.blit(flash_surf, (SCREEN_WIDTH // 2 - flash_surf.get_width() // 2, 648))
 
         # Back hint
-        back_surf = self.font_small.render("ESC or controller B - Back to Menu", True, (100, 100, 100))
+        back_surf = self.font_small.render(
+            f"ESC or controller {back_label} - Back to Menu",
+            True,
+            (100, 100, 100),
+        )
         screen.blit(back_surf, (20, SCREEN_HEIGHT - 28))
