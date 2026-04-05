@@ -136,7 +136,7 @@ class HUD:
             pygame.draw.polygon(screen, slot_color, poly)
             pygame.draw.polygon(screen, WHITE, poly, 2)
 
-            label = self.font_14.render(f"P{slot.index + 1}" if slot is not None else "REV", True, WHITE)
+            label = self._render_text(self.font_14, f"P{slot.index + 1}" if slot is not None else "REV", WHITE)
             label_rect = label.get_rect()
             label_rect.center = (int(tip[0]), int(tip[1]))
             if tip[0] <= HUD_SAFE_LEFT + _ARROW_TIP + 1:

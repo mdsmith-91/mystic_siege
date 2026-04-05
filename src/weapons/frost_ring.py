@@ -28,8 +28,8 @@ class FrostRing(BaseWeapon):
             {"base_cooldown": -0.8, "max_radius": 80}  # L5: more frequent, bigger reach
         ]
 
-        # Track frozen enemies: dict {enemy_id: remaining_freeze_time}
-        self.frozen_enemies = {}
+        # Track frozen enemies by live enemy reference to avoid repeated group scans.
+        self.frozen_enemies: dict[object, float] = {}
 
         # Active rings list: each ring is {radius: float, damage_done: set(), center: Vector2}
         self.rings = []
@@ -51,19 +51,15 @@ class FrostRing(BaseWeapon):
         super().update(dt)
 
         # Tick freeze timers, restore speed when timer hits 0
-        for enemy_id in list(self.frozen_enemies.keys()):
-            self.frozen_enemies[enemy_id] -= dt
-            if self.frozen_enemies[enemy_id] <= 0:
-                # Restore enemy speed
-                enemy = None
-                for e in self.enemy_group:
-                    if e.sprite_id == enemy_id:
-                        enemy = e
-                        break
-                if enemy:
-                    if hasattr(enemy, 'max_speed'):
-                        enemy.speed = enemy.max_speed  # Restore original speed
-                del self.frozen_enemies[enemy_id]
+        for enemy in list(self.frozen_enemies.keys()):
+            remaining = self.frozen_enemies[enemy] - dt
+            if remaining <= 0 or not enemy.alive():
+                if enemy.alive() and hasattr(enemy, 'max_speed'):
+                    enemy.speed = enemy.max_speed
+                del self.frozen_enemies[enemy]
+                continue
+
+            self.frozen_enemies[enemy] = remaining
 
         # Expand all rings and check for collisions
         i = 0
@@ -72,15 +68,18 @@ class FrostRing(BaseWeapon):
 
             # Expand the ring
             ring["radius"] += self.ring_speed * dt
+            inner_radius = max(0, ring["radius"] - 5)
+            outer_radius = ring["radius"] + 5
+            inner_radius_sq = inner_radius * inner_radius
+            outer_radius_sq = outer_radius * outer_radius
 
             # Check each ring against enemies (circle vs rect)
             for enemy in self.enemy_group:
                 # Calculate distance from ring center to enemy center
-                distance = (enemy.pos - ring["center"]).length()
+                distance_sq = (enemy.pos - ring["center"]).length_squared()
 
                 # Check if enemy is within the ring
-                if (distance >= ring["radius"] - 5 and  # Allow some overlap
-                    distance <= ring["radius"] + 5):  # Allow some overlap
+                if inner_radius_sq <= distance_sq <= outer_radius_sq:
 
                     # Check if this enemy has already been damaged by this ring
                     if enemy.sprite_id not in ring["damage_done"]:
@@ -96,7 +95,7 @@ class FrostRing(BaseWeapon):
                             HitSpark(enemy.pos, (0, 200, 255), [self.effect_group])
 
                         # Freeze enemy — only save max_speed if not already frozen
-                        self.frozen_enemies[enemy.sprite_id] = self.freeze_duration
+                        self.frozen_enemies[enemy] = self.freeze_duration
                         if enemy.speed > 0:
                             enemy.max_speed = enemy.speed
                         enemy.speed = 0

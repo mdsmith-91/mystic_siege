@@ -31,6 +31,7 @@ class LightningChain(BaseWeapon):
         # lightning_arcs: list — each arc is {"start": Vector2, "end": Vector2, "timer": float}
         # Timer counts down from 0.12s — arcs are drawn for that long then removed.
         self.lightning_arcs = []
+        self.stunned_enemies: dict[object, float] = {}
 
     def fire(self):
         """Strike the nearest enemy and chain to nearby foes."""
@@ -39,18 +40,19 @@ class LightningChain(BaseWeapon):
             return
 
         nearest_enemy = None
-        nearest_distance = float('inf')
+        nearest_distance_sq = float("inf")
+        max_range_sq = LIGHTNING_CHAIN_RANGE * LIGHTNING_CHAIN_RANGE
 
         for enemy in self.enemy_group:
-            distance = (enemy.pos - self.owner.pos).length()
-            if distance < nearest_distance:
-                nearest_distance = distance
+            distance_sq = (enemy.pos - self.owner.pos).length_squared()
+            if distance_sq < nearest_distance_sq:
+                nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
         if not nearest_enemy:
             return
 
-        if nearest_distance > LIGHTNING_CHAIN_RANGE:
+        if nearest_distance_sq > max_range_sq:
             return
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN)
@@ -62,15 +64,16 @@ class LightningChain(BaseWeapon):
 
         for _ in range(self.chain_count):
             closest_enemy = None
-            closest_distance = float('inf')
+            closest_distance_sq = float("inf")
+            chain_range_sq = self.chain_range * self.chain_range
 
             for enemy in self.enemy_group:
                 if enemy.sprite_id in enemies_hit:
                     continue
 
-                distance = (enemy.pos - chain[-1].pos).length()
-                if distance <= self.chain_range and distance < closest_distance:
-                    closest_distance = distance
+                distance_sq = (enemy.pos - chain[-1].pos).length_squared()
+                if distance_sq <= chain_range_sq and distance_sq < closest_distance_sq:
+                    closest_distance_sq = distance_sq
                     closest_enemy = enemy
 
             if closest_enemy:
@@ -102,6 +105,7 @@ class LightningChain(BaseWeapon):
                     enemy.max_speed = enemy.speed
                 enemy.speed = 0
                 enemy.freeze_timer = self.stun_duration
+                self.stunned_enemies[enemy] = self.stun_duration
 
         # Store arc positions for drawing — first arc runs from player to initial target
         self.lightning_arcs.append({
@@ -131,14 +135,19 @@ class LightningChain(BaseWeapon):
             else:
                 i += 1
 
-        # Tick stun timers on all enemies and restore speed when stun expires
-        for enemy in self.enemy_group:
-            if getattr(enemy, 'freeze_timer', 0) > 0:
-                enemy.freeze_timer -= dt
-                if enemy.freeze_timer <= 0:
+        # Tick stun timers only on currently stunned enemies.
+        for enemy in list(self.stunned_enemies.keys()):
+            remaining = self.stunned_enemies[enemy] - dt
+            if remaining <= 0 or not enemy.alive():
+                if enemy.alive():
                     enemy.freeze_timer = 0
                     if hasattr(enemy, 'max_speed'):
                         enemy.speed = enemy.max_speed
+                del self.stunned_enemies[enemy]
+                continue
+
+            self.stunned_enemies[enemy] = remaining
+            enemy.freeze_timer = remaining
 
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs."""

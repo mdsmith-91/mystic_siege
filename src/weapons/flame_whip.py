@@ -29,8 +29,8 @@ class FlameWhip(BaseWeapon):
             {"cone_angle": 30, "base_damage": 20}  # L5: wider cone, more damage
         ]
 
-        # Track burning enemies: dict {enemy_id: remaining_burn_time}
-        self.burning_enemies = {}
+        # Track burning enemies by live enemy reference to avoid repeated id lookups.
+        self.burning_enemies: dict[object, float] = {}
 
         # Swing timer counts down after firing — cone is visible while > 0
         self.swing_timer = 0.0
@@ -45,11 +45,11 @@ class FlameWhip(BaseWeapon):
 
         # Find nearest enemy to aim the cone at
         nearest_enemy = None
-        nearest_distance = float('inf')
+        nearest_distance_sq = float("inf")
         for enemy in self.enemy_group:
-            distance = (enemy.pos - self.owner.pos).length()
-            if distance < nearest_distance:
-                nearest_distance = distance
+            distance_sq = (enemy.pos - self.owner.pos).length_squared()
+            if distance_sq < nearest_distance_sq:
+                nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
         if not nearest_enemy:
@@ -59,21 +59,23 @@ class FlameWhip(BaseWeapon):
 
         # Aim the cone center at the nearest enemy
         self.fire_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+        cone_range_sq = self.cone_range * self.cone_range
 
         # Hit every enemy within cone_range that falls inside the cone arc
         for enemy in self.enemy_group:
-            dist = (enemy.pos - self.owner.pos).length()
-            if dist > self.cone_range:
+            offset = enemy.pos - self.owner.pos
+            dist_sq = offset.length_squared()
+            if dist_sq == 0 or dist_sq > cone_range_sq:
                 continue
 
-            direction_to_enemy = (enemy.pos - self.owner.pos).normalize()
+            direction_to_enemy = offset * (1.0 / (dist_sq ** 0.5))
             angle_to_enemy = self.fire_direction.angle_to(direction_to_enemy)
 
             if abs(angle_to_enemy) <= self.cone_angle / 2:
                 is_crit = random.random() < self.owner.crit_chance
                 damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy, attacker=self.owner)
-                self.burning_enemies[enemy.sprite_id] = self.burn_duration
+                self.burning_enemies[enemy] = self.burn_duration
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
                     DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
@@ -89,18 +91,13 @@ class FlameWhip(BaseWeapon):
         self.swing_timer = max(0, self.swing_timer - dt)
 
         # Tick burn timers and apply burn damage each frame
-        for enemy_id in list(self.burning_enemies.keys()):
-            self.burning_enemies[enemy_id] -= dt
-            if self.burning_enemies[enemy_id] > 0:
-                enemy = None
-                for e in self.enemy_group:
-                    if e.sprite_id == enemy_id:
-                        enemy = e
-                        break
-                if enemy:
-                    enemy.take_damage(self.burn_damage * dt, attacker=self.owner)
-            else:
-                del self.burning_enemies[enemy_id]
+        for enemy in list(self.burning_enemies.keys()):
+            remaining = self.burning_enemies[enemy] - dt
+            if remaining <= 0 or not enemy.alive():
+                del self.burning_enemies[enemy]
+                continue
+            self.burning_enemies[enemy] = remaining
+            enemy.take_damage(self.burn_damage * dt, attacker=self.owner)
 
     def draw_effect(self, surface, camera_offset):
         """Draw a transparent orange fan shape for the duration of the swing."""

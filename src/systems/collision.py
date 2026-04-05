@@ -15,9 +15,14 @@ class CollisionSystem:
 
     def check_player_enemy_contact(self, players, enemy_group, effect_group=None):
         """Check for player-enemy contact collisions."""
-        for player in players:
-            if not player.is_alive:
-                continue
+        active_players = [
+            player for player in players
+            if player.is_alive and player.iframes <= 0
+        ]
+        if not active_players:
+            return
+
+        for player in active_players:
             for enemy in enemy_group:
                 if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
                     player.take_damage(enemy.damage)
@@ -42,12 +47,17 @@ class CollisionSystem:
 
     def check_enemy_projectiles_player(self, projectile_group, players, effect_group=None):
         """Check for enemy-projectile-player collisions."""
+        active_players = [
+            player for player in players
+            if player.is_alive and player.iframes <= 0
+        ]
+        if not active_players:
+            return
+
         for projectile in projectile_group:
             if not projectile.is_enemy_projectile:
                 continue
-            for player in players:
-                if not player.is_alive or player.iframes > 0:
-                    continue
+            for player in active_players:
                 if projectile.rect.colliderect(player.rect):
                     player.take_damage(projectile.damage)
                     player.iframes = IFRAME_DURATION

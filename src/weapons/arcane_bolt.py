@@ -57,12 +57,13 @@ class ArcaneBolt(BaseWeapon):
             return
 
         nearest_enemy = None
-        nearest_distance = float('inf')
+        nearest_distance_sq = float("inf")
+        max_range_sq = ARCANE_BOLT_RANGE * ARCANE_BOLT_RANGE
 
         for enemy in self.enemy_group:
-            distance = (enemy.pos - self.owner.pos).length()
-            if distance < nearest_distance and distance <= ARCANE_BOLT_RANGE:
-                nearest_distance = distance
+            distance_sq = (enemy.pos - self.owner.pos).length_squared()
+            if distance_sq < nearest_distance_sq and distance_sq <= max_range_sq:
+                nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
         if not nearest_enemy:
