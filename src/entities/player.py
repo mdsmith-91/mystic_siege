@@ -234,9 +234,18 @@ class Player(BaseEntity):
             return direction
 
         if cfg["type"] == "controller":
-            ax, ay = InputManager.instance().get_movement_for_joystick(
-                cfg["joystick_id"]
+            input_manager = InputManager.instance()
+            joystick_id = input_manager.resolve_joystick_id(
+                cfg.get("joystick_id"),
+                profile_key=cfg.get("profile_key"),
+                guid=cfg.get("guid"),
+                name=cfg.get("name"),
             )
+            if joystick_id is None:
+                return Vector2(0, 0)
+            if joystick_id != cfg.get("joystick_id"):
+                self.slot.input_config = input_manager.build_controller_input_config(joystick_id)
+            ax, ay = input_manager.get_movement_for_joystick(joystick_id)
             return Vector2(ax, ay)
 
         return Vector2(0, 0)

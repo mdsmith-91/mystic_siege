@@ -228,6 +228,91 @@ class InputManager:
                 instance_ids.append(instance_id)
         return instance_ids
 
+    def build_controller_input_config(self, joystick_id: int) -> dict:
+        """Build a controller claim payload from the currently connected device."""
+        meta = self._joystick_meta.get(joystick_id, {})
+        profile_key = meta.get("profile_key")
+        return {
+            "type": "controller",
+            "joystick_id": joystick_id,
+            "profile_key": self._canonical_profile_key(profile_key) if profile_key is not None else None,
+            "guid": meta.get("guid"),
+            "name": meta.get("name"),
+        }
+
+    def get_profile_key_for_joystick(self, joystick_id: int) -> str | None:
+        """Return the canonical binding profile key for a connected joystick."""
+        meta = self._joystick_meta.get(joystick_id)
+        if meta is None:
+            return None
+        return self._canonical_profile_key(meta["profile_key"])
+
+    def get_reconnect_candidate_ids(
+        self,
+        *,
+        joystick_id: int | None,
+        profile_key: str | None = None,
+        guid: str | None = None,
+        name: str | None = None,
+    ) -> list[int]:
+        """Return live controller IDs that plausibly match a stored controller claim."""
+        if joystick_id is not None and joystick_id in self._joysticks:
+            return [joystick_id]
+
+        candidate_ids: list[int] = []
+        if guid:
+            candidate_ids = [
+                instance_id
+                for instance_id, meta in self._joystick_meta.items()
+                if meta.get("guid") == guid
+            ]
+        elif profile_key is not None:
+            candidate_ids = self.get_connected_instance_ids_for_profile(profile_key)
+
+        if name and candidate_ids:
+            named_ids = [
+                instance_id for instance_id in candidate_ids
+                if self._joystick_meta.get(instance_id, {}).get("name") == name
+            ]
+            if named_ids:
+                candidate_ids = named_ids
+
+        return sorted(candidate_ids)
+
+    def resolve_joystick_id(
+        self,
+        joystick_id: int | None,
+        *,
+        profile_key: str | None = None,
+        guid: str | None = None,
+        name: str | None = None,
+    ) -> int | None:
+        """Resolve a stored joystick claim to a currently connected instance ID.
+
+        SDL instance IDs are transient across unplug/replug. Prefer the original
+        live instance when it still exists; otherwise remap through the stored
+        controller identity when there is a unique strong live match.
+        """
+        if joystick_id is not None and joystick_id in self._joysticks:
+            return joystick_id
+
+        candidate_ids = self.get_reconnect_candidate_ids(
+            joystick_id=joystick_id,
+            profile_key=profile_key,
+            guid=guid,
+            name=name,
+        )
+        if len(candidate_ids) != 1:
+            return None
+
+        # Only auto-remap on a strong identifier. Name-only profile keys are
+        # insufficiently stable for safe automatic reassignment.
+        if guid:
+            return candidate_ids[0]
+        if profile_key is not None and not self._canonical_profile_key(profile_key).startswith("name:"):
+            return candidate_ids[0]
+        return None
+
     def canonicalize_profile_key(self, profile_key: str | None) -> str | None:
         """Return the canonical storage key for a controller profile."""
         if profile_key is None:

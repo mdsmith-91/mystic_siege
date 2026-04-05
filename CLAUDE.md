@@ -186,7 +186,7 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   - lobby claims devices by slot and rejects duplicate controller claims
   - class select and upgrade menus route controller input by owned joystick instance
   - pause only responds to joined keyboard schemes and claimed controllers
-  - disconnected claimed controllers are pruned or fail inertly instead of cross-controlling
+  - disconnected claimed controllers are pruned in the lobby, and in-run controller claims now recover by safe remap or explicit reclaim instead of cross-controlling
 - Controller bindings are configurable from Settings:
   - `Global Default` is the fallback mapping for unknown / untouched controllers
   - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
@@ -610,7 +610,7 @@ For audit/planning tasks, prefer this output order:
 - Duplicate hero picks must be blocked cleanly
 - Device claims must be unique
 - Upgrade menus must not allow input bleed from non-active players
-- Controller disconnects should fail safely, not crash
+- Controller disconnects should fail safely, not crash; reconnects may auto-resume only on a unique strong match, otherwise the slot must be explicitly reclaimed
 - HUD and camera changes must remain readable in 1P
 - Save/progression behavior must remain sane if a multiplayer run is introduced later
 - Pause/menu ownership should be explicit, not accidental

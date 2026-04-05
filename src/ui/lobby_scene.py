@@ -165,8 +165,8 @@ class LobbyScene:
                 self._prune_disconnected_controllers()
 
             elif event.type == pygame.JOYBUTTONDOWN:
-                ic = {"type": "controller", "joystick_id": event.instance_id}
                 input_manager = InputManager.instance()
+                ic = input_manager.build_controller_input_config(event.instance_id)
                 if input_manager.button_matches("back", event.button, joystick_id=event.instance_id):
                     # B / Circle — leave slot or go back to menu
                     existing = self._slot_index_for_device(ic)

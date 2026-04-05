@@ -107,6 +107,9 @@ class GameScene:
         self._settings_menu = None
         self._pause_controller_nav_dir: dict[int, int] = {}
         self._pause_controller_nav_timer: dict[int, float] = {}
+        self._reclaim_slot_index: int | None = None
+        self._reconnect_prompt_font = pygame.font.SysFont("serif", 22)
+        self._reconnect_prompt_small_font = pygame.font.SysFont("serif", 16)
 
         # 11. next_scene: str = None
         self.next_scene = None
@@ -378,6 +381,110 @@ class GameScene:
 
         return bindings
 
+    def _resolved_controller_id_for_slot(self, slot: PlayerSlot | None) -> int | None:
+        if slot is None or slot.input_config is None:
+            return None
+        cfg = slot.input_config
+        if cfg.get("type") != "controller":
+            return None
+
+        input_manager = InputManager.instance()
+        joystick_id = input_manager.resolve_joystick_id(
+            cfg.get("joystick_id"),
+            profile_key=cfg.get("profile_key"),
+            guid=cfg.get("guid"),
+            name=cfg.get("name"),
+        )
+        if joystick_id is not None and joystick_id != cfg.get("joystick_id"):
+            slot.input_config = input_manager.build_controller_input_config(joystick_id)
+        return joystick_id
+
+    def _controller_reconnect_candidate_ids(self, slot: PlayerSlot | None) -> list[int]:
+        if slot is None or slot.input_config is None:
+            return []
+        cfg = slot.input_config
+        if cfg.get("type") != "controller":
+            return []
+
+        return InputManager.instance().get_reconnect_candidate_ids(
+            joystick_id=cfg.get("joystick_id"),
+            profile_key=cfg.get("profile_key"),
+            guid=cfg.get("guid"),
+            name=cfg.get("name"),
+        )
+
+    def _unresolved_controller_players(self) -> list[Player]:
+        unresolved_players: list[Player] = []
+        for player in self.players:
+            slot = player.slot
+            if slot is None or slot.input_config is None:
+                continue
+            if slot.input_config.get("type") != "controller":
+                continue
+            if self._resolved_controller_id_for_slot(slot) is None:
+                unresolved_players.append(player)
+        unresolved_players.sort(key=lambda player: player.slot.index if player.slot is not None else -1)
+        return unresolved_players
+
+    def _active_reclaim_player(self) -> Player | None:
+        unresolved_players = self._unresolved_controller_players()
+        if not unresolved_players:
+            self._reclaim_slot_index = None
+            return None
+
+        if self._reclaim_slot_index not in {player.slot.index for player in unresolved_players if player.slot is not None}:
+            self._reclaim_slot_index = unresolved_players[0].slot.index
+
+        for player in unresolved_players:
+            if player.slot is not None and player.slot.index == self._reclaim_slot_index:
+                return player
+        return unresolved_players[0]
+
+    def _bind_controller_slot(self, slot: PlayerSlot, joystick_id: int) -> None:
+        slot.input_config = InputManager.instance().build_controller_input_config(joystick_id)
+
+    def _try_reclaim_controller(self, event: pygame.event.Event) -> bool:
+        if event.type != pygame.JOYBUTTONDOWN:
+            return False
+
+        input_manager = InputManager.instance()
+        if event.instance_id in self._claimed_controller_ids():
+            return False
+
+        unresolved_players = self._unresolved_controller_players()
+        if not unresolved_players:
+            return False
+
+        matching_players = [
+            player
+            for player in unresolved_players
+            if event.instance_id in self._controller_reconnect_candidate_ids(player.slot)
+        ]
+        if not matching_players:
+            return False
+
+        if not (
+            input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id)
+            or input_manager.button_matches("start", event.button, joystick_id=event.instance_id)
+        ):
+            return False
+
+        target_player: Player | None = None
+        if len(matching_players) == 1:
+            target_player = matching_players[0]
+        else:
+            target_player = self._active_reclaim_player()
+            if target_player not in matching_players:
+                return False
+
+        if target_player is None or target_player.slot is None:
+            return False
+
+        self._bind_controller_slot(target_player.slot, event.instance_id)
+        if target_player.slot.index == self._reclaim_slot_index:
+            self._reclaim_slot_index = None
+        return True
+
     def _claimed_controller_ids(self) -> set[int]:
         controller_ids: set[int] = set()
         for player in self.players:
@@ -386,7 +493,9 @@ class GameScene:
                 continue
             cfg = slot.input_config
             if cfg.get("type") == "controller":
-                controller_ids.add(cfg["joystick_id"])
+                joystick_id = self._resolved_controller_id_for_slot(slot)
+                if joystick_id is not None:
+                    controller_ids.add(joystick_id)
         return controller_ids
 
     def _toggle_pause(self) -> None:
@@ -508,6 +617,8 @@ class GameScene:
                 elif menu_rect.collidepoint(event.pos):
                     self.next_scene = STATE_MENU
             elif event.type == pygame.JOYBUTTONDOWN:
+                if self._try_reclaim_controller(event):
+                    continue
                 self._handle_controller_pause_button(event)
             elif event.type == pygame.QUIT:
                 # Do NOT call pygame.quit() here. game.py already sets running=False
@@ -641,12 +752,62 @@ class GameScene:
         if self.upgrade_menu:
             self.upgrade_menu.draw(screen)
 
+        self._draw_reconnect_prompt(screen)
+
         # 8. If paused: draw pause overlay or settings overlay
         if self.paused:
             if self._settings_open:
                 self._settings_menu.draw(screen)
             else:
                 self._draw_pause_overlay(screen)
+
+    def _draw_reconnect_prompt(self, screen: pygame.Surface) -> None:
+        unresolved_players = self._unresolved_controller_players()
+        if not unresolved_players:
+            return
+
+        active_reclaim_player = self._active_reclaim_player()
+        overlay = pygame.Surface((SCREEN_WIDTH, 96), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 175))
+        screen.blit(overlay, (0, SCREEN_HEIGHT - 116))
+
+        if active_reclaim_player is not None and len(unresolved_players) > 1:
+            title = (
+                f"Controller for Player {active_reclaim_player.slot.index + 1} disconnected"
+                " - reconnect that controller first and press Confirm or Start"
+            )
+        else:
+            target_player = active_reclaim_player or unresolved_players[0]
+            title = (
+                f"Controller for Player {target_player.slot.index + 1} disconnected"
+                " - reconnect and press Confirm or Start to reclaim"
+            )
+
+        title_surface = self._reconnect_prompt_font.render(title, True, GOLD)
+        screen.blit(
+            title_surface,
+            (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, SCREEN_HEIGHT - 106),
+        )
+
+        detail = "Single-player keyboard behavior is unchanged. Multiplayer controller claims never auto-switch across players."
+        detail_surface = self._reconnect_prompt_small_font.render(detail, True, (220, 220, 220))
+        screen.blit(
+            detail_surface,
+            (SCREEN_WIDTH // 2 - detail_surface.get_width() // 2, SCREEN_HEIGHT - 74),
+        )
+
+        unresolved_labels = ", ".join(
+            f"P{player.slot.index + 1}" for player in unresolved_players if player.slot is not None
+        )
+        status_surface = self._reconnect_prompt_small_font.render(
+            f"Waiting on: {unresolved_labels}",
+            True,
+            (180, 180, 180),
+        )
+        screen.blit(
+            status_surface,
+            (SCREEN_WIDTH // 2 - status_surface.get_width() // 2, SCREEN_HEIGHT - 48),
+        )
 
     def _draw_pause_overlay(self, screen):
         """Draw the pause menu: overlay, title, and four interactive buttons."""

@@ -37,6 +37,64 @@ class ClassSelect:
             self.nav_index = initial_index
             self.selected_class = HERO_CLASSES[initial_index]
 
+    def _controller_cfg(self) -> dict | None:
+        if not self.slot_queue_active:
+            return None
+        cfg = self.current_slot.input_config
+        if cfg is None or cfg.get("type") != "controller":
+            return None
+        return cfg
+
+    def _resolved_controller_id(self) -> int | None:
+        cfg = self._controller_cfg()
+        if cfg is None:
+            return None
+
+        input_manager = InputManager.instance()
+        joystick_id = input_manager.resolve_joystick_id(
+            cfg.get("joystick_id"),
+            profile_key=cfg.get("profile_key"),
+            guid=cfg.get("guid"),
+            name=cfg.get("name"),
+        )
+        if joystick_id is not None and joystick_id != cfg.get("joystick_id"):
+            self.current_slot.input_config = input_manager.build_controller_input_config(joystick_id)
+        return joystick_id
+
+    def _controller_reconnect_candidate_ids(self) -> list[int]:
+        cfg = self._controller_cfg()
+        if cfg is None:
+            return []
+
+        return InputManager.instance().get_reconnect_candidate_ids(
+            joystick_id=cfg.get("joystick_id"),
+            profile_key=cfg.get("profile_key"),
+            guid=cfg.get("guid"),
+            name=cfg.get("name"),
+        )
+
+    def _try_reclaim_controller(self, event: pygame.event.Event) -> bool:
+        cfg = self._controller_cfg()
+        if cfg is None:
+            return False
+
+        input_manager = InputManager.instance()
+        if self._resolved_controller_id() is not None:
+            return False
+        if event.instance_id not in self._controller_reconnect_candidate_ids():
+            return False
+
+        if not (
+            input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id)
+            or input_manager.button_matches("start", event.button, joystick_id=event.instance_id)
+        ):
+            return False
+
+        self.current_slot.input_config = input_manager.build_controller_input_config(event.instance_id)
+        self._controller_nav_dir = 0
+        self._controller_nav_timer = 0.0
+        return True
+
     def _mouse_input_enabled(self) -> bool:
         """Mouse hero selection is available in both solo and multiplayer."""
         return True
@@ -138,10 +196,17 @@ class ClassSelect:
         cfg = self.current_slot.input_config
         if cfg is not None and cfg["type"] == "controller":
             input_manager = InputManager.instance()
+            joystick_id = self._resolved_controller_id()
+            cfg = self.current_slot.input_config
+            if joystick_id is None:
+                return (
+                    f"Player {self.current_slot.index + 1}: controller disconnected"
+                    f"  -  reconnect and press {input_manager.describe_binding('confirm')} or {input_manager.describe_binding('start')} to reclaim"
+                )
             return (
-                f"Controller {cfg['joystick_id'] + 1}: stick, D-pad, or click to choose"
-                f"  -  {input_manager.describe_binding('confirm', joystick_id=cfg['joystick_id'])} or click confirms"
-                f"  -  {input_manager.describe_binding('back', joystick_id=cfg['joystick_id'])}, ESC, or Back click backs"
+                f"Controller {joystick_id + 1}: stick, D-pad, or click to choose"
+                f"  -  {input_manager.describe_binding('confirm', joystick_id=joystick_id)} or click confirms"
+                f"  -  {input_manager.describe_binding('back', joystick_id=joystick_id)}, ESC, or Back click backs"
             )
         return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
 
@@ -234,10 +299,14 @@ class ClassSelect:
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "controller":
             return
-        if event.instance_id != cfg["joystick_id"]:
+        input_manager = InputManager.instance()
+        joystick_id = self._resolved_controller_id()
+        if joystick_id is None:
+            self._try_reclaim_controller(event)
+            return
+        if event.instance_id != joystick_id:
             return
 
-        input_manager = InputManager.instance()
         if input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
             self._route_to_game_or_next_slot()
         elif input_manager.button_matches("back", event.button, joystick_id=event.instance_id):
@@ -251,8 +320,14 @@ class ClassSelect:
         if cfg is None or cfg["type"] != "controller":
             return
 
+        joystick_id = self._resolved_controller_id()
+        if joystick_id is None:
+            self._controller_nav_dir = 0
+            self._controller_nav_timer = 0.0
+            return
+
         new_dir, _unused_y = InputManager.instance().get_menu_navigation_for_joystick(
-            cfg["joystick_id"]
+            joystick_id
         )
 
         if new_dir != self._controller_nav_dir:
