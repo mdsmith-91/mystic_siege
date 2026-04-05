@@ -78,6 +78,32 @@ WEAPON_SLOT_PIP_SPACING = 7
 WEAPON_SLOT_PIP_Y_OFFSET = 6
 WEAPON_SLOT_PIP_FILLED_COLOR = (255, 215, 0)
 WEAPON_SLOT_PIP_EMPTY_COLOR = (80, 80, 80)
+HUD_PANEL_PADDING = 10
+HUD_PANEL_BAR_HEIGHT = 12
+HUD_PANEL_WEAPON_SLOT_SIZE = 32
+HUD_PANEL_WEAPON_SLOT_GAP = 4
+HUD_REVIVE_RING_RADIUS = 28
+HUD_REVIVE_RING_WIDTH = 4
+HUD_PANEL_TUPLES = {
+    1: {
+        0: (20, 20, 360, 120),
+    },
+    2: {
+        0: (20, 20, 300, 140),
+        1: (960, 20, 300, 140),
+    },
+    3: {
+        0: (20, 20, 250, 138),
+        1: (515, 20, 250, 138),
+        2: (1010, 20, 250, 138),
+    },
+    4: {
+        0: (20, 20, 240, 132),
+        1: (1020, 20, 240, 132),
+        2: (20, 558, 240, 132),
+        3: (1020, 558, 240, 132),
+    },
+}
 
 # CONTROLLER
 CONTROLLER_DEADZONE = 0.2

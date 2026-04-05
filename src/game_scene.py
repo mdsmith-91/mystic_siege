@@ -370,7 +370,10 @@ class GameScene:
             return
 
         # If paused or upgrade_menu is open (and not yet dismissed): return
-        if self.paused or (self.upgrade_menu and not self.upgrade_menu.done):
+        if self.paused:
+            return
+        if self.upgrade_menu and not self.upgrade_menu.done:
+            self.upgrade_menu.update(dt)
             return
 
         self._smooth_dt = dt * 0.1 + self._smooth_dt * 0.9
@@ -466,7 +469,15 @@ class GameScene:
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
         fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
         self.hud.draw_threat_arrows(screen, self.enemy_group, self.camera)
-        self.hud.draw(screen, self.player, self.xp_systems[0], self.wave_manager, self.show_fps, fps)
+        self.hud.draw(
+            screen,
+            self.players,
+            self.xp_systems,
+            self.wave_manager,
+            self.show_fps,
+            fps,
+            self.camera,
+        )
 
         # 7. If upgrade_menu: upgrade_menu.draw(screen)
         if self.upgrade_menu:

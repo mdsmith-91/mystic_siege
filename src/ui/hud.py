@@ -1,3 +1,5 @@
+import math
+
 import pygame
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_MED_COLOR, HP_LOW_COLOR, XP_COLOR,
@@ -5,6 +7,10 @@ from settings import (
     WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
+    WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
+    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE,
+    HUD_PANEL_WEAPON_SLOT_GAP, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
+    HUD_PANEL_TUPLES,
 )
 
 # Arrow geometry: tip distance from edge, half-width of arrow base
@@ -80,31 +86,114 @@ class HUD:
             pygame.draw.polygon(screen, THREAT_ARROW_COLOR, poly)
             arrows_drawn += 1
 
-    def draw(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
-        """Draw all in-game overlay UI in screen space (no camera offset)."""
+    def _draw_bar(
+        self,
+        screen,
+        rect: pygame.Rect,
+        ratio: float,
+        fill_color: tuple[int, int, int],
+        background_color: tuple[int, int, int] = (30, 30, 30),
+    ) -> None:
+        pygame.draw.rect(screen, background_color, rect, border_radius=4)
+        ratio = max(0.0, min(1.0, ratio))
+        fill_width = int(rect.width * ratio)
+        if fill_width > 0:
+            fill_rect = pygame.Rect(rect.x, rect.y, fill_width, rect.height)
+            pygame.draw.rect(screen, fill_color, fill_rect, border_radius=4)
 
-        # 1. HP Bar (top-left, x=20, y=20)
+    def _draw_shared_info(self, screen, wave_manager, show_fps: bool, fps: float) -> None:
+        timer_text = wave_manager.get_elapsed_str()
+        timer_surface = self.font_32.render(timer_text, True, WHITE)
+        timer_shadow = self.font_32.render(timer_text, True, BLACK)
+        tx = SCREEN_WIDTH // 2 - timer_surface.get_width() // 2
+        screen.blit(timer_shadow, (tx + 2, 12))
+        screen.blit(timer_surface, (tx, 10))
+
+        warning = wave_manager.get_warning()
+        if warning:
+            warning_surface = self.font_48.render(warning, True, (255, 100, 0))
+            warning_shadow = self.font_48.render(warning, True, BLACK)
+            wx = SCREEN_WIDTH // 2 - warning_surface.get_width() // 2
+            screen.blit(warning_shadow, (wx + 3, 203))
+            screen.blit(warning_surface, (wx, 200))
+
+        if show_fps:
+            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, WHITE)
+            fps_rect = fps_text.get_rect(midtop=(SCREEN_WIDTH // 2, 50))
+            screen.blit(fps_text, fps_rect)
+
+    def _draw_weapon_slots(
+        self,
+        screen,
+        player,
+        left: int,
+        top: int,
+        slot_size: int,
+    ) -> None:
+        for i in range(MAX_WEAPON_SLOTS):
+            slot_x = left + i * (slot_size + HUD_PANEL_WEAPON_SLOT_GAP)
+            slot_rect = pygame.Rect(slot_x, top, slot_size, slot_size)
+            pygame.draw.rect(screen, (40, 40, 40), slot_rect, border_radius=4)
+
+            if i >= len(player.weapons):
+                pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1, border_radius=4)
+                continue
+
+            pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2, border_radius=4)
+            weapon = player.weapons[i]
+            letter = weapon.name[0] if weapon.name else "?"
+            letter_font = self.font_16 if slot_size >= 36 else self.font_14
+            text = letter_font.render(letter, True, WHITE)
+            screen.blit(text, text.get_rect(center=slot_rect.center))
+
+            pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
+            pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_size // 5))
+            pip_y_offset = max(4, min(WEAPON_SLOT_PIP_Y_OFFSET, slot_size // 5))
+            total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * pip_spacing
+            pip_start_x = slot_rect.centerx - total_pip_width // 2
+            pip_y = slot_rect.bottom - pip_y_offset - pip_radius
+            for p in range(WEAPON_SLOT_PIP_COUNT):
+                pip_x = pip_start_x + p * pip_spacing
+                color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon.level else WEAPON_SLOT_PIP_EMPTY_COLOR
+                pygame.draw.circle(screen, color, (pip_x, pip_y), pip_radius)
+
+    def _draw_revive_indicator(self, screen, player, slot_color, camera) -> None:
+        if not player.is_downed:
+            return
+
+        center = camera.world_to_screen(player.pos)
+        ring_rect = pygame.Rect(0, 0, HUD_REVIVE_RING_RADIUS * 2, HUD_REVIVE_RING_RADIUS * 2)
+        ring_rect.center = (int(center.x), int(center.y))
+        pygame.draw.circle(screen, (50, 50, 50), ring_rect.center, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH)
+
+        if REVIVE_DURATION > 0 and player.revive_timer > 0:
+            progress = max(0.0, min(1.0, player.revive_timer / REVIVE_DURATION))
+            pygame.draw.arc(
+                screen,
+                slot_color,
+                ring_rect,
+                -math.pi / 2,
+                (-math.pi / 2) + (2 * math.pi * progress),
+                HUD_REVIVE_RING_WIDTH,
+            )
+
+    def _draw_single_player(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
+        """Preserve the familiar 1P HUD layout."""
+
         hp_bar_rect = pygame.Rect(20, 20, 200, 20)
-        pygame.draw.rect(screen, (30, 30, 30), hp_bar_rect)
-
         hp_ratio = max(0.0, player.hp / player.max_hp)
-        fill_width = int(200 * hp_ratio)
-
         if hp_ratio > 0.5:
             fill_color = HP_COLOR
         elif hp_ratio > 0.25:
             fill_color = HP_MED_COLOR
         else:
             fill_color = HP_LOW_COLOR
-
-        pygame.draw.rect(screen, fill_color, pygame.Rect(20, 20, fill_width, 20))
+        self._draw_bar(screen, hp_bar_rect, hp_ratio, fill_color)
 
         hp_display = max(0, int(player.hp))
-        text = self.font_16.render(f"HP  {hp_display} / {int(player.max_hp)}", True, (255, 255, 255))
+        text = self.font_16.render(f"HP  {hp_display} / {int(player.max_hp)}", True, WHITE)
         screen.blit(text, (230, 20))
 
-        # 1b. Player stat block (top-left, below HP bar)
-        #     Always show Speed; show others only when non-default
         stat_lines = []
         if player.speed > player.base_speed:
             spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
@@ -132,70 +221,96 @@ class HUD:
             screen.blit(surf, (20, stat_y))
             stat_y += 16
 
-        # 2. XP Bar (flush with screen bottom, full width)
         xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 20, SCREEN_WIDTH, 20)
-        pygame.draw.rect(screen, (30, 30, 30), xp_bar_rect)
-
         xp_progress = xp_system.xp_progress()
-        fill_width = int(SCREEN_WIDTH * xp_progress)
+        self._draw_bar(screen, xp_bar_rect, xp_progress, XP_COLOR)
 
-        if fill_width > 0:
-            pygame.draw.rect(screen, XP_COLOR, pygame.Rect(0, SCREEN_HEIGHT - 20, fill_width, 20))
-
-        lvl_text = self.font_16.render(f"LVL {xp_system.current_level}", True, (255, 255, 255))
+        lvl_text = self.font_16.render(f"LVL {xp_system.current_level}", True, WHITE)
         lvl_rect = lvl_text.get_rect(midleft=(10, xp_bar_rect.centery))
         screen.blit(lvl_text, lvl_rect)
 
-        # 3. Timer (top-center)
-        timer_text = wave_manager.get_elapsed_str()
-        timer_surface = self.font_32.render(timer_text, True, (255, 255, 255))
-        timer_shadow = self.font_32.render(timer_text, True, (0, 0, 0))
-        tx = SCREEN_WIDTH // 2 - timer_surface.get_width() // 2
-        screen.blit(timer_shadow, (tx + 2, 12))
-        screen.blit(timer_surface, (tx, 10))
-
-        # 4. Kill counter and hero class (top-right)
-        kill_text = self.font_16.render(f"KILLS  {player.kill_count}", True, (255, 255, 255))
+        kill_text = self.font_16.render(f"KILLS  {player.kill_count}", True, WHITE)
         screen.blit(kill_text, (SCREEN_WIDTH - kill_text.get_width() - 10, 20))
         class_text = self.font_14.render(player.hero_class.upper(), True, (180, 160, 120))
         screen.blit(class_text, (SCREEN_WIDTH - class_text.get_width() - 10, 40))
 
-        # 5. Weapon slots (bottom-right)
         weapon_slots_x = SCREEN_WIDTH - (MAX_WEAPON_SLOTS * 45 + 5)
         weapon_slots_y = SCREEN_HEIGHT - 65
+        self._draw_weapon_slots(screen, player, weapon_slots_x, weapon_slots_y, 40)
 
-        for i in range(MAX_WEAPON_SLOTS):
-            slot_rect = pygame.Rect(weapon_slots_x + i * 45, weapon_slots_y, 40, 40)
-            pygame.draw.rect(screen, (40, 40, 40), slot_rect)
-
-            if i < len(player.weapons):
-                pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2)
-                weapon_name = player.weapons[i].name
-                letter = weapon_name[0] if weapon_name else "?"
-                text = self.font_20.render(letter, True, (255, 255, 255))
-                screen.blit(text, text.get_rect(center=slot_rect.center))
-                weapon_level = player.weapons[i].level
-                total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * WEAPON_SLOT_PIP_SPACING
-                pip_start_x = slot_rect.centerx - total_pip_width // 2
-                pip_y = slot_rect.bottom - WEAPON_SLOT_PIP_Y_OFFSET - WEAPON_SLOT_PIP_RADIUS
-                for p in range(WEAPON_SLOT_PIP_COUNT):
-                    pip_x = pip_start_x + p * WEAPON_SLOT_PIP_SPACING
-                    color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon_level else WEAPON_SLOT_PIP_EMPTY_COLOR
-                    pygame.draw.circle(screen, color, (pip_x, pip_y), WEAPON_SLOT_PIP_RADIUS)
-            else:
-                pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1)
-
-        # 6. Wave warning (center screen, fades out)
-        warning = wave_manager.get_warning()
-        if warning:
-            warning_surface = self.font_48.render(warning, True, (255, 100, 0))
-            warning_shadow = self.font_48.render(warning, True, (0, 0, 0))
-            wx = SCREEN_WIDTH // 2 - warning_surface.get_width() // 2
-            screen.blit(warning_shadow, (wx + 3, 203))
-            screen.blit(warning_surface, (wx, 200))
-
-        # 7. FPS counter (above XP bar, centered over LVL label)
         if show_fps:
-            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, (255, 255, 255))
+            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, WHITE)
             fps_rect = fps_text.get_rect(centerx=lvl_rect.centerx, bottom=xp_bar_rect.top - 2)
             screen.blit(fps_text, fps_rect)
+
+        self._draw_shared_info(screen, wave_manager, False, fps)
+
+    def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera) -> None:
+        panel_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
+        panel_surface.fill(UI_BG)
+        screen.blit(panel_surface, rect.topleft)
+        pygame.draw.rect(screen, slot.color, rect, 2, border_radius=6)
+
+        inner_x = rect.x + HUD_PANEL_PADDING
+        inner_y = rect.y + HUD_PANEL_PADDING
+        inner_width = rect.width - HUD_PANEL_PADDING * 2
+
+        title = self.font_16.render(f"P{slot.index + 1}  {player.hero_class.upper()}", True, WHITE)
+        kills = self.font_14.render(f"KILLS {player.kill_count}", True, GOLD)
+        screen.blit(title, (inner_x + 20, inner_y))
+        screen.blit(kills, (rect.right - HUD_PANEL_PADDING - kills.get_width(), inner_y + 2))
+        pygame.draw.circle(screen, slot.color, (inner_x + 8, inner_y + 10), 6)
+
+        hp_y = inner_y + 24
+        hp_rect = pygame.Rect(inner_x, hp_y, inner_width, HUD_PANEL_BAR_HEIGHT)
+        hp_ratio = max(0.0, player.hp / player.max_hp) if player.max_hp else 0.0
+        if player.is_downed:
+            hp_color = (110, 110, 110)
+        elif hp_ratio > 0.5:
+            hp_color = HP_COLOR
+        elif hp_ratio > 0.25:
+            hp_color = HP_MED_COLOR
+        else:
+            hp_color = HP_LOW_COLOR
+        self._draw_bar(screen, hp_rect, hp_ratio, hp_color)
+        hp_label = "DOWNED" if player.is_downed else f"HP  {max(0, int(player.hp))} / {int(player.max_hp)}"
+        screen.blit(self.font_14.render(hp_label, True, WHITE), (inner_x, hp_rect.bottom + 1))
+
+        xp_rect = pygame.Rect(inner_x, hp_rect.bottom + 18, inner_width, HUD_PANEL_BAR_HEIGHT)
+        self._draw_bar(screen, xp_rect, xp_system.xp_progress(), XP_COLOR)
+        lvl_text = self.font_14.render(f"LVL {xp_system.current_level}", True, WHITE)
+        status_y = xp_rect.bottom + 1
+        screen.blit(lvl_text, (inner_x, status_y))
+
+        if player.is_downed:
+            progress = 0
+            if REVIVE_DURATION > 0:
+                progress = int((player.revive_timer / REVIVE_DURATION) * 100)
+            revive_text = self.font_14.render(f"REVIVE {max(0, min(100, progress))}%", True, slot.color)
+            screen.blit(revive_text, (rect.right - HUD_PANEL_PADDING - revive_text.get_width(), xp_rect.bottom + 2))
+
+        slot_size = HUD_PANEL_WEAPON_SLOT_SIZE
+        total_slots_width = (MAX_WEAPON_SLOTS * slot_size) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
+        weapon_left = rect.centerx - total_slots_width // 2
+        weapon_top = status_y + self.font_14.get_height() + 4
+        self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)
+        self._draw_revive_indicator(screen, player, slot.color, camera)
+
+    def draw(self, screen, players, xp_systems, wave_manager, show_fps=False, fps=0, camera=None):
+        """Draw all in-game overlay UI in screen space (no camera offset)."""
+        if not players or not xp_systems:
+            return
+
+        if len(players) == 1:
+            self._draw_single_player(screen, players[0], xp_systems[0], wave_manager, show_fps, fps)
+            return
+
+        layout = HUD_PANEL_TUPLES[len(players)]
+        for player, xp_system in zip(players, xp_systems):
+            slot = player.slot
+            if slot is None:
+                continue
+            rect = pygame.Rect(layout[slot.index])
+            self._draw_player_panel(screen, player, xp_system, rect, slot, camera)
+
+        self._draw_shared_info(screen, wave_manager, show_fps, fps)
