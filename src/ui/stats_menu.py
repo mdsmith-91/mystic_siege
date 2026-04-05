@@ -44,8 +44,7 @@ class StatsMenu:
                 if back_rect.collidepoint(mouse_pos):
                     self.next_scene = STATE_MENU
             elif event.type == pygame.QUIT:
-                pygame.quit()
-                raise SystemExit
+                return
 
     def update(self, dt):
         pass

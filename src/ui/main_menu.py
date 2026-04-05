@@ -1,5 +1,4 @@
 import pygame
-import sys
 import random
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE, STATE_LOBBY
 
@@ -52,8 +51,8 @@ class MainMenu:
                     # Check if "Quit" button was clicked
                     quit_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, 590, 240, 50)
                     if quit_rect.collidepoint(mouse_pos):
-                        pygame.quit()
-                        sys.exit()
+                        pygame.event.post(pygame.event.Event(pygame.QUIT))
+                        return
 
             elif event.type == pygame.MOUSEMOTION:
                 self.keyboard_active = False
@@ -71,12 +70,11 @@ class MainMenu:
                     if action:
                         self.next_scene = action
                     else:
-                        pygame.quit()
-                        sys.exit()
+                        pygame.event.post(pygame.event.Event(pygame.QUIT))
+                        return
 
             elif event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                return
 
     def update(self, dt):
         """Update the main menu state."""
