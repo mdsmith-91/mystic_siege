@@ -58,14 +58,22 @@ class Player(BaseEntity):
         # Passive stats as instance variables
         self.regen_rate = 0.0       # HP per second
         self.xp_multiplier = 1.0
+        self.base_xp_multiplier = 1.0
+        self.xp_multiplier_bonus_pct = 0.0
         self.pickup_radius = PICKUP_RADIUS
+        self.base_pickup_radius = PICKUP_RADIUS
+        self.pickup_radius_bonus_pct = 0.0
         self.cooldown_reduction = 0.0       # 0.0 to 0.9 max
         self.crit_chance = CRIT_CHANCE_BASE
         self.spell_damage_multiplier = 1.0
+        self.base_spell_damage_multiplier = 1.0
+        self.spell_damage_bonus_pct = 0.0
+        self.speed_bonus_pct = 0.0
         if self.hero_class == "Wizard":
             self.crit_chance += 0.10
-            self.spell_damage_multiplier += WIZARD_SPELL_DAMAGE_BONUS
+            self.spell_damage_bonus_pct += WIZARD_SPELL_DAMAGE_BONUS
         self.damage_multiplier = 1.0
+        self._recalculate_pct_stats()
 
         # iframes: float = 0.0  (countdown timer for invincibility frames)
         self.iframes = 0.0
@@ -163,6 +171,27 @@ class Player(BaseEntity):
     def can_collect_xp(self) -> bool:
         """Whether the player can currently collect XP and queue upgrades."""
         return self.alive() and not self.is_downed and not self.dying
+
+    def _recalculate_pct_stats(self) -> None:
+        """Recompute effective percent-based stats from their base values."""
+        self.speed = self.base_speed * (1.0 + self.speed_bonus_pct)
+        self.pickup_radius = self.base_pickup_radius * (1.0 + self.pickup_radius_bonus_pct)
+        self.xp_multiplier = self.base_xp_multiplier * (1.0 + self.xp_multiplier_bonus_pct)
+        self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
+
+    def add_flat_percent_bonus(self, stat: str, value: float) -> None:
+        """Apply a percent bonus additively from the stat's base value."""
+        if stat == "speed_pct":
+            self.speed_bonus_pct += value
+        elif stat == "pickup_radius_pct":
+            self.pickup_radius_bonus_pct += value
+        elif stat == "xp_multiplier_pct":
+            self.xp_multiplier_bonus_pct += value
+        elif stat == "spell_damage_multiplier_pct":
+            self.spell_damage_bonus_pct += value
+        else:
+            return
+        self._recalculate_pct_stats()
 
     def _read_input(self) -> Vector2:
         """Return the raw (un-normalized) movement direction for this player.

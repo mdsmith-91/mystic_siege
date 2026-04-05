@@ -12,7 +12,6 @@ Run from the project root:
 import os
 import sys
 import collections
-import numpy as np
 import pygame
 
 # Resolve project root regardless of where the script is run from
@@ -28,8 +27,21 @@ BG_THRESHOLD = 60
 TILE_SIZE = 32
 
 
-def color_distance(a: np.ndarray, b: np.ndarray) -> float:
+def _require_numpy():
+    """Import numpy only when this asset-processing script is executed."""
+    try:
+        import numpy as np
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "golem sprite processing requires numpy. Install project dependencies "
+            "before running src/utils/process_golem_sprite.py."
+        ) from exc
+    return np
+
+
+def color_distance(a, b) -> float:
     """Euclidean distance between two RGB triples."""
+    np = _require_numpy()
     return float(np.sqrt(np.sum((a.astype(np.float32) - b.astype(np.float32)) ** 2)))
 
 
@@ -41,6 +53,7 @@ def flood_fill_background(surface: pygame.Surface, threshold: int) -> pygame.Sur
     """
     w, h = surface.get_size()
     result = surface.copy()
+    np = _require_numpy()
 
     rgb = pygame.surfarray.pixels3d(result)      # shape (w, h, 3)
     alpha = pygame.surfarray.pixels_alpha(result) # shape (w, h)

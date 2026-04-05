@@ -260,18 +260,18 @@ class UpgradeSystem:
             player.max_hp += value
             player.hp += value
         elif stat == "speed_pct":
-            player.speed *= (1 + value)
+            player.add_flat_percent_bonus(stat, value)
         elif stat == "pickup_radius_pct":
-            player.pickup_radius *= (1 + value)
+            player.add_flat_percent_bonus(stat, value)
         elif stat == "armor":
             player.armor += value
         elif stat == "regen_rate":
             player.regen_rate += value
         elif stat == "xp_multiplier_pct":
-            player.xp_multiplier *= (1 + value)
+            player.add_flat_percent_bonus(stat, value)
         elif stat == "cooldown_reduction":
             player.cooldown_reduction = min(0.9, player.cooldown_reduction + value)
         elif stat == "crit_chance":
             player.crit_chance += value
         elif stat == "spell_damage_multiplier_pct":
-            player.spell_damage_multiplier *= (1 + value)
+            player.add_flat_percent_bonus(stat, value)

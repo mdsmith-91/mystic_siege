@@ -8,20 +8,47 @@ class XPSystem:
         self.xp_to_next = BASE_XP_REQUIRED
         self.levelup_count = 0
 
-    def update(self, dt, player, xp_orb_group):
+    def _slot_order(self, player) -> int:
+        slot = getattr(player, "slot", None)
+        return slot.index if slot is not None else 0
+
+    def _eligible_collector_for_orb(self, orb, players):
+        """Choose a deterministic orb collector independent of update order."""
+        eligible_collectors: list[tuple[float, int, object]] = []
+        for player in players:
+            if not getattr(player, "can_collect_xp", player.is_alive):
+                continue
+            pickup_radius_sq = player.pickup_radius * player.pickup_radius
+            dist_sq = (player.pos - orb.rect.center).length_squared()
+            if dist_sq <= pickup_radius_sq:
+                eligible_collectors.append((dist_sq, self._slot_order(player), player))
+
+        if not eligible_collectors:
+            return None
+        return min(eligible_collectors, key=lambda item: (item[0], item[1]))[2]
+
+    def update(self, dt, player, xp_orb_group, players=None):
         """Handle XP collection and orb pickup."""
         if not getattr(player, "can_collect_xp", player.is_alive):
             return
 
+        players = players or [player]
         pickup_radius_sq = player.pickup_radius * player.pickup_radius
 
         # For each orb in xp_orb_group:
         for orb in xp_orb_group:
+            if orb.collected:
+                continue
+
+            chosen_collector = self._eligible_collector_for_orb(orb, players)
+            if chosen_collector is not player:
+                continue
+
             # dist_sq = squared distance from player.pos to orb.rect.center
             dist_sq = (player.pos - orb.rect.center).length_squared()
 
             # if dist_sq <= pickup_radius_sq and not orb.collected:
-            if dist_sq <= pickup_radius_sq and not orb.collected:
+            if dist_sq <= pickup_radius_sq:
                 self.collect_orb(orb, player)
 
     def collect_orb(self, orb, player):

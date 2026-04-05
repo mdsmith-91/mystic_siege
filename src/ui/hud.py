@@ -255,13 +255,15 @@ class HUD:
         if player.damage_multiplier > 1.0:
             stat_lines.append((f"DMG  {player.damage_multiplier:.1f}x", (255, 200, 120)))
         if player.crit_chance > CRIT_CHANCE_BASE:
-            stat_lines.append((f"CRIT  {int(player.crit_chance * 100)}%", (255, 230, 80)))
+            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 230, 80)))
         if player.regen_rate > 0:
             stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 160)))
         if player.spell_damage_multiplier > 1.0:
-            stat_lines.append((f"SPELL  {player.spell_damage_multiplier:.2f}x", (180, 140, 255)))
+            spell_pct = round((player.spell_damage_multiplier - 1.0) * 100)
+            stat_lines.append((f"SPELL  +{spell_pct}%", (180, 140, 255)))
         if player.xp_multiplier > 1.0:
-            stat_lines.append((f"XP  {player.xp_multiplier:.2f}x", (200, 255, 200)))
+            xp_pct = round((player.xp_multiplier - 1.0) * 100)
+            stat_lines.append((f"XP  +{xp_pct}%", (200, 255, 200)))
         if player.pickup_radius > PICKUP_RADIUS:
             stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
 

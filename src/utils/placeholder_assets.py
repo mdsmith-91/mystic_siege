@@ -3,9 +3,20 @@
 
 import os
 import wave
-import numpy as np
 import pygame
 from pygame.math import Vector2
+
+
+def _require_numpy():
+    """Import numpy only when audio placeholder generation is actually used."""
+    try:
+        import numpy as np
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "placeholder audio generation requires numpy. Install project dependencies "
+            "before running src/utils/placeholder_assets.py."
+        ) from exc
+    return np
 
 def create_asset_directories():
     """Create all required asset directories."""
@@ -182,6 +193,7 @@ def generate_weapon_icon_assets():
 
 def _write_sine_wav(path: str, freq_hz: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
     """Write a mono sine-wave WAV file."""
+    np = _require_numpy()
     n = int(sample_rate * duration_s)
     t = np.linspace(0, duration_s, n, endpoint=False)
     # Apply a short fade-out envelope to avoid clicks
@@ -196,6 +208,7 @@ def _write_sine_wav(path: str, freq_hz: float, duration_s: float, volume: float 
 
 def _write_sweep_wav(path: str, freq_start: float, freq_end: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
     """Write a mono frequency-sweep (chirp) WAV file."""
+    np = _require_numpy()
     n = int(sample_rate * duration_s)
     freq = np.linspace(freq_start, freq_end, n)
     phase = np.cumsum(2 * np.pi * freq / sample_rate)
@@ -210,6 +223,7 @@ def _write_sweep_wav(path: str, freq_start: float, freq_end: float, duration_s: 
 
 def _write_chord_wav(path: str, freqs: list, duration_s: float, volume: float = 0.2, sample_rate: int = 44100):
     """Write a mono chord WAV file by mixing multiple sine frequencies."""
+    np = _require_numpy()
     n = int(sample_rate * duration_s)
     t = np.linspace(0, duration_s, n, endpoint=False)
     envelope = np.linspace(1.0, 0.0, n)

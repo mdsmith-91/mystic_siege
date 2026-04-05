@@ -140,6 +140,9 @@ class GameScene:
             scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
             self.background.blit(scaled_pattern, (0, 0))
 
+        self._world_surface: pygame.Surface | None = None
+        self._scaled_world_surface: pygame.Surface | None = None
+
     @property
     def player(self) -> Player:
         return self.players[0]
@@ -260,6 +263,16 @@ class GameScene:
             "stats": stats,
             "player_results": player_results if len(player_results) > 1 else None,
         }
+
+    def _get_cached_world_surface(self, size: tuple[int, int]) -> pygame.Surface:
+        if self._world_surface is None or self._world_surface.get_size() != size:
+            self._world_surface = pygame.Surface(size).convert()
+        return self._world_surface
+
+    def _get_cached_scaled_surface(self, size: tuple[int, int]) -> pygame.Surface:
+        if self._scaled_world_surface is None or self._scaled_world_surface.get_size() != size:
+            self._scaled_world_surface = pygame.Surface(size).convert()
+        return self._scaled_world_surface
 
     def _revive_player(self, player: Player) -> None:
         player.hp = max(1.0, player.max_hp * REVIVE_HEALTH_FRACTION)
@@ -541,7 +554,7 @@ class GameScene:
 
         # xp_system.update(dt, player, xp_orb_group)
         for player, xp_system in zip(self.players, self.xp_systems):
-            xp_system.update(dt, player, self.xp_orb_group)
+            xp_system.update(dt, player, self.xp_orb_group, self.players)
 
         camera_targets = [player.pos for player in self.players if player.is_alive]
         self.camera.update_multi(camera_targets, dt)
@@ -567,7 +580,7 @@ class GameScene:
         """Draw the game scene."""
         visible_rect = self.camera.get_view_rect()
         visible_rect.clamp_ip(pygame.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT))
-        world_surface = pygame.Surface(visible_rect.size).convert()
+        world_surface = self._get_cached_world_surface(visible_rect.size)
         world_surface.blit(self.background, (0, 0), visible_rect)
         local_offset = Vector2(visible_rect.x, visible_rect.y)
 
@@ -591,6 +604,8 @@ class GameScene:
 
         # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
         for player in self.players:
+            if player.is_downed:
+                continue
             for weapon in player.weapons:
                 if hasattr(weapon, 'draw'):
                     weapon.draw(world_surface, local_offset)
@@ -605,7 +620,8 @@ class GameScene:
         if world_surface.get_size() == (SCREEN_WIDTH, SCREEN_HEIGHT):
             screen.blit(world_surface, (0, 0))
         else:
-            scaled_world = pygame.transform.smoothscale(world_surface, (SCREEN_WIDTH, SCREEN_HEIGHT))
+            scaled_world = self._get_cached_scaled_surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            pygame.transform.smoothscale(world_surface, (SCREEN_WIDTH, SCREEN_HEIGHT), scaled_world)
             screen.blit(scaled_world, (0, 0))
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
