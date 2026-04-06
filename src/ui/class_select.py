@@ -4,6 +4,7 @@ from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
     STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_LOBBY, PLAYER_COLORS,
     CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+    CLASS_SELECT_TITLE_Y, CLASS_SELECT_PROMPT_MARGIN_TOP,
 )
 from src.core.player_slot import PlayerSlot
 from src.utils.input_manager import InputManager
@@ -392,7 +393,8 @@ class ClassSelect:
         if self.slot_queue_active:
             title = f"PLAYER {self.current_slot.index + 1} - CHOOSE YOUR HERO"
         title_surface = self.font_title.render(title, True, (255, 255, 255))
-        screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
+        title_y = CLASS_SELECT_TITLE_Y
+        screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, title_y))
 
         # 3. Draw one card per hero class.
         card_width = 260
@@ -533,9 +535,10 @@ class ClassSelect:
             else:
                 prompt = "Use your assigned controls to choose"
             prompt_surface = self.font_small.render(prompt, True, (180, 180, 180))
+            prompt_y = title_y + title_surface.get_height() + CLASS_SELECT_PROMPT_MARGIN_TOP
             screen.blit(
                 prompt_surface,
-                (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, 108),
+                (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, prompt_y),
             )
 
             if self.selected_class is None:
