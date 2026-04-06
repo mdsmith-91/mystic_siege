@@ -1,3 +1,4 @@
+import math
 import os
 from itertools import chain
 import pygame
@@ -9,7 +10,8 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        SPAWN_OFFSETS, STATE_GAMEOVER,
                        REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
                        REVIVE_IFRAME_DURATION,
-                       CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE)
+                       CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+                       CAMERA_ZOOM_MIN)
 from src.core.player_slot import PlayerSlot
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader, _get_base_path
@@ -144,8 +146,14 @@ class GameScene:
             scaled_pattern = pygame.transform.scale(tile_pattern, (WORLD_WIDTH, WORLD_HEIGHT))
             self.background.blit(scaled_pattern, (0, 0))
 
+        self.background = self.background.convert()
+
         self._world_surface: pygame.Surface | None = None
         self._scaled_world_surface: pygame.Surface | None = None
+        self._max_world_surface_size = (
+            math.ceil(SCREEN_WIDTH / CAMERA_ZOOM_MIN),
+            math.ceil(SCREEN_HEIGHT / CAMERA_ZOOM_MIN),
+        )
 
     @property
     def player(self) -> Player:
@@ -269,9 +277,18 @@ class GameScene:
         }
 
     def _get_cached_world_surface(self, size: tuple[int, int]) -> pygame.Surface:
-        if self._world_surface is None or self._world_surface.get_size() != size:
-            self._world_surface = pygame.Surface(size).convert()
-        return self._world_surface
+        min_width, min_height = self._max_world_surface_size
+        required_width = max(size[0], min_width)
+        required_height = max(size[1], min_height)
+
+        if (
+            self._world_surface is None
+            or self._world_surface.get_width() < required_width
+            or self._world_surface.get_height() < required_height
+        ):
+            self._world_surface = pygame.Surface((required_width, required_height)).convert()
+
+        return self._world_surface.subsurface((0, 0, size[0], size[1]))
 
     def _get_cached_scaled_surface(self, size: tuple[int, int]) -> pygame.Surface:
         if self._scaled_world_surface is None or self._scaled_world_surface.get_size() != size:
@@ -708,10 +725,12 @@ class GameScene:
         #    screen.blit(sprite.image, camera.apply(sprite))
         #    sprite.draw_health_bar(screen, camera.offset) if enemy
         # Sort sprites by y-position for proper drawing order (projectiles are not in all_sprites)
-        sorted_sprites = sorted(
-            chain(self.all_sprites, self.projectile_group),
-            key=lambda sprite: sprite.rect.bottom,
-        )
+        sorted_sprites = [
+            sprite
+            for sprite in chain(self.all_sprites, self.projectile_group)
+            if sprite.rect.colliderect(visible_rect)
+        ]
+        sorted_sprites.sort(key=lambda sprite: sprite.rect.bottom)
 
         for sprite in sorted_sprites:
             # Apply camera offset
@@ -734,6 +753,8 @@ class GameScene:
 
         # 4. Draw effects (damage numbers, sparks, explosions) on top of sprites
         for sprite in self.effect_group:
+            if not sprite.rect.colliderect(visible_rect):
+                continue
             screen_pos = sprite.rect.move(-local_offset)
             world_surface.blit(sprite.image, screen_pos)
 

@@ -25,8 +25,7 @@ class DamageNumber(pygame.sprite.Sprite):
         self.font = pygame.font.SysFont(None, font_size, bold=is_crit)
 
         # Text surface
-        self.text_surface = self.font.render(self.text, True, self.color)
-        self.image = self.text_surface
+        self.image = self.font.render(self.text, True, self.color)
         self.rect = self.image.get_rect(center=pos)
 
         # Velocity: Vector2(random -20 to 20, -80)
@@ -54,7 +53,6 @@ class DamageNumber(pygame.sprite.Sprite):
         # Alpha fades out in last 0.3s
         if self.lifetime < 0.3:
             alpha = int(255 * (self.lifetime / 0.3))
-            self.image = self.text_surface.copy()
             self.image.set_alpha(alpha)
 
         # kill() when done
@@ -87,6 +85,7 @@ class HitSpark(pygame.sprite.Sprite):
 
         # Store original position
         self.pos = Vector2(pos)
+        self.lifetime = 0.25
 
     def update(self, dt):
         # Move particles, shrink radius, fade
@@ -100,11 +99,14 @@ class HitSpark(pygame.sprite.Sprite):
             # Fade (decrease lifetime)
             particle["lifetime"] -= dt
 
-            # Update position
-            self.rect.center = self.pos
+        self.lifetime -= dt
+        self.rect.center = self.pos
 
         # Remove dead particles and update image
         self.particles = [p for p in self.particles if p["lifetime"] > 0]
+        if self.lifetime <= 0 or not self.particles:
+            self.kill()
+            return
 
         # Redraw image
         self.image.fill((0, 0, 0, 0))  # Clear surface
@@ -187,6 +189,7 @@ class LevelUpEffect(pygame.sprite.Sprite):
 
     def update(self, dt):
         # Move particles outward, then fade
+        self.lifetime -= dt
         for particle in self.particles:
             # Move outward
             particle["distance"] += particle["speed"] * dt
@@ -203,6 +206,9 @@ class LevelUpEffect(pygame.sprite.Sprite):
 
         # Remove dead particles
         self.particles = [p for p in self.particles if p["lifetime"] > 0]
+        if self.lifetime <= 0 or not self.particles:
+            self.kill()
+            return
 
         # Update image
         self.image.fill((0, 0, 0, 0))  # Clear surface
@@ -212,7 +218,3 @@ class LevelUpEffect(pygame.sprite.Sprite):
                              (particle["pos"].x - self.rect.x,
                               particle["pos"].y - self.rect.y),
                              particle["radius"])
-
-        # Kill when done
-        if self.lifetime <= 0:
-            self.kill()

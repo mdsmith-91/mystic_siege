@@ -33,6 +33,27 @@ class LightningChain(BaseWeapon):
         self.lightning_arcs = []
         self.stunned_enemies: dict[object, float] = {}
 
+    def _build_arc_points(self, start: Vector2, end: Vector2) -> list[Vector2]:
+        """Freeze the arc geometry once so draw() avoids per-frame random work."""
+        direction_vector = end - start
+        if direction_vector.length_squared() == 0:
+            return [Vector2(start), Vector2(end)]
+
+        direction = direction_vector.normalize()
+        perpendicular = Vector2(-direction.y, direction.x)
+        segment_length = direction_vector.length()
+        points = [Vector2(start)]
+
+        num_midpoints = 3 + random.randint(0, 2)
+        for i in range(1, num_midpoints):
+            t = i / num_midpoints
+            midpoint = start + direction * (t * segment_length)
+            midpoint += perpendicular * random.randint(-15, 15)
+            points.append(midpoint)
+
+        points.append(Vector2(end))
+        return points
+
     def fire(self):
         """Strike the nearest enemy and chain to nearby foes."""
         # Find nearest enemy to owner
@@ -111,7 +132,8 @@ class LightningChain(BaseWeapon):
         self.lightning_arcs.append({
             "start": Vector2(self.owner.pos),
             "end": Vector2(chain[0].pos),
-            "timer": 0.12
+            "timer": 0.12,
+            "points": self._build_arc_points(Vector2(self.owner.pos), Vector2(chain[0].pos)),
         })
         for i in range(len(chain) - 1):
             start = chain[i].pos
@@ -119,7 +141,8 @@ class LightningChain(BaseWeapon):
             self.lightning_arcs.append({
                 "start": start,
                 "end": end,
-                "timer": 0.12
+                "timer": 0.12,
+                "points": self._build_arc_points(Vector2(start), Vector2(end)),
             })
 
     def update(self, dt):
@@ -152,38 +175,14 @@ class LightningChain(BaseWeapon):
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs."""
         for arc in self.lightning_arcs:
-            start = arc["start"]
-            end = arc["end"]
-
-            # Draw jagged yellow/white lines (zigzag between start and end with 3-4 midpoints
-            # randomly offset ±15px perpendicular)
-
-            # Calculate direction and perpendicular
-            direction_vector = end - start
-            # Check if the vector is zero-length to avoid normalization error
-            if direction_vector.length() == 0:
+            points = arc["points"]
+            if len(points) < 2:
                 continue
 
-            direction = direction_vector.normalize()
-            perpendicular = Vector2(-direction.y, direction.x)
-
-            # Create points for the arc
-            points = [start]
-
-            # Add 3-4 midpoints with random offsets
-            num_midpoints = 3 + random.randint(0, 2)  # 3-5 midpoints
-            for i in range(1, num_midpoints):
-                t = i / num_midpoints
-                midpoint = start + direction * (t * (end - start).length())
-
-                # Add random offset perpendicular to the direction
-                offset = perpendicular * (random.randint(-15, 15))
-                midpoint += offset
-
-                points.append(midpoint)
-
-            points.append(end)
-
-            # Draw the arc
-            pygame.draw.lines(surface, (255, 255, 200), False,  # Yellow/white color
-                            [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points], 2)
+            pygame.draw.lines(
+                surface,
+                (255, 255, 200),
+                False,
+                [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points],
+                2,
+            )

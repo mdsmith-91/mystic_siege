@@ -27,6 +27,7 @@ class HUD:
         self.font_20 = pygame.font.SysFont("serif", 20)
         self.font_48 = pygame.font.SysFont("serif", 48)
         self._text_cache: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
+        self._panel_surface_cache: dict[tuple[int, int], pygame.Surface] = {}
 
     def _render_text(
         self,
@@ -39,6 +40,14 @@ class HUD:
         if cached is None:
             cached = font.render(text, True, color)
             self._text_cache[key] = cached
+        return cached
+
+    def _get_panel_surface(self, size: tuple[int, int]) -> pygame.Surface:
+        cached = self._panel_surface_cache.get(size)
+        if cached is None:
+            cached = pygame.Surface(size, pygame.SRCALPHA)
+            cached.fill(UI_BG)
+            self._panel_surface_cache[size] = cached
         return cached
 
     def _build_edge_arrow(self, view_rect: pygame.Rect, screen_pos: pygame.Vector2):
@@ -309,8 +318,7 @@ class HUD:
         self._draw_shared_info(screen, wave_manager, show_fps, fps)
 
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera) -> None:
-        panel_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
-        panel_surface.fill(UI_BG)
+        panel_surface = self._get_panel_surface(rect.size)
         screen.blit(panel_surface, rect.topleft)
         pygame.draw.rect(screen, slot.color, rect, 2, border_radius=6)
 

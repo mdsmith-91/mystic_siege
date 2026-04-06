@@ -549,6 +549,11 @@ These rules apply to all multiplayer-related changes.
    repeated HUD text surfaces where practical, and avoid expensive per-frame scaling/filtering in
    the world draw path unless the visual quality difference is important enough to justify the cost.
 
+8. **Cull and reuse before rewriting the render path.** In gameplay rendering, first eliminate
+   offscreen sprite/effect work and reuse cached world/UI surfaces before considering larger camera
+   or pipeline rewrites. Full-frame zoom scaling is a known cost center, so changes there should be
+   driven by real profiling rather than speculative refactors.
+
 ---
 
 ## Temporary Debug Code
