@@ -67,7 +67,7 @@ class Projectile(pygame.sprite.Sprite):
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
 
         if self.rotate_to_direction:
-            angle = -self.direction.angle_to(Vector2(1, 0))
+            angle = Vector2(1, 0).angle_to(self.direction)
             surface = pygame.transform.rotate(surface, angle)
 
         return surface
