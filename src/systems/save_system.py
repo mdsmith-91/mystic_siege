@@ -9,7 +9,7 @@ DEFAULT_SAVE = {
     "total_time_played": 0.0,
     "highest_level": 1,
     "best_time_survived": 0.0,
-    "unlocked_heroes": ["Knight", "Wizard", "Friar"],
+    "unlocked_heroes": ["Knight", "Wizard", "Friar", "Ranger"],
     "settings": {
         "music_volume": 0.5,
         "sfx_volume": 0.8,

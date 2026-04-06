@@ -95,7 +95,7 @@ mystic_siege/
 │       ├── spritesheet.py         # Spritesheet frame/animation extractor
 │       ├── audio_manager.py       # Singleton audio with silent fallback
 │       ├── input_manager.py       # Singleton controller input — owned routing, synthetic menu keys, per-profile bindings
-│       └── placeholder_assets.py  # Generates colored rect PNGs and sine-wave WAVs for all assets
+│       └── placeholder_assets.py  # Generates stylized placeholder sprites/icons and sine-wave WAVs for missing assets
 └── assets/
     ├── sprites/heroes|enemies|projectiles|effects|ui/
     ├── audio/sfx|music/
@@ -142,10 +142,12 @@ mystic_siege/
 | Knight | 150 | 180 | 15 | SpectralBlade |
 | Wizard | 80 | 240 | 0 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
+| Ranger | 95 | 225 | 3 | Longbow |
 
 Knight passive: 15% damage reduction, knockback immune  
 Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
+Ranger passive: +10% crit chance, arrows pierce +1 enemy
 
 ### Weapons (all have 5 upgrade levels)
 
@@ -185,7 +187,7 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 
 - The solo baseline is preserved inside `GameScene`; a single joined slot still uses
   the legacy single-player runtime path for movement, death, and HUD behavior.
-- The practical current party cap is 3 unique players because there are 3 heroes and
+- The practical current party cap is 4 unique players because there are 4 heroes and
   duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
   shared `saves/progress.json`, not per-person profiles.
@@ -371,7 +373,9 @@ SFX use WAV format (`assets/audio/sfx/`); music tracks use OGG format
 No code changes needed — just drop the file in.
 
 Run `python src/utils/placeholder_assets.py` any time to regenerate placeholder
-sprites and audio for any missing asset files.
+sprites/icons and audio for any missing asset files. Audio placeholder generation
+uses the normal project `numpy` dependency; if it is unavailable, the script fails
+explicitly instead of silently skipping audio output.
 
 ---
 
@@ -719,7 +723,6 @@ Track progress here as phases are completed:
   - aggregate party game-over results
 - Still transitional:
   - `input_config=None` compatibility branches remain in parts of the flow
-  - practical player cap is 3 until duplicates are allowed or a 4th hero exists
 - Still unverified in runtime:
   - broad 1P, 2P, and 3P readiness coverage
   - multiplayer balance/scaling

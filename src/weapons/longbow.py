@@ -41,7 +41,7 @@ class Longbow(BaseWeapon):
             damage=self.base_damage * self.owner.damage_multiplier,
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
-            pierce=self.pierce,
+            pierce=self.pierce + getattr(self.owner, "projectile_pierce_bonus", 0),
             color=LONGBOW_PROJECTILE_COLOR,
             owner_crit_chance=min(1.0, self.owner.crit_chance + self.crit_bonus),
             owner=self.owner,

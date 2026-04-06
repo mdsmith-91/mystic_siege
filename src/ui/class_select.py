@@ -22,7 +22,7 @@ class ClassSelect:
         self.slot_queue_active = self.current_slot is not None
         self.selected_class = None
         self.hovered_card = None
-        self.nav_index = 0  # keyboard nav index for hero cards (0–2)
+        self.nav_index = 0  # keyboard nav index for hero cards
         self.keyboard_active = False
         self._controller_nav_dir = 0
         self._controller_nav_timer = 0.0
@@ -394,7 +394,7 @@ class ClassSelect:
         title_surface = self.font_title.render(title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
 
-        # 3. For each of 3 HERO_CLASSES cards:
+        # 3. Draw one card per hero class.
         card_width = 260
         card_height = 380
         spacing = 40

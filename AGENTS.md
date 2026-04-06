@@ -55,8 +55,8 @@ incremental verification phase and must continue to preserve the solo experience
 2. `input_config=None` is only a temporary migration shim for the old 1P path.
 3. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
 4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
-5. The long-term player-count target remains 4, but the current hero roster only
-   supports 3 unique simultaneous selections without duplicates.
+5. The long-term player-count target remains 4, and the current hero roster now
+   supports 4 unique simultaneous selections without duplicates.
 6. Save/progression is still machine-local and aggregated across runs, including
    multiplayer runs; there is no per-person profile split yet.
 7. XP orb collection is currently a shared pool, and equal-distance ties resolve
