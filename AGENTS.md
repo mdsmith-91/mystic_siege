@@ -28,7 +28,10 @@ HUD/UI note: shared HUD chrome should stay settings-driven. If HP/XP bars intent
 match empty weapon slots, reuse the same `settings.py` constant instead of duplicating
 the color in `src/ui/hud.py`. In the current HUD, solo and multiplayer use the same
 slot-panel HUD treatment, including the 4-segment border tracker that fills clockwise
-from the top and uses the empty-slot gray for unearned sections.
+from the top and uses the empty-slot gray for unearned sections. Keep the shared HUD
+render path allocation-aware as well: cache stable panel/weapon-slot geometry inside
+`HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
+draws instead of rebuilding equivalent screen-space work every frame.
 
 ## Multiplayer Rules
 

@@ -19,6 +19,15 @@ from src.utils.resource_loader import ResourceLoader
 _ARROW_TIP = 15
 _ARROW_DEPTH = 14
 _ARROW_HALF = 8
+_WEAPON_ICON_NAMES = {
+    "ArcaneBolt": "arcane",
+    "HolyNova": "nova",
+    "SpectralBlade": "blade",
+    "FlameWhip": "fire",
+    "FrostRing": "frost",
+    "LightningChain": "lightning",
+    "Longbow": "longbow",
+}
 
 
 class HUD:
@@ -31,6 +40,8 @@ class HUD:
         self._text_cache: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
         self._panel_surface_cache: dict[tuple[int, int], pygame.Surface] = {}
         self._weapon_icon_cache: dict[tuple[str, int], pygame.Surface] = {}
+        self._panel_rect_cache: dict[int, dict[int, pygame.Rect]] = {}
+        self._weapon_slot_offset_cache: dict[tuple[int, int], tuple[int, tuple[int, ...]]] = {}
 
     def _render_text(
         self,
@@ -54,16 +65,30 @@ class HUD:
         return cached
 
     def _weapon_icon_name(self, weapon) -> str | None:
-        icon_names = {
-            "ArcaneBolt": "arcane",
-            "HolyNova": "nova",
-            "SpectralBlade": "blade",
-            "FlameWhip": "fire",
-            "FrostRing": "frost",
-            "LightningChain": "lightning",
-            "Longbow": "longbow",
-        }
-        return icon_names.get(weapon.__class__.__name__)
+        return _WEAPON_ICON_NAMES.get(weapon.__class__.__name__)
+
+    def _get_panel_rects(self, player_count: int) -> dict[int, pygame.Rect]:
+        cached = self._panel_rect_cache.get(player_count)
+        if cached is None:
+            cached = {
+                slot_index: pygame.Rect(rect_tuple)
+                for slot_index, rect_tuple in HUD_PANEL_TUPLES[player_count].items()
+            }
+            self._panel_rect_cache[player_count] = cached
+        return cached
+
+    def _get_weapon_slot_offsets(self, slot_size: int) -> tuple[int, tuple[int, ...]]:
+        cache_key = (slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+        cached = self._weapon_slot_offset_cache.get(cache_key)
+        if cached is None:
+            slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+            offsets = tuple(
+                index * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
+                for index in range(MAX_WEAPON_SLOTS)
+            )
+            cached = (slot_width, offsets)
+            self._weapon_slot_offset_cache[cache_key] = cached
+        return cached
 
     def _get_weapon_icon(self, weapon, slot_size: int) -> pygame.Surface | None:
         icon_name = self._weapon_icon_name(weapon)
@@ -231,9 +256,9 @@ class HUD:
         top: int,
         slot_size: int,
     ) -> None:
-        slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
-        for i in range(MAX_WEAPON_SLOTS):
-            slot_x = left + i * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
+        slot_width, slot_offsets = self._get_weapon_slot_offsets(slot_size)
+        for i, slot_offset in enumerate(slot_offsets):
+            slot_x = left + slot_offset
             slot_rect = pygame.Rect(slot_x, top, slot_width, slot_size)
             pygame.draw.rect(screen, HUD_EMPTY_SLOT_BG_COLOR, slot_rect, border_radius=4)
 
@@ -302,7 +327,11 @@ class HUD:
             pygame.draw.rect(screen, color, segment_rect, border_radius=border_width)
 
     def _draw_revive_indicator(self, screen, player, slot_color, camera) -> None:
-        if not player.is_downed:
+        if not player.is_downed or camera is None:
+            return
+
+        view_rect = camera.get_view_rect()
+        if not view_rect.collidepoint(int(player.pos.x), int(player.pos.y)):
             return
 
         center = camera.world_to_screen(player.pos)
@@ -431,8 +460,8 @@ class HUD:
             screen.blit(revive_text, (rect.right - HUD_PANEL_PADDING - revive_text.get_width(), xp_rect.bottom + 2))
 
         slot_size = HUD_PANEL_WEAPON_SLOT_SIZE
-        slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
-        total_slots_width = (MAX_WEAPON_SLOTS * slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
+        slot_width, slot_offsets = self._get_weapon_slot_offsets(slot_size)
+        total_slots_width = slot_width + slot_offsets[-1] if slot_offsets else slot_width
         weapon_left = rect.centerx - total_slots_width // 2
         weapon_top = status_y + self.font_14.get_height() + 4
         self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)
@@ -445,12 +474,12 @@ class HUD:
         if not players or not xp_systems:
             return
 
-        layout = HUD_PANEL_TUPLES[len(players)]
+        layout = self._get_panel_rects(len(players))
         for player, xp_system in zip(players, xp_systems):
             slot = player.slot
             if slot is None:
                 continue
-            rect = pygame.Rect(layout[slot.index])
+            rect = layout[slot.index]
             self._draw_player_panel(screen, player, xp_system, rect, slot, camera, show_stat_bonuses)
 
         self._draw_shared_info(screen, wave_manager, show_fps, fps)

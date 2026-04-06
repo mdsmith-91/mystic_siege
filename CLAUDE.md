@@ -204,6 +204,11 @@ Current weapon architecture rules:
   panels use a settings-driven 4-segment border tracker that fills clockwise from
   the top as levels 2–5 are earned; any unearned segments use the same gray
   baseline as empty weapon slots.
+- The shared HUD renderer in `src/ui/hud.py` should keep caching stable data in the
+  hot path: panel tuple-to-`pygame.Rect` conversion, weapon-slot row geometry,
+  weapon icon surfaces, and repeated text surfaces should be reused rather than
+  rebuilt every frame. Offscreen downed-player revive rings should be culled, while
+  teammate threat arrows remain available as the offscreen signal.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
