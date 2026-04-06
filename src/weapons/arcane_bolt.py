@@ -71,7 +71,13 @@ class ArcaneBolt(BaseWeapon):
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_ARCANE)
 
-        base_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+        base_direction = nearest_enemy.pos - self.owner.pos
+        if base_direction.length_squared() > 0:
+            base_direction = base_direction.normalize()
+        elif self.owner.facing.length_squared() > 0:
+            base_direction = self.owner.facing.normalize()
+        else:
+            base_direction = Vector2(1, 0)
 
         for i in range(self.bolt_count):
             direction = base_direction
