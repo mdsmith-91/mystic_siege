@@ -33,6 +33,16 @@ render path allocation-aware as well: cache stable panel/weapon-slot geometry in
 `HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
 draws instead of rebuilding equivalent screen-space work every frame.
 
+Weapon architecture note: weapon tunables should follow the same settings-driven
+pattern as heroes and enemies. Keep weapon stats, upgrade deltas, and relevant
+visual knobs in clearly grouped `settings.py` weapon sections first. Shared weapon
+construction should go through `src/weapons/factory.py` via
+`WEAPON_CLASS_REGISTRY` / `create_weapon()` instead of growing new constructor
+chains in `game_scene.py`, `upgrade_system.py`, or other callers. Hero
+`starting_weapon` fields and upgrade rewards should stay on stable string ids, and
+package-level imports should continue to flow through `src/weapons/__init__.py`
+when callers need the shared registry/helper surface.
+
 Enemy architecture note: enemy tunables should now follow the same settings-driven
 pattern as heroes and weapons. Keep enemy stats, per-enemy gameplay knobs, and
 wave/spawn balance values in clearly grouped `settings.py` enemy sections first.

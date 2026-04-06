@@ -14,8 +14,10 @@ migration is partially implemented. New runs currently flow through a lobby and 
 hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
 hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
 downed/revive runtime support, reconnect/reclaim handling, and controller-binding
-settings. The main remaining gap is runtime verification and hardening, not missing
-foundational architecture.
+settings. Weapon creation is now also centralized through the shared
+`src/weapons/factory.py` registry/helper path for both hero starting weapons and
+upgrade unlocks. The main remaining gap is runtime verification and hardening, not
+missing foundational architecture.
 **Planned direction:** finish the local co-op migration through phased, low-regression
 changes that continue to preserve the current single-player experience.
 
@@ -201,6 +203,9 @@ Current weapon architecture rules:
   reference them by string.
 - Keep player-facing weapon names in metadata / weapon classes aligned with those
   internal ids. `FlameBlast` currently uses the display name `Flame Blast`.
+- Keep scene/system callers on the string-id path even when the internal id matches
+  the class name today; do not reintroduce direct class instantiation in
+  `GameScene`, `UpgradeSystem`, or hero configuration code.
 - HUD chrome that is visually tied to weapon slots should also stay settings-driven.
   The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
   bar background reuses that same constant so 1P and multiplayer HUD panels keep a

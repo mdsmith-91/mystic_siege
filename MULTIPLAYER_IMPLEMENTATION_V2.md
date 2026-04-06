@@ -12,6 +12,10 @@ out of scope for this guide but the architecture is designed to make it feasible
 > plumbing, multi-player HUD/camera support, revive/downed runtime support, and
 > owned menu input work. Use `README.md`, `CLAUDE.md`, and
 > `MULTIPLAYER_READINESS_GATE_REVIEW.md` for current-state and verification status.
+> Weapon architecture note (2026-04-06): the repo now resolves both hero starting
+> weapons and upgrade unlocks through `src/weapons/factory.py`
+> (`WEAPON_CLASS_REGISTRY` + `create_weapon()`). Treat any older discussion that
+> assumes scene-local weapon constructor branches as historical migration context.
 > Use this file for intended architecture, remaining cleanup direction, and
 > long-term phase alignment.
 

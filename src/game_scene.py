@@ -7,6 +7,11 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        STATE_MENU, STATE_LOBBY, GOLD,
                        PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, PAUSE_BUTTON_SPACING,
                        PAUSE_BUTTON_COLOR, PAUSE_BUTTON_HOVER_COLOR, PAUSE_BUTTON_TEXT_COLOR,
+                       PAUSE_CONFIRM_DIALOG_WIDTH, PAUSE_CONFIRM_DIALOG_HEIGHT,
+                       PAUSE_CONFIRM_DIALOG_BG_COLOR, PAUSE_CONFIRM_BUTTON_WIDTH,
+                       PAUSE_CONFIRM_BUTTON_HEIGHT, PAUSE_CONFIRM_MESSAGE_FONT_SIZE,
+                       PAUSE_CONFIRM_BUTTON_Y_OFFSET,
+                       PAUSE_CONFIRM_BUTTON_INSET, PAUSE_CONFIRM_MESSAGE_Y_OFFSET,
                        SPAWN_OFFSETS, STATE_GAMEOVER,
                        REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
                        REVIVE_IFRAME_DURATION,
@@ -107,6 +112,9 @@ class GameScene:
         self.paused = False
         self.pause_selected = 0  # keyboard-nav index for pause menu (0=RESUME…3=MAIN MENU)
         self.pause_keyboard_active = False
+        self.pause_confirm_open = False
+        self.pause_confirm_action: str | None = None
+        self.pause_confirm_selected = 1
         self._settings_open = False
         self._settings_menu = None
         self._pause_controller_nav_dir: dict[int, int] = {}
@@ -337,6 +345,64 @@ class GameScene:
         )
         return make(0), make(1), make(2), make(3)
 
+    def _pause_confirm_dialog(self) -> dict:
+        dialog_rect = pygame.Rect(
+            SCREEN_WIDTH // 2 - PAUSE_CONFIRM_DIALOG_WIDTH // 2,
+            SCREEN_HEIGHT // 2 - PAUSE_CONFIRM_DIALOG_HEIGHT // 2,
+            PAUSE_CONFIRM_DIALOG_WIDTH,
+            PAUSE_CONFIRM_DIALOG_HEIGHT,
+        )
+        button_y = dialog_rect.top + PAUSE_CONFIRM_BUTTON_Y_OFFSET
+        return {
+            "rect": dialog_rect,
+            "confirm": pygame.Rect(
+                dialog_rect.left + PAUSE_CONFIRM_BUTTON_INSET,
+                button_y,
+                PAUSE_CONFIRM_BUTTON_WIDTH,
+                PAUSE_CONFIRM_BUTTON_HEIGHT,
+            ),
+            "cancel": pygame.Rect(
+                dialog_rect.right - PAUSE_CONFIRM_BUTTON_INSET - PAUSE_CONFIRM_BUTTON_WIDTH,
+                button_y,
+                PAUSE_CONFIRM_BUTTON_WIDTH,
+                PAUSE_CONFIRM_BUTTON_HEIGHT,
+            ),
+        }
+
+    @staticmethod
+    def _pause_confirm_button_order() -> list[str]:
+        return ["confirm", "cancel"]
+
+    def _close_pause_confirm(self) -> None:
+        self.pause_confirm_open = False
+        self.pause_confirm_action = None
+        self.pause_confirm_selected = 1
+
+    def _open_pause_confirm(self, action: str) -> None:
+        self.pause_confirm_open = True
+        self.pause_confirm_action = action
+        self.pause_confirm_selected = 1
+        self.pause_keyboard_active = True
+
+    def _activate_pause_confirm_button(self, button_name: str) -> None:
+        if button_name == "cancel":
+            self._close_pause_confirm()
+            return
+
+        if self.pause_confirm_action == "restart":
+            self.next_scene = STATE_LOBBY
+        elif self.pause_confirm_action == "main_menu":
+            self.next_scene = STATE_MENU
+
+        self._close_pause_confirm()
+
+    def _pause_confirm_message(self) -> str:
+        if self.pause_confirm_action == "restart":
+            return "Restart this run and return to the lobby?"
+        if self.pause_confirm_action == "main_menu":
+            return "Leave this run and return to the main menu?"
+        return "Confirm this action?"
+
     @staticmethod
     def _discard_pending_synthetic_controller_keys() -> None:
         """Prevent controller confirm bleed when opening the pause settings overlay."""
@@ -356,9 +422,9 @@ class GameScene:
             self._settings_open = True
             self._discard_pending_synthetic_controller_keys()
         elif index == 2:
-            self.next_scene = STATE_LOBBY
+            self._open_pause_confirm("restart")
         elif index == 3:
-            self.next_scene = STATE_MENU
+            self._open_pause_confirm("main_menu")
 
     def _owned_keyboard_pause_bindings(self) -> dict[int, dict[str, set[int]]]:
         """Return per-joined-keyboard pause bindings keyed by slot index."""
@@ -524,6 +590,9 @@ class GameScene:
             self.pause_keyboard_active = False
             self._pause_controller_nav_dir.clear()
             self._pause_controller_nav_timer.clear()
+            self._close_pause_confirm()
+        elif was_paused and not self.paused:
+            self._close_pause_confirm()
 
     def _set_show_fps(self, value: bool) -> None:
         self.show_fps = value
@@ -544,7 +613,23 @@ class GameScene:
 
         for binding in self._owned_keyboard_pause_bindings().values():
             if event.key in binding["toggle"]:
+                if self.pause_confirm_open:
+                    self._close_pause_confirm()
+                    return True
                 self._toggle_pause()
+                return True
+            if self.pause_confirm_open and event.key in binding["up"]:
+                self.pause_keyboard_active = True
+                self.pause_confirm_selected = max(0, self.pause_confirm_selected - 1)
+                return True
+            if self.pause_confirm_open and event.key in binding["down"]:
+                self.pause_keyboard_active = True
+                self.pause_confirm_selected = min(1, self.pause_confirm_selected + 1)
+                return True
+            if self.pause_confirm_open and event.key in binding["confirm"]:
+                self._activate_pause_confirm_button(
+                    self._pause_confirm_button_order()[self.pause_confirm_selected]
+                )
                 return True
             if self.paused and event.key in binding["up"]:
                 self.pause_keyboard_active = True
@@ -566,13 +651,26 @@ class GameScene:
 
         input_manager = InputManager.instance()
         if input_manager.button_matches("start", event.button, joystick_id=event.instance_id):
+            if self.pause_confirm_open:
+                self._close_pause_confirm()
+                return True
             self._toggle_pause()
             return True
         if (
             self.paused
             and input_manager.button_matches("back", event.button, joystick_id=event.instance_id)
         ):
+            if self.pause_confirm_open:
+                self._close_pause_confirm()
+                return True
             self._toggle_pause()
+            return True
+        if self.pause_confirm_open and input_manager.button_matches(
+            "confirm", event.button, joystick_id=event.instance_id
+        ):
+            self._activate_pause_confirm_button(
+                self._pause_confirm_button_order()[self.pause_confirm_selected]
+            )
             return True
         if self.paused and input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
             self._activate_pause_button(self.pause_selected)
@@ -592,7 +690,10 @@ class GameScene:
                 self._pause_controller_nav_dir[joystick_id] = vertical_dir
                 if vertical_dir != 0:
                     self.pause_keyboard_active = True
-                    self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+                    if self.pause_confirm_open:
+                        self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + vertical_dir))
+                    else:
+                        self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
                     self._pause_controller_nav_timer[joystick_id] = CONTROLLER_AXIS_REPEAT_DELAY
                 else:
                     self._pause_controller_nav_timer.pop(joystick_id, None)
@@ -605,7 +706,10 @@ class GameScene:
             if timer <= 0.0:
                 timer += CONTROLLER_AXIS_REPEAT_RATE
                 self.pause_keyboard_active = True
-                self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+                if self.pause_confirm_open:
+                    self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + vertical_dir))
+                else:
+                    self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
             self._pause_controller_nav_timer[joystick_id] = timer
 
     def handle_events(self, events):
@@ -634,20 +738,36 @@ class GameScene:
             if event.type == pygame.KEYDOWN:
                 self._handle_keyboard_pause_event(event)
             elif event.type == pygame.MOUSEMOTION and self.paused:
-                self.pause_keyboard_active = False
+                if self.pause_confirm_open:
+                    dialog = self._pause_confirm_dialog()
+                    for index, button_name in enumerate(self._pause_confirm_button_order()):
+                        if dialog[button_name].collidepoint(event.pos):
+                            self.pause_keyboard_active = False
+                            self.pause_confirm_selected = index
+                            break
+                else:
+                    self.pause_keyboard_active = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.paused:
-                # Click on pause menu buttons
-                resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
-                if resume_rect.collidepoint(event.pos):
-                    self.paused = False
-                elif settings_rect.collidepoint(event.pos):
-                    from src.ui.settings_menu import SettingsMenu
-                    self._settings_menu = SettingsMenu()
-                    self._settings_open = True
-                elif restart_rect.collidepoint(event.pos):
-                    self.next_scene = STATE_LOBBY
-                elif menu_rect.collidepoint(event.pos):
-                    self.next_scene = STATE_MENU
+                if self.pause_confirm_open:
+                    dialog = self._pause_confirm_dialog()
+                    for index, button_name in enumerate(self._pause_confirm_button_order()):
+                        if dialog[button_name].collidepoint(event.pos):
+                            self.pause_confirm_selected = index
+                            self._activate_pause_confirm_button(button_name)
+                            break
+                else:
+                    # Click on pause menu buttons
+                    resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
+                    if resume_rect.collidepoint(event.pos):
+                        self.paused = False
+                    elif settings_rect.collidepoint(event.pos):
+                        from src.ui.settings_menu import SettingsMenu
+                        self._settings_menu = SettingsMenu()
+                        self._settings_open = True
+                    elif restart_rect.collidepoint(event.pos):
+                        self._open_pause_confirm("restart")
+                    elif menu_rect.collidepoint(event.pos):
+                        self._open_pause_confirm("main_menu")
             elif event.type == pygame.JOYBUTTONDOWN:
                 if self._try_reclaim_controller(event):
                     continue
@@ -859,6 +979,7 @@ class GameScene:
 
         title_font = pygame.font.SysFont("serif", 72)
         btn_font = pygame.font.SysFont("serif", 28)
+        confirm_message_font = pygame.font.SysFont("serif", PAUSE_CONFIRM_MESSAGE_FONT_SIZE)
 
         cx = SCREEN_WIDTH // 2
         resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
@@ -885,3 +1006,35 @@ class GameScene:
             text_surf = btn_font.render(label, True, PAUSE_BUTTON_TEXT_COLOR)
             screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
                                     rect.centery - text_surf.get_height() // 2))
+
+        if self.pause_confirm_open:
+            dialog = self._pause_confirm_dialog()
+            pygame.draw.rect(screen, PAUSE_CONFIRM_DIALOG_BG_COLOR, dialog["rect"], border_radius=8)
+            pygame.draw.rect(screen, GOLD, dialog["rect"], width=2, border_radius=8)
+
+            message_surf = confirm_message_font.render(self._pause_confirm_message(), True, PAUSE_BUTTON_TEXT_COLOR)
+            screen.blit(
+                message_surf,
+                (
+                    dialog["rect"].centerx - message_surf.get_width() // 2,
+                    dialog["rect"].top + PAUSE_CONFIRM_MESSAGE_Y_OFFSET,
+                ),
+            )
+
+            button_labels = {
+                "confirm": "CONFIRM",
+                "cancel": "CANCEL",
+            }
+            for index, button_name in enumerate(self._pause_confirm_button_order()):
+                rect = dialog[button_name]
+                highlighted = rect.collidepoint(mouse_pos) or (
+                    self.pause_keyboard_active and index == self.pause_confirm_selected
+                )
+                color = PAUSE_BUTTON_HOVER_COLOR if highlighted else PAUSE_BUTTON_COLOR
+                pygame.draw.rect(screen, color, rect, border_radius=6)
+                pygame.draw.rect(screen, GOLD, rect, width=2, border_radius=6)
+                text_surf = btn_font.render(button_labels[button_name], True, PAUSE_BUTTON_TEXT_COLOR)
+                screen.blit(
+                    text_surf,
+                    (rect.centerx - text_surf.get_width() // 2, rect.centery - text_surf.get_height() // 2),
+                )
