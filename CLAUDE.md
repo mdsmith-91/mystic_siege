@@ -293,7 +293,9 @@ AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
 - Use `button_matches(..., joystick_id=...)`, `describe_binding(..., joystick_id=...)`,
   or `get_confirm_for_joystick()` instead of hardcoding controller button indices in scenes.
 - Synthetic controller `KEYDOWN` events are still acceptable for global menus, but owned
-  multiplayer menus must preserve joystick identity or poll the owning joystick directly.
+  multiplayer menus must still handle ownership deliberately even though synthetic events
+  now carry source metadata; preserving device identity in menu logic or polling the
+  owning joystick directly are both valid approaches.
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
 
@@ -315,8 +317,9 @@ ax, ay = InputManager.instance().get_movement()
 Controller button/D-pad presses are automatically translated into synthetic
 `pygame.KEYDOWN` events and posted to the pygame event queue, so global menus work
 with a controller without any extra code in the UI layer. This is not sufficient
-for owned multiplayer menus because the synthetic events do not preserve joystick
-identity.
+for owned multiplayer menus on its own: while the synthetic events now include
+source metadata, menu code still has to reject or route those events explicitly
+to preserve ownership semantics.
 
 Current migration note: owned multiplayer menus now bypass that limitation on a
 case-by-case basis. `ClassSelect` and `UpgradeMenu` filter keyboard input to the
@@ -637,12 +640,12 @@ For audit/planning tasks, prefer this output order:
   the downed/revive path, while solo players enter the legacy dying/fade flow without
   delegating lethal damage to `BaseEntity.take_damage()`. Treat this override as a
   requirement whenever player death logic is touched.
-- **InputManager synthetic events carry no joystick identity (hidden menu blocker).** `_post_key()` /
-  `_post_keyup()` emit plain `KEYDOWN`/`KEYUP` events with no `joystick_id` in the payload. Menu code
-  cannot tell which controller fired `K_RETURN` or `K_ESCAPE`. Owned multiplayer menus (ClassSelect
-  slot-queue, UpgradeMenu) require either (a) a custom event payload that preserves device metadata,
-  or (b) bypassing synthetic events for owned menus and polling the assigned device directly. The
-  current implementation uses option (b) for `ClassSelect` and `UpgradeMenu`.
+- **InputManager synthetic events now carry source metadata, but owned-menu filtering is still
+  required.** `_post_key()` / `_post_keyup()` include `synthetic_controller_event` and
+  `source_instance_id` in the payload, but menu code must still reject or explicitly route those
+  events to preserve ownership semantics. `ClassSelect` and `UpgradeMenu` currently protect their
+  owned flows by filtering keyboard paths and using per-joystick polling / `JOYBUTTONDOWN` for the
+  active controller instead of trusting global synthetic confirm events.
 - **SceneManager caches ClassSelect — slot-queue routing requires a fresh instance per pass.**
   `STATE_CLASS_SELECT` is now in the always-create-fresh set, which is required for the slot-queue flow
   (ClassSelect visited N times, once per player). Keep it that way unless the scene is redesigned.
