@@ -3,7 +3,7 @@ from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.entities.projectile import Projectile
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT, LICH_FIRE_RANGE
+from settings import LICH_FAMILIAR_ENEMY_DATA
 
 # Column indices matching direction order in lich_meta.json
 _DIR_DOWN  = 0
@@ -12,24 +12,24 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class LichFamiliar(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, projectile_group=None, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Lich",
-            "hp": 35,
-            "speed": 90,
-            "damage": 12,
-            "xp_value": 12,
-            "behavior": "orbit"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, LICH_FAMILIAR_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Maintains orbit distance of ~200px from player, fires slow orb every 2.5s
         self.projectile_group = projectile_group
 
         self.orbit_angle = 0.0
-        self.orbit_radius = 200
+        self.orbit_radius = LICH_FAMILIAR_ENEMY_DATA["orbit_radius"]
         self.fire_timer = 0.0
-        self.fire_interval = 2.5
+        self.fire_interval = LICH_FAMILIAR_ENEMY_DATA["fire_interval"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/lich.png", 32, 32)
@@ -53,7 +53,7 @@ class LichFamiliar(Enemy):
 
     def update(self, dt):
         # Increment orbit angle and move toward orbit position around player
-        self.orbit_angle += 45 * dt  # 45 degrees per second
+        self.orbit_angle += LICH_FAMILIAR_ENEMY_DATA["orbit_angular_speed"] * dt
 
         target = self.target
         if target is None:
@@ -81,19 +81,20 @@ class LichFamiliar(Enemy):
         self.fire_timer -= dt
         if self.fire_timer <= 0:
             dist = (target.pos - self.pos).length()
-            if 0 < dist < LICH_FIRE_RANGE:
+            if 0 < dist < LICH_FAMILIAR_ENEMY_DATA["fire_range"]:
                 direction_to_player = (target.pos - self.pos) / dist
                 proj_groups = [self.projectile_group] if self.projectile_group is not None else []
                 Projectile(
                     pos=self.pos,
                     direction=direction_to_player,
-                    speed=120,
-                    damage=12,
+                    speed=LICH_FAMILIAR_ENEMY_DATA["projectile_speed"],
+                    damage=LICH_FAMILIAR_ENEMY_DATA["projectile_damage"],
                     groups=proj_groups,
                     enemy_group_ref=None,
                     pierce=0,
                     homing=False,
-                    color=(200, 60, 255),
-                    is_enemy_projectile=True
+                    color=LICH_FAMILIAR_ENEMY_DATA["projectile_color"],
+                    is_enemy_projectile=True,
+                    lifetime=LICH_FAMILIAR_ENEMY_DATA["projectile_lifetime"],
                 )
             self.fire_timer = self.fire_interval

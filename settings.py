@@ -197,14 +197,150 @@ LONGBOW_UPGRADE_LEVELS = [
     {"projectile_count": 1, "crit_bonus": 0.10},
 ]
 
+# ENEMIES
+# Shared enemy runtime tunables
+ENEMY_BASE_ATTACK_COOLDOWN = 1.0
 ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit
 ENEMY_RETARGET_INTERVAL = 0.25  # seconds between nearest-player retarget scans
-LICH_FIRE_RANGE = 450           # pixels — lich only fires when within this distance of the player
+ENEMY_SPAWN_OFFSCREEN_MARGIN = 150
+ENEMY_WARNING_DURATION = 3.0
+ENEMY_ELITE_HP_MULTIPLIER = 1.5
+ENEMY_ELITE_DAMAGE_MULTIPLIER = 1.5
 
-# SPAWNING
-INITIAL_SPAWN_RATE = 3.0
-MIN_SPAWN_RATE = 0.3
+# Enemy archetype data
+SKELETON_ENEMY_DATA = {
+    "name": "Skeleton",
+    "hp": 30,
+    "speed": 80,
+    "damage": 10,
+    "xp_value": 5,
+    "behavior": "chase",
+    "wander_angle_max": 5.0,
+    "wander_angle_change_interval": 0.5,
+}
+
+DARK_GOBLIN_ENEMY_DATA = {
+    "name": "Goblin",
+    "hp": 20,
+    "speed": 160,
+    "damage": 8,
+    "xp_value": 4,
+    "behavior": "chase",
+}
+
+WRAITH_ENEMY_DATA = {
+    "name": "Wraith",
+    "hp": 40,
+    "speed": 120,
+    "damage": 15,
+    "xp_value": 10,
+    "behavior": "chase",
+    "lunge_cooldown": 3.0,
+    "lunge_duration": 0.4,
+    "lunge_speed_multiplier": 3.0,
+}
+
+PLAGUE_BAT_ENEMY_DATA = {
+    "name": "Bat",
+    "hp": 15,
+    "speed": 220,
+    "damage": 8,
+    "xp_value": 6,
+    "behavior": "chase",
+    "split_chance": 0.4,
+    "split_count": 2,
+    "wave_frequency": 4.0,
+    "wave_amplitude": 0.5,
+    "sprite_scale": (20, 20),
+}
+
+MINI_BAT_ENEMY_DATA = {
+    "name": "Mini Bat",
+    "hp": 7,
+    "speed": 280,
+    "damage": 4,
+    "xp_value": 3,
+    "behavior": "chase",
+    "split_chance": 0.0,
+    "split_count": 0,
+    "wave_frequency": PLAGUE_BAT_ENEMY_DATA["wave_frequency"],
+    "wave_amplitude": PLAGUE_BAT_ENEMY_DATA["wave_amplitude"],
+    "sprite_scale": (14, 14),
+}
+
+CURSED_KNIGHT_ENEMY_DATA = {
+    "name": "Knight",
+    "hp": 80,
+    "speed": 110,
+    "damage": 20,
+    "xp_value": 15,
+    "behavior": "chase",
+    "shield_block_angle": 60.0,
+    "shield_damage_multiplier": 0.2,
+}
+
+LICH_FAMILIAR_ENEMY_DATA = {
+    "name": "Lich",
+    "hp": 35,
+    "speed": 90,
+    "damage": 12,
+    "xp_value": 12,
+    "behavior": "orbit",
+    "orbit_radius": 200,
+    "orbit_angular_speed": 45.0,
+    "fire_interval": 2.5,
+    "projectile_speed": 120,
+    "projectile_damage": 12,
+    "projectile_lifetime": 4.0,
+    "projectile_color": (200, 60, 255),
+    "fire_range": 450,
+}
+
+STONE_GOLEM_ENEMY_DATA = {
+    "name": "Golem",
+    "hp": 500,
+    "speed": 40,
+    "damage": 40,
+    "xp_value": 80,
+    "behavior": "chase",
+}
+
+ENEMY_DATA_BY_ID = {
+    "Skeleton": SKELETON_ENEMY_DATA,
+    "Goblin": DARK_GOBLIN_ENEMY_DATA,
+    "Wraith": WRAITH_ENEMY_DATA,
+    "Bat": PLAGUE_BAT_ENEMY_DATA,
+    "MiniBat": MINI_BAT_ENEMY_DATA,
+    "Knight": CURSED_KNIGHT_ENEMY_DATA,
+    "Lich": LICH_FAMILIAR_ENEMY_DATA,
+    "Golem": STONE_GOLEM_ENEMY_DATA,
+}
+
+# Wave / spawn tunables
+WAVE_INITIAL_ACTIVE_POOL = ["Skeleton"]
+WAVE_INITIAL_SPAWN_RATE = 3.0
+WAVE_GOBLIN_UNLOCK_TIME = 60
+WAVE_GOBLIN_SPAWN_RATE = 2.5
+WAVE_GOBLIN_PACK_MIN = 3
+WAVE_GOBLIN_PACK_MAX = 5
+WAVE_WRAITH_UNLOCK_TIME = 120
+WAVE_WRAITH_SPAWN_RATE = 2.0
+WAVE_BAT_UNLOCK_TIME = 300
+WAVE_BAT_SPAWN_RATE = 1.5
+WAVE_BAT_WARNING_TEXT = "BATS INCOMING!"
+WAVE_GOLEM_EVENT_TIME = 480
+WAVE_GOLEM_COUNT = 1
+WAVE_GOLEM_WARNING_TEXT = "GOLEM APPROACHES!"
+WAVE_KNIGHT_LICH_UNLOCK_TIME = 600
+WAVE_KNIGHT_LICH_SPAWN_RATE = 1.0
+WAVE_ELITE_MODE_TIME = 900
+WAVE_ELITE_SPAWN_RATE = 0.7
+WAVE_ELITE_WARNING_TEXT = "ELITE ENEMIES ARISE!"
+WAVE_FINAL_ASSAULT_TIME = 1200
+WAVE_FINAL_ASSAULT_SPAWN_RATE = 0.5
+WAVE_FINAL_ASSAULT_WARNING_TEXT = "FINAL ASSAULT!"
+WAVE_VICTORY_TIME = 1800
 
 # UI
 HUD_FONT_SIZE = 24

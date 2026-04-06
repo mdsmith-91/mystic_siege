@@ -4,7 +4,7 @@ import random
 import math
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import MINI_BAT_ENEMY_DATA, PLAGUE_BAT_ENEMY_DATA
 
 # Column indices matching direction order in bat_meta.json
 _DIR_DOWN  = 0
@@ -13,28 +13,32 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class PlagueBat(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Bat",
-            "hp": 15,
-            "speed": 220,
-            "damage": 8,
-            "xp_value": 6,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, PLAGUE_BAT_ENEMY_DATA, xp_orb_group, effect_group)
 
         # split_chance = 0.4  — on death, 40% chance to spawn 2 mini bats
-        self.split_chance = 0.4
+        self.split_chance = PLAGUE_BAT_ENEMY_DATA["split_chance"]
+        self.split_count = PLAGUE_BAT_ENEMY_DATA["split_count"]
+        self.wave_frequency = PLAGUE_BAT_ENEMY_DATA["wave_frequency"]
+        self.wave_amplitude = PLAGUE_BAT_ENEMY_DATA["wave_amplitude"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         # Scaled to 20x20 — bats are smaller than standard enemies
         sheet = Spritesheet("assets/sprites/enemies/bat.png", 32, 32)
+        sprite_scale = PLAGUE_BAT_ENEMY_DATA["sprite_scale"]
         self._frames = {
-            _DIR_DOWN:  pygame.transform.scale(sheet.get_frame(0, 0), (20, 20)),
-            _DIR_LEFT:  pygame.transform.scale(sheet.get_frame(1, 0), (20, 20)),
-            _DIR_RIGHT: pygame.transform.scale(sheet.get_frame(2, 0), (20, 20)),
-            _DIR_UP:    pygame.transform.scale(sheet.get_frame(3, 0), (20, 20)),
+            _DIR_DOWN:  pygame.transform.scale(sheet.get_frame(0, 0), sprite_scale),
+            _DIR_LEFT:  pygame.transform.scale(sheet.get_frame(1, 0), sprite_scale),
+            _DIR_RIGHT: pygame.transform.scale(sheet.get_frame(2, 0), sprite_scale),
+            _DIR_UP:    pygame.transform.scale(sheet.get_frame(3, 0), sprite_scale),
         }
 
         self.image = self._frames[_DIR_DOWN]
@@ -69,10 +73,10 @@ class PlagueBat(Enemy):
                 perpendicular = Vector2(-direction.y, direction.x)
 
                 # Sine wave offset perpendicular to travel direction
-                wave_offset = math.sin(self._t * 4)  # -1 to 1
+                wave_offset = math.sin(self._t * self.wave_frequency)  # -1 to 1
 
                 # Effective direction with wave offset
-                effective_dir = direction + perpendicular * (wave_offset * 0.5)
+                effective_dir = direction + perpendicular * (wave_offset * self.wave_amplitude)
 
                 self.vel = effective_dir * self.speed
             else:
@@ -91,24 +95,45 @@ class PlagueBat(Enemy):
         super().on_death(xp_orb_group)
 
         if random.random() < self.split_chance and not self.is_mini:
-            MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
-            MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
+            for _ in range(self.split_count):
+                MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
 
 class MiniBat(PlagueBat):
     """Mini bat spawned on PlagueBat death."""
 
-    def __init__(self, pos, player_list, groups, xp_orb_group=None, effect_group=None):
-        super().__init__(pos, player_list, groups, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        groups,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(
+            pos,
+            player_list,
+            groups,
+            xp_orb_group=xp_orb_group,
+            effect_group=effect_group,
+            projectile_group=projectile_group,
+        )
         self.is_mini = True
 
         # Override with mini bat stats
-        self.max_hp = 7
-        self.hp = 7
-        self.speed = 280
-        self.damage = 4
-        self.xp_value = 3
+        self.name = MINI_BAT_ENEMY_DATA["name"]
+        self.max_hp = MINI_BAT_ENEMY_DATA["hp"]
+        self.hp = MINI_BAT_ENEMY_DATA["hp"]
+        self.speed = MINI_BAT_ENEMY_DATA["speed"]
+        self.damage = MINI_BAT_ENEMY_DATA["damage"]
+        self.xp_value = MINI_BAT_ENEMY_DATA["xp_value"]
+        self.split_chance = MINI_BAT_ENEMY_DATA["split_chance"]
+        self.split_count = MINI_BAT_ENEMY_DATA["split_count"]
+        self.wave_frequency = MINI_BAT_ENEMY_DATA["wave_frequency"]
+        self.wave_amplitude = MINI_BAT_ENEMY_DATA["wave_amplitude"]
 
         # Mini bats are even smaller than regular bats
-        self._frames = {k: pygame.transform.scale(v, (14, 14)) for k, v in self._frames.items()}
+        mini_scale = MINI_BAT_ENEMY_DATA["sprite_scale"]
+        self._frames = {k: pygame.transform.scale(v, mini_scale) for k, v in self._frames.items()}
         self.image = self._frames[_DIR_DOWN]
         self.rect = self.image.get_rect(center=pos)

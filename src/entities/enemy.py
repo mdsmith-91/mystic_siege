@@ -2,7 +2,11 @@ import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from src.entities.xp_orb import XPOrb
-from settings import WORLD_WIDTH, WORLD_HEIGHT, ENEMY_KNOCKBACK_FORCE, ENEMY_RETARGET_INTERVAL
+from settings import (
+    ENEMY_BASE_ATTACK_COOLDOWN,
+    ENEMY_KNOCKBACK_FORCE,
+    ENEMY_RETARGET_INTERVAL,
+)
 from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
@@ -41,7 +45,7 @@ class Enemy(BaseEntity):
         self.attack_timer = 0.0
 
         # attack_cooldown: float = 1.0
-        self.attack_cooldown = 1.0
+        self.attack_cooldown = enemy_data.get("attack_cooldown", ENEMY_BASE_ATTACK_COOLDOWN)
 
         # Guard against on_death being triggered twice by simultaneous projectile hits
         self._death_handled = False

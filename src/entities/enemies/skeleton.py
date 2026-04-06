@@ -2,7 +2,7 @@ import pygame
 from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import SKELETON_ENEMY_DATA
 
 # Column indices matching DIRECTION_ORDER in generate_sprite.py
 _DIR_DOWN  = 0
@@ -11,20 +11,22 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class Skeleton(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Skeleton",
-            "hp": 30,
-            "speed": 80,
-            "damage": 10,
-            "xp_value": 5,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, SKELETON_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Add small random angle offset (±5 degrees, change every 0.5s) so they spread out
         self.angle_offset = 0.0
         self.angle_change_timer = 0.0
+        self.angle_change_interval = SKELETON_ENEMY_DATA["wander_angle_change_interval"]
+        self.angle_variance = SKELETON_ENEMY_DATA["wander_angle_max"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/skeleton.png", 32, 32)
@@ -49,8 +51,8 @@ class Skeleton(Enemy):
     def update(self, dt):
         # Add small random angle offset (±5 degrees, change every 0.5s) so they spread out
         self.angle_change_timer += dt
-        if self.angle_change_timer >= 0.5:
-            self.angle_offset = (pygame.time.get_ticks() % 1000) / 1000.0 * 10 - 5
+        if self.angle_change_timer >= self.angle_change_interval:
+            self.angle_offset = (pygame.time.get_ticks() % 1000) / 1000.0 * (self.angle_variance * 2) - self.angle_variance
             self.angle_change_timer = 0.0
 
         # Apply the angle offset to movement

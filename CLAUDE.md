@@ -57,6 +57,7 @@ mystic_siege/
 │   │   ├── xp_orb.py              # XP orb — bobbing animation, auto-collect
 │   │   ├── effects.py             # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect
 │   │   └── enemies/
+│   │       ├── __init__.py        # Enemy registry + create_enemy helper for shared spawn construction
 │   │       ├── skeleton.py        # hp=30, slow, slight random wander; uses skeleton.png 4-dir sheet
 │   │       ├── dark_goblin.py     # hp=20, fast, spawns in groups; uses goblin.png 4-dir sheet
 │   │       ├── wraith.py          # hp=40, phases walls, periodic lunge; uses wraith.png 4-dir sheet
@@ -213,6 +214,33 @@ Current weapon architecture rules:
   weapon icon surfaces, and repeated text surfaces should be reused rather than
   rebuilt every frame. Offscreen downed-player revive rings should be culled, while
   teammate threat arrows remain available as the offscreen signal.
+
+### Enemies
+
+- Skeleton — slow melee, slight random wander
+- Goblin — fast melee, spawns in packs
+- Wraith — phases walls, periodic lunge
+- PlagueBat — arc movement, can split into mini bats
+- CursedKnight — frontal shield reduces incoming damage
+- LichFamiliar — orbits the target and fires slow enemy projectiles
+- StoneGolem — high-HP mini-boss
+
+Current enemy architecture rules:
+
+- Enemy tunables live in grouped `settings.py` enemy sections first, including
+  shared enemy values, per-enemy config dicts, and wave/spawn balance constants.
+- Concrete enemy classes should read their stats and behavior knobs from those
+  settings-backed dicts instead of redefining local gameplay stat dicts.
+- Shared enemy spawning is centralized in `src/entities/enemies/__init__.py`
+  through `ENEMY_CLASS_REGISTRY` and `create_enemy()`. `WaveManager` should use
+  that shared helper instead of growing new enemy-specific constructor chains.
+- Keep enemy ids stable (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`,
+  `Golem`) because wave pools and settings lookups reference them by string.
+- Keep constructor signatures aligned across concrete enemy classes so the registry
+  can instantiate them through one shared call path; only consume optional runtime
+  dependencies such as `projectile_group` in the enemies that actually need them.
+- Keep `MiniBat` as a local plague-bat follow-on unless a gameplay change makes it
+  a true top-level spawnable enemy.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -460,8 +488,10 @@ python src/utils/placeholder_assets.py
 **Add a new enemy:**
 
 1. Create `src/entities/enemies/newenemy.py` inheriting from `Enemy`
-2. Add spawn data dict to `wave_manager.py`
-3. Add to wave timeline in `wave_manager._check_timeline()`
+2. Add that enemy's tunables to the enemy sections in `settings.py`
+3. Register the enemy id and class in `src/entities/enemies/__init__.py`
+4. Add the enemy id to the relevant settings-driven wave pool / timeline values
+5. Update `wave_manager.py` only where timeline behavior needs to expose the new id
 
 **Add a new weapon:**
 
@@ -489,8 +519,7 @@ python src/utils/placeholder_assets.py
 
 **Tune difficulty:**
 
-- Edit wave timing and spawn rates in `wave_manager.py`
-- Edit enemy stats in the data dicts at the top of `wave_manager.py`
+- Edit enemy and wave/spawn balance tunables in `settings.py`
 - Edit hero/weapon base stats in `settings.py`
 
 **Add a real sprite:**

@@ -33,6 +33,14 @@ render path allocation-aware as well: cache stable panel/weapon-slot geometry in
 `HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
 draws instead of rebuilding equivalent screen-space work every frame.
 
+Enemy architecture note: enemy tunables should now follow the same settings-driven
+pattern as heroes and weapons. Keep enemy stats, per-enemy gameplay knobs, and
+wave/spawn balance values in clearly grouped `settings.py` enemy sections first.
+Concrete enemy classes should read those values instead of redefining local stat
+dicts, and shared enemy spawning should go through the enemy registry/helper in
+`src/entities/enemies/__init__.py` instead of growing new constructor chains in
+`wave_manager.py`.
+
 ## Multiplayer Rules
 
 1. No new hard-coded P1/P2 architecture.

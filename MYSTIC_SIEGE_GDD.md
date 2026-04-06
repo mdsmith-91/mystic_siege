@@ -226,6 +226,16 @@ Current implementation note:
 | Cursed Knight | 80 | Medium | Frontal shield blocks 80% damage |
 | Lich Familiar | 35 | Medium | Orbits player, fires slow magic orbs |
 
+Current implementation note:
+
+- enemy tunables and wave/spawn balance values are defined in `settings.py` first
+- shared enemy construction is centralized in `src/entities/enemies/__init__.py`
+  via `ENEMY_CLASS_REGISTRY` and `create_enemy()`
+- enemy ids stay string-based so settings-driven wave pools and spawn lookups can
+  resolve through the same shared path
+- concrete enemy constructors now share one registry-friendly call shape; optional
+  dependencies such as `projectile_group` are only consumed by enemies that need them
+
 ---
 
 ## 8. GAME LOOP

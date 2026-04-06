@@ -1,8 +1,7 @@
 import pygame
-from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import DARK_GOBLIN_ENEMY_DATA
 
 # Column indices matching direction order in goblin_meta.json
 _DIR_DOWN  = 0
@@ -11,16 +10,16 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class DarkGoblin(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Goblin",
-            "hp": 20,
-            "speed": 160,
-            "damage": 8,
-            "xp_value": 4,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, DARK_GOBLIN_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/goblin.png", 32, 32)

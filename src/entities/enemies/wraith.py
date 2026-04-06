@@ -1,8 +1,7 @@
 import pygame
-from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import WRAITH_ENEMY_DATA
 
 # Column indices matching DIRECTION_ORDER in generate_sprite.py
 _DIR_DOWN  = 0
@@ -11,16 +10,16 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class Wraith(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Wraith",
-            "hp": 40,
-            "speed": 120,
-            "damage": 15,
-            "xp_value": 10,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, WRAITH_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/wraith.png", 32, 32)
@@ -36,7 +35,7 @@ class Wraith(Enemy):
 
         # lunge_timer: float — every 3 seconds, briefly triple speed for 0.4s
         # (lunge_active: bool, lunge_duration countdown)
-        self.lunge_timer = 3.0
+        self.lunge_timer = WRAITH_ENEMY_DATA["lunge_cooldown"]
         self.lunge_active = False
         self.lunge_duration = 0.0
 
@@ -56,16 +55,16 @@ class Wraith(Enemy):
             if self.lunge_timer <= 0:
                 # Start lunge
                 self.lunge_active = True
-                self.lunge_duration = 0.4
-                self.speed *= 3  # Triple speed
+                self.lunge_duration = WRAITH_ENEMY_DATA["lunge_duration"]
+                self.speed *= WRAITH_ENEMY_DATA["lunge_speed_multiplier"]
         else:
             # During lunge
             self.lunge_duration -= dt
             if self.lunge_duration <= 0:
                 # End lunge — restore speed and reset timer for next lunge
                 self.lunge_active = False
-                self.speed /= 3
-                self.lunge_timer = 3.0
+                self.speed /= WRAITH_ENEMY_DATA["lunge_speed_multiplier"]
+                self.lunge_timer = WRAITH_ENEMY_DATA["lunge_cooldown"]
 
         super().update(dt)
 

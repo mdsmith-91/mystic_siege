@@ -103,6 +103,16 @@ Not yet broadly verified in runtime:
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
 - The shared HUD renderer now caches stable panel rect conversion, weapon-slot row geometry, weapon icon surfaces, and text surfaces inside `src/ui/hud.py` rather than rebuilding equivalent data every frame. Offscreen downed-player revive rings are culled while teammate threat arrows remain active.
 
+## Enemy Architecture
+
+- `settings.py` is now the source of truth for enemy tunables as well, including shared enemy values, per-enemy config dicts, and wave/spawn balance data.
+- Enemy classes in `src/entities/enemies/` read their gameplay stats and behavior knobs from those settings-backed configs instead of redefining local stat dicts.
+- Shared enemy construction now goes through `src/entities/enemies/__init__.py` via `ENEMY_CLASS_REGISTRY` and `create_enemy()`.
+- `src/systems/wave_manager.py` resolves enemy ids through that shared helper and should not grow new enemy-specific constructor chains.
+- Enemy ids remain string-based (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`, `Golem`) because wave pools and settings lookups reference them directly.
+- Concrete enemy constructors now follow one shared call shape so the registry can instantiate them uniformly; optional dependencies such as `projectile_group` should only be consumed by enemies that need them.
+- `MiniBat` remains a plague-bat local follow-on spawned on death, not a top-level wave enemy.
+
 ## Getting Started
 
 Requirements:
