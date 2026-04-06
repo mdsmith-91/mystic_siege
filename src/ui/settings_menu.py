@@ -7,11 +7,16 @@ from settings import (
     SCREEN_HEIGHT,
     GOLD,
     CONTROLLER_BINDING_LABELS,
+    FPS_CAP_MIN,
+    FPS_CAP_COARSE_STEP,
+    FPS_CAP_FINE_STEP,
     SETTINGS_SLIDER_STEP_COARSE,
     SETTINGS_SLIDER_STEP_FINE,
     SETTINGS_ANALOG_ADJUST_REPEAT_DELAY,
     SETTINGS_ANALOG_ADJUST_REPEAT_RATE,
+    SETTINGS_SLIDER_VALUE_X_OFFSET,
 )
+from src.utils.fps_cap import detect_refresh_rate, clamp_fps_cap
 
 
 def _sdl_display_bounds() -> list[tuple[int, int, int, int]]:
@@ -97,6 +102,8 @@ class SettingsMenu:
         self.music_volume = self.save_system.get_setting("music_volume")
         self.sfx_volume   = self.save_system.get_setting("sfx_volume")
         self.show_fps     = self.save_system.get_setting("show_fps")
+        self.fps_cap_limit = detect_refresh_rate()
+        self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)
 
         # Keyboard nav index for buttons
         self.selected_index = 0
@@ -130,6 +137,7 @@ class SettingsMenu:
         return [
             "music_volume",
             "sfx_volume",
+            "fps_cap",
             "show_fps",
             "controller_bindings",
             "reset",
@@ -159,25 +167,32 @@ class SettingsMenu:
             "value":       self.sfx_volume,
             "label":       "SFX Volume",
         }
+        fps_cap_fraction = self._slider_fraction("fps_cap", self.fps_cap)
+        self.sliders["fps_cap"] = {
+            "rect":        pygame.Rect(slider_x, 325, slider_width, slider_height),
+            "handle_rect": pygame.Rect(slider_x + int(fps_cap_fraction * slider_width), 320, 20, slider_height + 10),
+            "value":       self.fps_cap,
+            "label":       "FPS Cap",
+        }
 
         # Buttons (navigable)
         self.buttons["show_fps"] = {
-            "rect":  pygame.Rect(button_x, 340, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 410, button_width, button_height),
             "text":  "Show FPS: " + ("ON" if self.show_fps else "OFF"),
             "value": self.show_fps,
         }
         self.buttons["controller_bindings"] = {
-            "rect":  pygame.Rect(button_x, 410, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 480, button_width, button_height),
             "text":  "Controller Bindings",
             "value": None,
         }
         self.buttons["reset"] = {
-            "rect":  pygame.Rect(button_x, 480, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 550, button_width, button_height),
             "text":  "Reset Progress",
             "value": None,
         }
         self.buttons["back"] = {
-            "rect":  pygame.Rect(button_x, 550, button_width, button_height),
+            "rect":  pygame.Rect(button_x, 620, button_width, button_height),
             "text":  "Back",
             "value": None,
         }
@@ -226,14 +241,41 @@ class SettingsMenu:
             self.show_fps = new_value
             self.save_system.set_setting("show_fps", new_value)
 
+    def _slider_min_value(self, slider_name: str) -> float:
+        if slider_name == "fps_cap":
+            return float(FPS_CAP_MIN)
+        return 0.0
+
+    def _slider_max_value(self, slider_name: str) -> float:
+        if slider_name == "fps_cap":
+            return float(self.fps_cap_limit)
+        return 1.0
+
+    def _slider_fraction(self, slider_name: str, value: float) -> float:
+        min_value = self._slider_min_value(slider_name)
+        max_value = self._slider_max_value(slider_name)
+        if max_value <= min_value:
+            return 0.0
+        return (value - min_value) / (max_value - min_value)
+
+    def _slider_value_from_fraction(self, slider_name: str, fraction: float) -> float:
+        min_value = self._slider_min_value(slider_name)
+        max_value = self._slider_max_value(slider_name)
+        if max_value <= min_value:
+            return min_value
+        return min_value + max(0.0, min(1.0, fraction)) * (max_value - min_value)
+
     def _set_slider_value(self, slider_name: str, value: float) -> None:
         slider = self.sliders[slider_name]
-        clamped_value = max(0.0, min(1.0, value))
+        if slider_name == "fps_cap":
+            clamped_value = float(clamp_fps_cap(value, self.fps_cap_limit))
+        else:
+            clamped_value = max(0.0, min(1.0, value))
         track = slider["rect"]
         handle = slider["handle_rect"]
 
         slider["value"] = clamped_value
-        handle.centerx = track.left + int(clamped_value * track.width)
+        handle.centerx = track.left + int(self._slider_fraction(slider_name, clamped_value) * track.width)
 
         if slider_name == "music_volume":
             self.music_volume = clamped_value
@@ -243,9 +285,17 @@ class SettingsMenu:
             self.sfx_volume = clamped_value
             self.save_system.set_setting("sfx_volume", clamped_value)
             AudioManager.instance().set_sfx_volume(clamped_value)
+        elif slider_name == "fps_cap":
+            self.fps_cap = int(clamped_value)
+            self.save_system.set_setting("fps_cap", self.fps_cap)
 
     def _adjust_slider(self, slider_name: str, delta: float) -> None:
-        adjusted_value = round(self.sliders[slider_name]["value"] + delta, 4)
+        if slider_name == "fps_cap":
+            fine_adjust = abs(delta) <= SETTINGS_SLIDER_STEP_FINE + 1e-9
+            step = FPS_CAP_FINE_STEP if fine_adjust else FPS_CAP_COARSE_STEP
+            adjusted_value = self.sliders[slider_name]["value"] + (step if delta > 0 else -step)
+        else:
+            adjusted_value = round(self.sliders[slider_name]["value"] + delta, 4)
         self._set_slider_value(slider_name, adjusted_value)
 
     def _selected_main_item(self) -> str:
@@ -263,6 +313,7 @@ class SettingsMenu:
             self.music_volume = self.save_system.get_setting("music_volume")
             self.sfx_volume = self.save_system.get_setting("sfx_volume")
             self.show_fps = self.save_system.get_setting("show_fps")
+            self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)
             self._init_ui_elements()
             self._slider_adjust_dir = 0
             self._slider_adjust_timer = 0.0
@@ -286,7 +337,7 @@ class SettingsMenu:
 
         selected_item = self._selected_main_item()
         if selected_item in self.sliders:
-            return "Up/Down selects  -  Left/Right adjusts volume  -  Stick hold fine-tunes"
+            return "Up/Down selects  -  Left/Right adjusts setting  -  Stick hold fine-tunes"
 
         return "Up/Down selects  -  Confirm activates  -  Back returns"
 
@@ -641,7 +692,8 @@ class SettingsMenu:
                 slider = self.sliders[self.dragging_slider]
                 track  = slider["rect"]
                 new_x     = max(track.left, min(mouse_x, track.right))
-                new_value = (new_x - track.left) / track.width
+                new_fraction = (new_x - track.left) / track.width
+                new_value = self._slider_value_from_fraction(self.dragging_slider, new_fraction)
                 self._set_slider_value(self.dragging_slider, new_value)
 
     def update(self, dt: float):
@@ -693,8 +745,12 @@ class SettingsMenu:
 
             # Percentage value to the right of track
             pct_color = GOLD if highlighted else TEXT_COLOR
-            pct = self.font_label.render(f"{round(slider_data['value'] * 100)}%", True, pct_color)
-            screen.blit(pct, (track.right + 12, track.centery - pct.get_height() // 2))
+            if slider_name == "fps_cap":
+                value_text = f"{int(slider_data['value'])} FPS"
+            else:
+                value_text = f"{round(slider_data['value'] * 100)}%"
+            pct = self.font_label.render(value_text, True, pct_color)
+            screen.blit(pct, (track.right + SETTINGS_SLIDER_VALUE_X_OFFSET, track.centery - pct.get_height() // 2))
 
         # Buttons
         for i, item_name in enumerate(self._main_menu_order()):

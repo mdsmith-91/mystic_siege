@@ -3,12 +3,19 @@ from src.scene_manager import SceneManager
 from src.utils.input_manager import InputManager
 from settings import STATE_MENU, MOUSE_HIDE_DELAY
 from datetime import datetime, timezone
+from src.systems.save_system import SaveSystem
+from src.utils.fps_cap import clamp_fps_cap
 
 class Game:
     def __init__(self, screen, clock, refresh_rate: int = 60):
         self.screen = screen
         self.clock = clock
-        self.refresh_rate = refresh_rate
+        self.max_refresh_rate = refresh_rate
+        self.save_system = SaveSystem()
+        self.refresh_rate = clamp_fps_cap(
+            self.save_system.get_setting("fps_cap"),
+            self.max_refresh_rate,
+        )
         self.scene_manager = SceneManager()
         self.scene_manager.switch_to(STATE_MENU)
         self._mouse_idle = 0.0
@@ -22,6 +29,12 @@ class Game:
     def run(self):
         running = True
         while running:
+            self.save_system.reload_if_changed()
+            self.refresh_rate = clamp_fps_cap(
+                self.save_system.get_setting("fps_cap"),
+                self.max_refresh_rate,
+            )
+
             # Collect events once per frame so nothing is dropped
             events = pygame.event.get()
             mouse_moved = False
