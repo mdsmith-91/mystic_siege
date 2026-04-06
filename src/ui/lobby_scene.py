@@ -178,10 +178,9 @@ class LobbyScene:
                     # A / Cross — join or leave
                     self._try_join(ic)
                 elif input_manager.button_matches("start", event.button, joystick_id=event.instance_id):
-                    # Start / Options — join if not yet joined, then start if possible
-                    if self._slot_index_for_device(ic) is None:
-                        self._try_join(ic)
-                    self._start_game()
+                    # Start / Options only begins the run for an already joined device.
+                    if self._slot_index_for_device(ic) is not None:
+                        self._start_game()
 
     def update(self, dt: float) -> None:
         if self.flash_timer > 0:
