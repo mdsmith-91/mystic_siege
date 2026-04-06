@@ -204,7 +204,7 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
     immediately activate the first control in the new UI
 
 - Time stops on level-up (upgrade menu open)
-- ESC pauses
+- ESC pauses, and controller `Back` unpauses from the pause menu like `ESC`
 - F3 toggles FPS counter
 - F12 saves screenshot
 
@@ -339,7 +339,8 @@ Default button mapping (Xbox / PlayStation / Switch Pro):
 
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
 - A / Cross (btn 0) → confirm (`K_RETURN`)
-- B / Circle (btn 1), Start / Options (btn 7/9) → back / pause (`K_ESCAPE`)
+- B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the in-game pause menu
+- Start / Options (btn 7/9) → pause toggle (`K_ESCAPE` in global menus)
 
 Tune deadzone and repeat timing in `settings.py`:
 `CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`

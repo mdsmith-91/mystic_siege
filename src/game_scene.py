@@ -581,6 +581,12 @@ class GameScene:
         if input_manager.button_matches("start", event.button, joystick_id=event.instance_id):
             self._toggle_pause()
             return True
+        if (
+            self.paused
+            and input_manager.button_matches("back", event.button, joystick_id=event.instance_id)
+        ):
+            self._toggle_pause()
+            return True
         if self.paused and input_manager.button_matches("confirm", event.button, joystick_id=event.instance_id):
             self._activate_pause_button(self.pause_selected)
             return True
