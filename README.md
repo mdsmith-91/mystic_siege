@@ -32,9 +32,9 @@ Main Menu -> Lobby -> queued Class Select -> Game -> Game Over -> Lobby or Menu
 
 Single-player is the stable baseline. Solo runs now start through the same lobby-based scene flow as multiplayer, but the in-run solo gameplay path is still treated as the first regression path and is intended to preserve the legacy single-player feel.
 
-### Local multiplayer
+### Local co-op
 
-Local multiplayer is partially implemented and still in progress. The codebase now includes:
+Local co-op is implemented and runtime-verified for 1–4 players. The codebase includes:
 
 - slot-based lobby join/leave with `PlayerSlot`
 - queued hero selection with duplicate-hero lockout
@@ -74,7 +74,6 @@ Not yet verified:
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
-- Some compatibility shims from the single-player migration still exist, including temporary `input_config=None` paths in parts of the flow.
 - Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
