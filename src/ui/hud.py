@@ -12,6 +12,7 @@ from settings import (
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_PANEL_TUPLES,
 )
+from src.utils.resource_loader import ResourceLoader
 
 # Arrow geometry: tip distance from edge, half-width of arrow base
 _ARROW_TIP = 15
@@ -28,6 +29,7 @@ class HUD:
         self.font_48 = pygame.font.SysFont("serif", 48)
         self._text_cache: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
         self._panel_surface_cache: dict[tuple[int, int], pygame.Surface] = {}
+        self._weapon_icon_cache: dict[tuple[str, int], pygame.Surface] = {}
 
     def _render_text(
         self,
@@ -48,6 +50,34 @@ class HUD:
             cached = pygame.Surface(size, pygame.SRCALPHA)
             cached.fill(UI_BG)
             self._panel_surface_cache[size] = cached
+        return cached
+
+    def _weapon_icon_name(self, weapon) -> str | None:
+        icon_names = {
+            "ArcaneBolt": "arcane",
+            "HolyNova": "nova",
+            "SpectralBlade": "blade",
+            "FlameWhip": "fire",
+            "FrostRing": "frost",
+            "LightningChain": "lightning",
+            "Longbow": "longbow",
+        }
+        return icon_names.get(weapon.__class__.__name__)
+
+    def _get_weapon_icon(self, weapon, slot_size: int) -> pygame.Surface | None:
+        icon_name = self._weapon_icon_name(weapon)
+        if icon_name is None:
+            return None
+
+        icon_size = max(16, slot_size - 10)
+        cache_key = (icon_name, icon_size)
+        cached = self._weapon_icon_cache.get(cache_key)
+        if cached is None:
+            cached = ResourceLoader.instance().load_image(
+                f"assets/sprites/ui/{icon_name}.png",
+                scale=(icon_size, icon_size),
+            )
+            self._weapon_icon_cache[cache_key] = cached
         return cached
 
     def _build_edge_arrow(self, view_rect: pygame.Rect, screen_pos: pygame.Vector2):
@@ -214,10 +244,14 @@ class HUD:
 
             pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2, border_radius=4)
             weapon = player.weapons[i]
-            letter = weapon.name[0] if weapon.name else "?"
-            letter_font = self.font_16 if slot_size >= 36 else self.font_14
-            text = self._render_text(letter_font, letter, WHITE)
-            screen.blit(text, text.get_rect(center=slot_rect.center))
+            icon = self._get_weapon_icon(weapon, slot_size)
+            if icon is not None:
+                screen.blit(icon, icon.get_rect(center=slot_rect.center))
+            else:
+                letter = weapon.name[0] if weapon.name else "?"
+                letter_font = self.font_16 if slot_size >= 36 else self.font_14
+                text = self._render_text(letter_font, letter, WHITE)
+                screen.blit(text, text.get_rect(center=slot_rect.center))
 
             pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
             pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_rect.width // 6))

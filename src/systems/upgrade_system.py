@@ -1,5 +1,5 @@
 import random
-from settings import HERO_CLASSES
+from settings import HERO_CLASSES, MAX_WEAPON_SLOTS
 
 # Define PASSIVE_UPGRADES as a module-level list of dicts
 PASSIVE_UPGRADES = [
@@ -75,7 +75,8 @@ WEAPON_CLASSES = [
     "SpectralBlade",
     "FlameWhip",
     "FrostRing",
-    "LightningChain"
+    "LightningChain",
+    "Longbow",
 ]
 
 WEAPON_META = {
@@ -121,6 +122,13 @@ WEAPON_META = {
         "icon_color": (255, 255, 100),
         "symbol": "LC",
     },
+    "Longbow": {
+        "name": "Longbow",
+        "new_description": "Fires fast, precise arrows in straight lines at nearby enemies.",
+        "upgrade_description": "More damage at L2, faster shots at L3, pierce at L4, and an extra arrow plus higher crit at L5.",
+        "icon_color": (170, 120, 60),
+        "symbol": "LB",
+    },
 }
 
 class UpgradeSystem:
@@ -134,23 +142,24 @@ class UpgradeSystem:
         # Build candidate list
         candidates = []
 
-        # Add weapons the player does NOT have (offer as "new weapon" card)
-        for weapon_class in WEAPON_CLASSES:
-            has_weapon = False
-            for weapon in player.weapons:
-                if weapon.__class__.__name__ == weapon_class:
-                    has_weapon = True
-                    break
-            if not has_weapon:
-                meta = WEAPON_META.get(weapon_class, {})
-                candidates.append({
-                    "weapon_class": weapon_class,
-                    "type": "new_weapon",
-                    "name": meta.get("name", weapon_class),
-                    "description": meta.get("new_description", "Unlock this weapon."),
-                    "icon_color": meta.get("icon_color", (100, 100, 180)),
-                    "symbol": meta.get("symbol", weapon_class[:2]),
-                })
+        # Do not offer new weapons when the inventory is already full.
+        if len(player.weapons) < MAX_WEAPON_SLOTS:
+            for weapon_class in WEAPON_CLASSES:
+                has_weapon = False
+                for weapon in player.weapons:
+                    if weapon.__class__.__name__ == weapon_class:
+                        has_weapon = True
+                        break
+                if not has_weapon:
+                    meta = WEAPON_META.get(weapon_class, {})
+                    candidates.append({
+                        "weapon_class": weapon_class,
+                        "type": "new_weapon",
+                        "name": meta.get("name", weapon_class),
+                        "description": meta.get("new_description", "Unlock this weapon."),
+                        "icon_color": meta.get("icon_color", (100, 100, 180)),
+                        "symbol": meta.get("symbol", weapon_class[:2]),
+                    })
 
         # Add weapons the player HAS but not at level 5 (offer as "upgrade" card)
         for weapon in player.weapons:
@@ -243,6 +252,9 @@ class UpgradeSystem:
                 elif weapon_class_name == "LightningChain":
                     from src.weapons.lightning_chain import LightningChain
                     weapon = LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
+                elif weapon_class_name == "Longbow":
+                    from src.weapons.longbow import Longbow
+                    weapon = Longbow(player, self.projectile_group, self.enemy_group, self.effect_group)
                 else:
                     return
                 player.add_weapon(weapon)

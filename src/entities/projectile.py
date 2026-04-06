@@ -9,23 +9,26 @@ class Projectile(pygame.sprite.Sprite):
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
                  color: tuple = (200, 100, 255), target_enemy=None,
                  is_enemy_projectile: bool = False, owner_crit_chance: float = 0.0,
-                 owner=None):
+                 owner=None, lifetime: float = 4.0,
+                 size: tuple[int, int] | None = None,
+                 draw_shape: str = "circle",
+                 rotate_to_direction: bool = False):
         super().__init__(groups)
-
-        # image: 10x10 circle surface with given color
-        self.image = pygame.Surface((10, 10), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, color, (5, 5), 5)
-
-        self.rect = self.image.get_rect(center=pos)
 
         # direction normalized on init
         self.direction = direction.normalize()
+        self.draw_shape = draw_shape
+        self.projectile_size = size or (10, 10)
+        self.rotate_to_direction = rotate_to_direction
+        self.color = color
+        self.image = self._build_image()
+        self.rect = self.image.get_rect(center=pos)
 
         # enemies_hit: set() — tracks enemy ids already hit (for pierce)
         self.enemies_hit = set()
 
-        # lifetime: float = 4.0  (auto-destroy after 4 seconds)
-        self.lifetime = 4.0
+        # lifetime: float (auto-destroy after this many seconds)
+        self.lifetime = lifetime
 
         # Additional attributes
         self.speed = speed
@@ -43,6 +46,31 @@ class Projectile(pygame.sprite.Sprite):
 
         self.owner_crit_chance = owner_crit_chance
         self.owner = owner
+
+    def _build_image(self) -> pygame.Surface:
+        width, height = self.projectile_size
+        surface = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        if self.draw_shape == "arrow":
+            shaft_width = max(2, height // 3)
+            shaft_rect = pygame.Rect(0, 0, max(1, width - height), shaft_width)
+            shaft_rect.centery = height // 2
+            pygame.draw.rect(surface, self.color, shaft_rect)
+            head_points = [
+                (width - 1, height // 2),
+                (max(0, width - height), 0),
+                (max(0, width - height), height - 1),
+            ]
+            pygame.draw.polygon(surface, self.color, head_points)
+        else:
+            radius = min(width, height) // 2
+            pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
+
+        if self.rotate_to_direction:
+            angle = Vector2(1, 0).angle_to(self.direction)
+            surface = pygame.transform.rotate(surface, angle)
+
+        return surface
 
     def update(self, dt):
         # Home toward original target only while it's still alive — fly straight once it dies

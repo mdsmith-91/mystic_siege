@@ -7,6 +7,9 @@ from settings import (
     WORLD_HEIGHT,
     MAX_WEAPON_SLOTS,
     CRIT_CHANCE_BASE,
+    WIZARD_CRIT_CHANCE_BONUS,
+    RANGER_CRIT_CHANCE_BONUS,
+    RANGER_PROJECTILE_PIERCE_BONUS,
     WIZARD_SPELL_DAMAGE_BONUS,
     DOWNED_ALPHA,
 )
@@ -68,10 +71,14 @@ class Player(BaseEntity):
         self.spell_damage_multiplier = 1.0
         self.base_spell_damage_multiplier = 1.0
         self.spell_damage_bonus_pct = 0.0
+        self.projectile_pierce_bonus = 0
         self.speed_bonus_pct = 0.0
         if self.hero_class == "Wizard":
-            self.crit_chance += 0.10
+            self.crit_chance += WIZARD_CRIT_CHANCE_BONUS
             self.spell_damage_bonus_pct += WIZARD_SPELL_DAMAGE_BONUS
+        elif self.hero_class == "Ranger":
+            self.crit_chance += RANGER_CRIT_CHANCE_BONUS
+            self.projectile_pierce_bonus += RANGER_PROJECTILE_PIERCE_BONUS
         self.damage_multiplier = 1.0
         self._recalculate_pct_stats()
 

@@ -4,7 +4,6 @@
 import os
 import wave
 import pygame
-from pygame.math import Vector2
 
 
 def _require_numpy():
@@ -34,31 +33,249 @@ def create_asset_directories():
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
 
+
+def _shade(color: tuple[int, int, int], delta: int) -> tuple[int, int, int]:
+    """Return a color shifted brighter/darker by delta."""
+    return tuple(max(0, min(255, channel + delta)) for channel in color)
+
+
+def _hero_palettes() -> dict[str, dict[str, tuple[int, int, int]]]:
+    return {
+        "knight": {
+            "primary": (70, 145, 200),
+            "secondary": (205, 120, 55),
+            "accent": (235, 195, 70),
+            "skin": (235, 200, 165),
+        },
+        "wizard": {
+            "primary": (225, 120, 35),
+            "secondary": (75, 120, 215),
+            "accent": (245, 205, 90),
+            "skin": (235, 205, 170),
+        },
+        "friar": {
+            "primary": (198, 124, 52),
+            "secondary": (135, 82, 34),
+            "accent": (242, 210, 120),
+            "skin": (229, 190, 150),
+        },
+        "ranger": {
+            "primary": (85, 152, 102),
+            "secondary": (128, 88, 52),
+            "accent": (224, 210, 156),
+            "skin": (225, 192, 150),
+        },
+    }
+
+
+def _draw_outline_rect(surface: pygame.Surface, color: tuple[int, int, int], rect: pygame.Rect, radius: int = 2) -> None:
+    pygame.draw.rect(surface, color, rect, 1, border_radius=radius)
+
+
+def _weapon_points(direction: str) -> tuple[tuple[int, int], tuple[int, int]]:
+    if direction == "left":
+        return (9, 14), (2, 20)
+    if direction == "right":
+        return (23, 14), (30, 20)
+    if direction == "up":
+        return (17, 9), (24, 3)
+    return (15, 20), (22, 28)
+
+
+def _draw_knight_weapon(surface: pygame.Surface, direction: str, palette: dict[str, tuple[int, int, int]]) -> None:
+    start, end = _weapon_points(direction)
+    blade_color = _shade(palette["accent"], 10)
+    guard_color = _shade(palette["secondary"], -15)
+    pygame.draw.line(surface, blade_color, start, end, 2)
+    if direction in {"left", "right"}:
+        guard_x = start[0]
+        pygame.draw.line(surface, guard_color, (guard_x, start[1] - 2), (guard_x, start[1] + 2), 2)
+    else:
+        guard_y = start[1]
+        pygame.draw.line(surface, guard_color, (start[0] - 2, guard_y), (start[0] + 2, guard_y), 2)
+
+
+def _draw_staff(surface: pygame.Surface, direction: str, palette: dict[str, tuple[int, int, int]]) -> None:
+    wood = _shade(palette["secondary"], -20)
+    orb = palette["accent"]
+    start, end = _weapon_points(direction)
+    pygame.draw.line(surface, wood, start, end, 2)
+    pygame.draw.circle(surface, orb, end, 2)
+
+
+def _draw_book(surface: pygame.Surface, direction: str, palette: dict[str, tuple[int, int, int]]) -> None:
+    book = pygame.Rect(20, 15, 7, 6)
+    if direction == "left":
+        book = pygame.Rect(5, 15, 7, 6)
+    elif direction == "up":
+        book = pygame.Rect(18, 8, 7, 6)
+    elif direction == "down":
+        book = pygame.Rect(18, 20, 7, 6)
+    pygame.draw.rect(surface, palette["accent"], book, border_radius=1)
+    pygame.draw.line(surface, _shade(palette["secondary"], -25), (book.centerx, book.top + 1), (book.centerx, book.bottom - 1), 1)
+
+
+def _draw_bow(surface: pygame.Surface, direction: str, palette: dict[str, tuple[int, int, int]]) -> None:
+    bow = _shade(palette["secondary"], -25)
+    string = _shade(palette["accent"], 20)
+    if direction == "left":
+        pygame.draw.arc(surface, bow, (3, 10, 9, 14), 1.3, 5.0, 2)
+        pygame.draw.line(surface, string, (9, 11), (9, 23), 1)
+        pygame.draw.line(surface, string, (9, 17), (15, 17), 1)
+        pygame.draw.polygon(surface, string, [(15, 17), (12, 15), (12, 19)])
+    elif direction == "right":
+        pygame.draw.arc(surface, bow, (20, 10, 9, 14), 4.4, 1.9, 2)
+        pygame.draw.line(surface, string, (23, 11), (23, 23), 1)
+        pygame.draw.line(surface, string, (17, 17), (23, 17), 1)
+        pygame.draw.polygon(surface, string, [(17, 17), (20, 15), (20, 19)])
+    elif direction == "up":
+        pygame.draw.arc(surface, bow, (16, 2, 10, 16), 2.7, 0.5, 2)
+        pygame.draw.line(surface, string, (20, 4), (20, 16), 1)
+        pygame.draw.line(surface, string, (14, 10), (20, 10), 1)
+        pygame.draw.polygon(surface, string, [(14, 10), (17, 8), (17, 12)])
+    else:
+        pygame.draw.arc(surface, bow, (6, 15, 10, 16), 5.8, 3.7, 2)
+        pygame.draw.line(surface, string, (10, 17), (10, 29), 1)
+        pygame.draw.line(surface, string, (10, 23), (16, 23), 1)
+        pygame.draw.polygon(surface, string, [(16, 23), (13, 21), (13, 25)])
+
+
+def _draw_hero_frame(hero_key: str, direction: str, palette: dict[str, tuple[int, int, int]]) -> pygame.Surface:
+    frame = pygame.Surface((32, 32), pygame.SRCALPHA)
+    primary = palette["primary"]
+    secondary = palette["secondary"]
+    accent = palette["accent"]
+    skin = palette["skin"]
+    outline = _shade(primary, -55)
+
+    head_rect = pygame.Rect(10, 5, 12, 9)
+    torso_rect = pygame.Rect(9, 12, 14, 12)
+    leg_left = pygame.Rect(10, 22, 4, 6)
+    leg_right = pygame.Rect(18, 22, 4, 6)
+
+    if hero_key == "wizard":
+        pygame.draw.polygon(frame, secondary, [(9, 11), (16, 3), (23, 11)])
+        pygame.draw.ellipse(frame, accent, (8, 10, 16, 4))
+    elif hero_key == "friar":
+        pygame.draw.ellipse(frame, secondary, (10, 5, 12, 10))
+    else:
+        pygame.draw.ellipse(frame, skin if hero_key == "knight" else secondary, head_rect)
+
+    if hero_key == "knight":
+        pygame.draw.rect(frame, _shade(primary, 35), (12, 6, 8, 5), border_radius=2)
+        pygame.draw.rect(frame, primary, torso_rect, border_radius=3)
+        pygame.draw.rect(frame, accent, (13, 15, 6, 7), border_radius=1)
+        pygame.draw.rect(frame, secondary, (9, 12, 3, 9), border_radius=1)
+        pygame.draw.rect(frame, secondary, (20, 12, 3, 9), border_radius=1)
+    elif hero_key == "wizard":
+        pygame.draw.polygon(frame, primary, [(9, 24), (16, 11), (23, 24)])
+        pygame.draw.rect(frame, primary, (12, 12, 8, 8), border_radius=2)
+        pygame.draw.rect(frame, accent, (13, 14, 6, 3), border_radius=1)
+    elif hero_key == "friar":
+        pygame.draw.polygon(frame, primary, [(9, 24), (16, 10), (23, 24)])
+        pygame.draw.rect(frame, accent, (14, 13, 4, 6), border_radius=1)
+        pygame.draw.line(frame, accent, (16, 12), (16, 20), 1)
+        pygame.draw.line(frame, accent, (13, 16), (19, 16), 1)
+    else:
+        pygame.draw.polygon(frame, primary, [(8, 24), (12, 11), (20, 11), (24, 24)])
+        pygame.draw.rect(frame, secondary, (11, 8, 10, 6), border_radius=2)
+        pygame.draw.rect(frame, accent, (13, 15, 6, 3), border_radius=1)
+
+    pygame.draw.rect(frame, _shade(secondary, 20), leg_left, border_radius=1)
+    pygame.draw.rect(frame, _shade(secondary, 20), leg_right, border_radius=1)
+    pygame.draw.rect(frame, outline, leg_left, 1, border_radius=1)
+    pygame.draw.rect(frame, outline, leg_right, 1, border_radius=1)
+
+    if hero_key == "knight":
+        _draw_knight_weapon(frame, direction, palette)
+    elif hero_key == "wizard":
+        _draw_staff(frame, direction, palette)
+    elif hero_key == "friar":
+        _draw_book(frame, direction, palette)
+    else:
+        _draw_bow(frame, direction, palette)
+
+    _draw_outline_rect(frame, outline, torso_rect)
+    if hero_key != "wizard":
+        pygame.draw.ellipse(frame, outline, head_rect, 1)
+
+    return frame
+
+
+def _weapon_bg(surface: pygame.Surface, color: tuple[int, int, int]) -> None:
+    bg = _shade(color, -30)
+    border = _shade(color, 35)
+    pygame.draw.rect(surface, bg, (0, 0, 32, 32), border_radius=6)
+    pygame.draw.rect(surface, border, (1, 1, 30, 30), 2, border_radius=6)
+
+
+def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
+    detail = _shade(color, 55)
+    shadow = _shade(color, -70)
+    if weapon_key == "arcane":
+        pygame.draw.circle(surface, detail, (16, 16), 7)
+        pygame.draw.circle(surface, shadow, (16, 16), 7, 2)
+        pygame.draw.line(surface, detail, (21, 11), (26, 6), 2)
+    elif weapon_key == "nova":
+        pygame.draw.circle(surface, detail, (16, 16), 8, 3)
+        pygame.draw.circle(surface, detail, (16, 16), 3)
+    elif weapon_key == "fire":
+        pygame.draw.polygon(surface, detail, [(16, 6), (21, 14), (18, 25), (12, 22), (10, 14)])
+        pygame.draw.polygon(surface, shadow, [(16, 11), (18, 16), (16, 22), (13, 18)])
+    elif weapon_key == "frost":
+        pygame.draw.line(surface, detail, (16, 7), (16, 25), 2)
+        pygame.draw.line(surface, detail, (8, 16), (24, 16), 2)
+        pygame.draw.line(surface, detail, (10, 10), (22, 22), 2)
+        pygame.draw.line(surface, detail, (22, 10), (10, 22), 2)
+    elif weapon_key == "lightning":
+        pygame.draw.polygon(surface, detail, [(18, 6), (10, 17), (15, 17), (12, 26), (22, 14), (17, 14)])
+    elif weapon_key == "blade":
+        pygame.draw.line(surface, detail, (11, 23), (22, 10), 3)
+        pygame.draw.line(surface, shadow, (9, 24), (13, 24), 2)
+        pygame.draw.line(surface, shadow, (12, 21), (16, 25), 2)
+    elif weapon_key == "longbow":
+        pygame.draw.arc(surface, shadow, (8, 5, 12, 22), 1.2, 5.1, 3)
+        pygame.draw.line(surface, detail, (18, 7), (18, 25), 1)
+        pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
+        pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
+
+
+def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
+    detail = _shade(color, 45)
+    shadow = _shade(color, -60)
+    if weapon_key == "arcane":
+        pygame.draw.circle(surface, detail, (8, 8), 5)
+        pygame.draw.circle(surface, shadow, (8, 8), 5, 1)
+        pygame.draw.line(surface, detail, (11, 5), (14, 2), 1)
+    elif weapon_key == "nova":
+        pygame.draw.circle(surface, detail, (8, 8), 5, 2)
+        pygame.draw.circle(surface, detail, (8, 8), 2)
+    elif weapon_key == "fire":
+        pygame.draw.polygon(surface, detail, [(8, 2), (12, 7), (10, 14), (5, 12), (4, 7)])
+    elif weapon_key == "frost":
+        pygame.draw.line(surface, detail, (8, 3), (8, 13), 1)
+        pygame.draw.line(surface, detail, (3, 8), (13, 8), 1)
+        pygame.draw.line(surface, detail, (4, 4), (12, 12), 1)
+        pygame.draw.line(surface, detail, (12, 4), (4, 12), 1)
+    elif weapon_key == "lightning":
+        pygame.draw.polygon(surface, detail, [(9, 2), (5, 8), (8, 8), (6, 14), (12, 7), (9, 7)])
+    elif weapon_key == "longbow":
+        pygame.draw.rect(surface, shadow, (1, 6, 9, 4), border_radius=1)
+        pygame.draw.polygon(surface, detail, [(15, 8), (9, 3), (9, 13)])
+        pygame.draw.polygon(surface, (240, 230, 210), [(0, 8), (3, 4), (3, 12)])
+
 def generate_hero_assets():
     """Generate hero placeholder assets."""
     # Initialize pygame headlessly
     os.environ["SDL_VIDEODRIVER"] = "dummy"
     pygame.init()
 
-    # Hero colors and labels
-    heroes = [
-        ("knight.png", (180, 140, 60), "K"),
-        ("wizard.png", (160, 60, 220), "W"),
-        ("friar.png", (200, 180, 120), "F")
-    ]
-
-    for filename, color, label in heroes:
-        # Create 32x32 surface
-        surface = pygame.Surface((32, 32), pygame.SRCALPHA)
-
-        # Draw filled rectangle
-        pygame.draw.rect(surface, color, (0, 0, 32, 32))
-
-        # Draw label
-        font = pygame.font.SysFont(None, 24)
-        text = font.render(label, True, (255, 255, 255))
-        text_rect = text.get_rect(center=(16, 16))
-        surface.blit(text, text_rect)
+    for hero_key, palette in _hero_palettes().items():
+        filename = f"{hero_key}.png"
+        surface = pygame.Surface((128, 32), pygame.SRCALPHA)
+        for index, direction in enumerate(("down", "left", "right", "up")):
+            frame = _draw_hero_frame(hero_key, direction, palette)
+            surface.blit(frame, (index * 32, 0))
 
         # Only write if no real asset exists
         filepath = f"assets/sprites/heroes/{filename}"
@@ -123,15 +340,13 @@ def generate_projectile_assets():
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
         ("frost.png", (80, 200, 255)),
-        ("lightning.png", (255, 240, 60))
+        ("lightning.png", (255, 240, 60)),
+        ("longbow.png", (170, 120, 60)),
     ]
 
     for filename, color in projectiles:
-        # Create 16x16 surface
         surface = pygame.Surface((16, 16), pygame.SRCALPHA)
-
-        # Draw circle
-        pygame.draw.circle(surface, color, (8, 8), 8)
+        _draw_projectile(surface, filename.split(".")[0], color)
 
         # Only write if no real asset exists
         filepath = f"assets/sprites/projectiles/{filename}"
@@ -168,23 +383,14 @@ def generate_weapon_icon_assets():
         ("fire.png", (255, 100, 20)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
-        ("blade.png", (100, 150, 255))  # Spectral blade color
+        ("blade.png", (100, 150, 255)),  # Spectral blade color
+        ("longbow.png", (170, 120, 60)),
     ]
 
     for filename, color in weapons:
-        # Create 32x32 surface
         surface = pygame.Surface((32, 32), pygame.SRCALPHA)
-
-        # Draw filled rectangle with color
-        pygame.draw.rect(surface, color, (0, 0, 32, 32))
-
-        # Draw weapon symbol
-        font = pygame.font.SysFont(None, 24)
-        symbol = filename.split('.')[0]  # Get weapon name without extension
-        symbol = symbol[0].upper()  # Get first letter
-        text = font.render(symbol, True, (255, 255, 255))
-        text_rect = text.get_rect(center=(16, 16))
-        surface.blit(text, text_rect)
+        _weapon_bg(surface, color)
+        _draw_weapon_icon(surface, filename.split(".")[0], color)
 
         # Only write if no real asset exists
         filepath = f"assets/sprites/ui/{filename}"
@@ -267,6 +473,7 @@ def generate_audio_placeholders():
     maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
+    maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
 
 
 def main():
@@ -284,7 +491,7 @@ def main():
     generate_weapon_icon_assets()
     generate_audio_placeholders()
 
-    print("Generated 28 placeholder assets to assets/")
+    print("Generated placeholder assets to assets/")
     print("Run 'python main.py' to start the game")
 
 if __name__ == "__main__":

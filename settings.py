@@ -51,7 +51,10 @@ PICKUP_RADIUS = 80
 # CRITICAL HITS
 CRIT_CHANCE_BASE = 0.05   # 5% base crit chance for all heroes
 CRIT_MULTIPLIER = 2.0     # crits deal 2x damage
+WIZARD_CRIT_CHANCE_BONUS = 0.10
 WIZARD_SPELL_DAMAGE_BONUS = 0.20  # Wizard passive: spells deal 20% more damage
+RANGER_CRIT_CHANCE_BONUS = 0.10
+RANGER_PROJECTILE_PIERCE_BONUS = 1
 
 # XP
 BASE_XP_REQUIRED = 50
@@ -64,6 +67,24 @@ ARCANE_BOLT_RANGE = 350         # max distance to target an enemy
 ARCANE_BOLT_SPREAD = 20         # degrees between each bolt in a multi-bolt burst
 ARCANE_BOLT_STAGGER = 0.3       # seconds between each bolt in a burst
 LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
+LONGBOW_BASE_DAMAGE = 24.0
+LONGBOW_BASE_COOLDOWN = 1.0
+LONGBOW_RANGE = 520
+LONGBOW_PROJECTILE_SPEED = 720
+LONGBOW_PROJECTILE_LIFETIME = 0.9
+LONGBOW_BASE_PIERCE = 0
+LONGBOW_BASE_PROJECTILE_COUNT = 1
+LONGBOW_SPREAD = 10
+LONGBOW_BASE_CRIT_BONUS = 0.05
+LONGBOW_PROJECTILE_COLOR = (170, 120, 60)
+LONGBOW_PROJECTILE_SIZE = (24, 6)
+LONGBOW_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 8.0},
+    {"base_cooldown": -0.15},
+    {"pierce": 1},
+    {"projectile_count": 1, "crit_bonus": 0.10},
+]
 
 ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit
@@ -123,7 +144,7 @@ CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
 CONTROLLER_CONFIRM_BUTTON = 0        # A / Cross
 CONTROLLER_BACK_BUTTON = 1           # B / Circle
-CONTROLLER_START_BUTTONS = (7,)      # Start / Options; extend per-controller only if needed
+CONTROLLER_START_BUTTONS = (11,)     # Default pause/start button; extend per-controller only if needed
 CONTROLLER_BINDINGS_DEFAULT = {
     "confirm": CONTROLLER_CONFIRM_BUTTON,
     "back": CONTROLLER_BACK_BUTTON,
@@ -203,7 +224,7 @@ STATE_SETTINGS = "settings"
 STATE_STATS = "stats"
 STATE_LOBBY = "lobby"
 
-# HERO_CLASSES list of 3 dicts, each with keys:
+# HERO_CLASSES list of hero dicts, each with keys:
 # name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
 HERO_CLASSES = [
     {
@@ -235,5 +256,15 @@ HERO_CLASSES = [
         "starting_weapon": "HolyNova",
         "color": (200, 180, 120),
         "sprite": "assets/sprites/heroes/friar.png"
+    },
+    {
+        "name": "Ranger",
+        "hp": 95,
+        "speed": 225,
+        "armor": 3,
+        "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
+        "starting_weapon": "Longbow",
+        "color": (90, 170, 110),
+        "sprite": "assets/sprites/heroes/ranger.png"
     }
 ]

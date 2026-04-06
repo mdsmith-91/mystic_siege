@@ -4,7 +4,11 @@ from settings import FPS, FPS_CAP_MIN
 def detect_refresh_rate(default_fps: int = FPS) -> int:
     import pygame
 
-    refresh_rate = pygame.display.get_current_refresh_rate()
+    try:
+        refresh_rate = pygame.display.get_current_refresh_rate()
+    except pygame.error:
+        return default_fps
+
     if refresh_rate <= 0:
         return default_fps
     return refresh_rate

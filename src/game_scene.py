@@ -89,6 +89,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_BLADE,  "assets/audio/sfx/spectral_blade.wav")
         _am.load_sfx(AudioManager.WEAPON_CHAIN,  "assets/audio/sfx/lightning_chain.wav")
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
+        _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
 
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()
@@ -180,6 +181,9 @@ class GameScene:
         if starting_weapon == "LightningChain":
             from src.weapons.lightning_chain import LightningChain
             return LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
+        if starting_weapon == "Longbow":
+            from src.weapons.longbow import Longbow
+            return Longbow(player, self.projectile_group, self.enemy_group, self.effect_group)
 
         from src.weapons.arcane_bolt import ArcaneBolt
         return ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
