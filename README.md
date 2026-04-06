@@ -80,6 +80,13 @@ Not yet broadly verified in runtime:
 | Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
 
+## Hero Architecture
+
+- `settings.py` is also the source of truth for hero definitions through `HERO_CLASSES`.
+- Each hero record now includes declarative passive config in a `passives` dict, in addition to display text in `passive_desc`.
+- Current runtime systems read those passive values instead of hardcoding hero-name checks for Knight, Wizard, Friar, and Ranger behavior.
+- Hero records remain plain dicts so lobby, class select, and gameplay can keep using the current lightweight data flow.
+
 ## Weapon Architecture
 
 - `settings.py` is the source of truth for weapon tunables, including base stats, relevant visual tunables, and per-level upgrade deltas.

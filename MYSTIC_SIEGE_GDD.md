@@ -180,6 +180,12 @@ mystic_siege/
 - **Starting Weapon:** Longbow (precise ranged arrows)
 - **Playstyle:** Kiter — reliable ranged pressure with scaling projectile utility
 
+Current implementation note:
+
+- hero definitions remain plain dicts in `settings.py`
+- hero passive gameplay modifiers are now configured declaratively per hero via a `passives` mapping
+- runtime systems read those passive values instead of depending on hero-name branches where a config lookup is sufficient
+
 ---
 
 ## 6. WEAPONS / SPELLS

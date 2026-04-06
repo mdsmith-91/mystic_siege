@@ -150,6 +150,20 @@ Wizard passive: +20% spell damage, +10% crit chance
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
 
+Current hero architecture rules:
+
+- Hero definitions stay in `settings.HERO_CLASSES` as plain dicts used directly by
+  `ClassSelect`, `GameScene`, and `Player`.
+- Base stats, sprite path, starting weapon, passive text, and passive gameplay config
+  should all be authored in the hero record first.
+- Hero passive behavior is now declarative via each hero dict's `passives` mapping.
+  Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
+  `crit_chance_bonus`, `spell_damage_bonus_pct`, `projectile_pierce_bonus`, and
+  `heal_per_xp`.
+- Do not add new hero-name `if/elif` passive branches in gameplay systems when a
+  passive can be expressed as hero config and read by `Player`, `XPSystem`, or
+  collision/runtime code.
+
 ### Weapons (all have 5 upgrade levels)
 
 - ArcaneBolt — homing projectiles, 1→3 bolts
@@ -438,9 +452,12 @@ python src/utils/placeholder_assets.py
 **Add a new hero class:**
 
 1. Add a new dict entry to `HERO_CLASSES` in `settings.py` with `name`, `hp`, `speed`,
-   `armor`, `starting_weapon`, and `passive_description`
-2. Update `class_select.py` if layout logic assumes a fixed hero count
-3. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
+   `armor`, `starting_weapon`, `passive_desc`, `sprite`, and a `passives` dict
+   when the hero has gameplay modifiers
+2. Prefer declarative passive keys in the hero record over adding hero-name checks
+   in runtime code
+3. Update `class_select.py` if layout logic assumes a fixed hero count
+4. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
 
 **Tune difficulty:**
 

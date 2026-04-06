@@ -341,7 +341,8 @@ STATE_STATS = "stats"
 STATE_LOBBY = "lobby"
 
 # HERO_CLASSES list of hero dicts, each with keys:
-# name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
+# name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite),
+# sprite, and passives (declarative gameplay modifiers used by Player/XP/collision systems)
 HERO_CLASSES = [
     {
         "name": "Knight",
@@ -351,7 +352,11 @@ HERO_CLASSES = [
         "passive_desc": "Takes 15% less damage. Immune to knockback.",
         "starting_weapon": "SpectralBlade",
         "color": (180, 140, 60),
-        "sprite": "assets/sprites/heroes/knight.png"
+        "sprite": "assets/sprites/heroes/knight.png",
+        "passives": {
+            "damage_taken_multiplier": 0.85,
+            "knockback_immune": True,
+        },
     },
     {
         "name": "Wizard",
@@ -361,7 +366,11 @@ HERO_CLASSES = [
         "passive_desc": "Spells deal 20% more damage. +10% crit chance.",
         "starting_weapon": "ArcaneBolt",
         "color": (160, 60, 220),
-        "sprite": "assets/sprites/heroes/wizard.png"
+        "sprite": "assets/sprites/heroes/wizard.png",
+        "passives": {
+            "crit_chance_bonus": WIZARD_CRIT_CHANCE_BONUS,
+            "spell_damage_bonus_pct": WIZARD_SPELL_DAMAGE_BONUS,
+        },
     },
     {
         "name": "Friar",
@@ -371,7 +380,10 @@ HERO_CLASSES = [
         "passive_desc": "Heals 1 HP per 10 XP gained.",
         "starting_weapon": "HolyNova",
         "color": (200, 180, 120),
-        "sprite": "assets/sprites/heroes/friar.png"
+        "sprite": "assets/sprites/heroes/friar.png",
+        "passives": {
+            "heal_per_xp": FRIAR_HEAL_PER_XP,
+        },
     },
     {
         "name": "Ranger",
@@ -381,6 +393,10 @@ HERO_CLASSES = [
         "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
         "starting_weapon": "Longbow",
         "color": (90, 170, 110),
-        "sprite": "assets/sprites/heroes/ranger.png"
+        "sprite": "assets/sprites/heroes/ranger.png",
+        "passives": {
+            "crit_chance_bonus": RANGER_CRIT_CHANCE_BONUS,
+            "projectile_pierce_bonus": RANGER_PROJECTILE_PIERCE_BONUS,
+        },
     }
 ]

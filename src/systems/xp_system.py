@@ -1,4 +1,4 @@
-from settings import BASE_XP_REQUIRED, XP_SCALE_FACTOR, FRIAR_HEAL_PER_XP
+from settings import BASE_XP_REQUIRED, XP_SCALE_FACTOR
 from src.utils.audio_manager import AudioManager
 
 class XPSystem:
@@ -120,9 +120,9 @@ class XPSystem:
         # player.orbs_collected += 1
         player.orbs_collected += 1
 
-        # Friar passive: heal based on XP gained, not orb count
-        if player.hero_class == "Friar":
-            player.heal(gained * FRIAR_HEAL_PER_XP)
+        # Declarative hero passive: heal based on XP gained, not orb count.
+        if getattr(player, "heal_per_xp", 0.0) > 0:
+            player.heal(gained * player.heal_per_xp)
 
         # check_levelup()
         self.check_levelup()

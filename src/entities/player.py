@@ -7,10 +7,6 @@ from settings import (
     WORLD_HEIGHT,
     MAX_WEAPON_SLOTS,
     CRIT_CHANCE_BASE,
-    WIZARD_CRIT_CHANCE_BONUS,
-    RANGER_CRIT_CHANCE_BONUS,
-    RANGER_PROJECTILE_PIERCE_BONUS,
-    WIZARD_SPELL_DAMAGE_BONUS,
     DOWNED_ALPHA,
 )
 from src.utils.audio_manager import AudioManager
@@ -29,6 +25,8 @@ class Player(BaseEntity):
                  slot: PlayerSlot | None = None,
                  supports_revive: bool = False):
         super().__init__(pos, groups)
+
+        self.hero_data = hero_class_data
 
         # Store hero class name for passive checks
         self.hero_class = hero_class_data.get("name", "")
@@ -73,12 +71,10 @@ class Player(BaseEntity):
         self.spell_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
         self.speed_bonus_pct = 0.0
-        if self.hero_class == "Wizard":
-            self.crit_chance += WIZARD_CRIT_CHANCE_BONUS
-            self.spell_damage_bonus_pct += WIZARD_SPELL_DAMAGE_BONUS
-        elif self.hero_class == "Ranger":
-            self.crit_chance += RANGER_CRIT_CHANCE_BONUS
-            self.projectile_pierce_bonus += RANGER_PROJECTILE_PIERCE_BONUS
+        self.damage_taken_multiplier = 1.0
+        self.knockback_immune = False
+        self.heal_per_xp = 0.0
+        self._apply_hero_passives()
         self.damage_multiplier = 1.0
         self._recalculate_pct_stats()
 
@@ -186,6 +182,16 @@ class Player(BaseEntity):
         self.xp_multiplier = self.base_xp_multiplier * (1.0 + self.xp_multiplier_bonus_pct)
         self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
 
+    def _apply_hero_passives(self) -> None:
+        """Apply declarative passive bonuses from the hero config."""
+        passives = self.hero_data.get("passives", {})
+        self.crit_chance += passives.get("crit_chance_bonus", 0.0)
+        self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
+        self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
+        self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
+        self.knockback_immune = passives.get("knockback_immune", False)
+        self.heal_per_xp = passives.get("heal_per_xp", 0.0)
+
     def add_flat_percent_bonus(self, stat: str, value: float) -> None:
         """Apply a percent bonus additively from the stat's base value."""
         if stat == "speed_pct":
@@ -271,6 +277,7 @@ class Player(BaseEntity):
         AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
         armor = getattr(self, 'armor', 0)
         damage = amount * (1.0 - armor / 100.0) if armor else amount
+        damage *= self.damage_taken_multiplier
         previous_hp = self.hp
         self.hp = max(0.0, self.hp - damage)
         actual_damage = previous_hp - self.hp
