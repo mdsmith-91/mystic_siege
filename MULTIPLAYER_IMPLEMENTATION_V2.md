@@ -16,6 +16,10 @@ out of scope for this guide but the architecture is designed to make it feasible
 > weapons and upgrade unlocks through `src/weapons/factory.py`
 > (`WEAPON_CLASS_REGISTRY` + `create_weapon()`). Treat any older discussion that
 > assumes scene-local weapon constructor branches as historical migration context.
+> `src/weapons/__init__.py` now re-exports that shared registry/helper surface, and
+> `src/systems/upgrade_system.py` owns player-facing weapon card metadata
+> (`WEAPON_META` / `WEAPON_CLASSES`) while `settings.py` stays authoritative for
+> gameplay tunables.
 > Use this file for intended architecture, remaining cleanup direction, and
 > long-term phase alignment.
 

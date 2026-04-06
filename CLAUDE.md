@@ -195,6 +195,9 @@ Current weapon architecture rules:
   so callers can import the package-level API if needed.
 - Upgrade-card presentation metadata is kept in `src/systems/upgrade_system.py`
   via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
+- Keep the responsibility split explicit: `settings.py` owns gameplay values,
+  `src/weapons/factory.py` owns id-to-class resolution, and
+  `src/systems/upgrade_system.py` owns player-facing card metadata.
 - Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
   or other callers. Register the weapon once in `WEAPON_CLASS_REGISTRY` and keep
   hero data / upgrade rewards on string ids.

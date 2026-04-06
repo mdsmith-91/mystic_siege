@@ -22,6 +22,10 @@
 > `create_weapon()`) for both hero starting weapons and upgrade unlocks. Treat any
 > older direct-instantiation / `if/elif` starting-weapon discussion below as
 > historical migration guidance unless it is explicitly called out as current state.
+> `src/weapons/__init__.py` re-exports that shared registry/helper surface, and
+> `src/systems/upgrade_system.py` owns player-facing weapon card metadata
+> (`WEAPON_META` / `WEAPON_CLASSES`) while `settings.py` remains the source of
+> truth for gameplay values.
 
 ---
 
@@ -82,7 +86,9 @@ at construction. Every stat access (`self.owner.damage_multiplier`,
 `self.owner.crit_chance`, `self.owner.pos`) already works correctly per-player.
 Weapons are created per-player and need no changes to function in multiplayer.
 The current repo also centralizes weapon construction through the shared
-`create_weapon()` factory path rather than scene-local weapon branches.
+`create_weapon()` factory path rather than scene-local weapon branches, with
+player-facing unlock metadata kept in `UpgradeSystem` instead of weapon
+constructors or hero records.
 
 ### 2.3 UpgradeSystem is already player-agnostic
 `upgrade_system.py` receives a player reference only at `get_random_choices(player)`

@@ -41,7 +41,10 @@ construction should go through `src/weapons/factory.py` via
 chains in `game_scene.py`, `upgrade_system.py`, or other callers. Hero
 `starting_weapon` fields and upgrade rewards should stay on stable string ids, and
 package-level imports should continue to flow through `src/weapons/__init__.py`
-when callers need the shared registry/helper surface.
+when callers need the shared registry/helper surface. Player-facing weapon card
+metadata should stay in `src/systems/upgrade_system.py` (`WEAPON_META` /
+`WEAPON_CLASSES`) rather than being duplicated into gameplay constructors or hero
+records.
 
 Enemy architecture note: enemy tunables should now follow the same settings-driven
 pattern as heroes and weapons. Keep enemy stats, per-enemy gameplay knobs, and

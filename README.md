@@ -96,6 +96,7 @@ Not yet broadly verified in runtime:
 - Upgrade unlocks stay string-based as well: `UpgradeSystem` offers and applies weapon rewards by id, then resolves those ids through the same shared factory path.
 - `src/weapons/__init__.py` re-exports the registry and constructor helper as the package-level weapon API.
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
+- The intended ownership split is: `settings.py` for gameplay values, `src/weapons/factory.py` for id-to-class lookup, and `src/systems/upgrade_system.py` for player-facing card metadata.
 - `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
 - Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
 - Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.

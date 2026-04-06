@@ -683,23 +683,24 @@ class GameScene:
 
         input_manager = InputManager.instance()
         for joystick_id in self._claimed_controller_ids():
-            _unused_x, vertical_dir = input_manager.get_menu_navigation_for_joystick(joystick_id)
+            horizontal_dir, vertical_dir = input_manager.get_menu_navigation_for_joystick(joystick_id)
+            navigation_dir = horizontal_dir if self.pause_confirm_open and horizontal_dir != 0 else vertical_dir
             prev_dir = self._pause_controller_nav_dir.get(joystick_id, 0)
 
-            if vertical_dir != prev_dir:
-                self._pause_controller_nav_dir[joystick_id] = vertical_dir
-                if vertical_dir != 0:
+            if navigation_dir != prev_dir:
+                self._pause_controller_nav_dir[joystick_id] = navigation_dir
+                if navigation_dir != 0:
                     self.pause_keyboard_active = True
                     if self.pause_confirm_open:
-                        self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + vertical_dir))
+                        self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + navigation_dir))
                     else:
-                        self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+                        self.pause_selected = max(0, min(3, self.pause_selected + navigation_dir))
                     self._pause_controller_nav_timer[joystick_id] = CONTROLLER_AXIS_REPEAT_DELAY
                 else:
                     self._pause_controller_nav_timer.pop(joystick_id, None)
                 continue
 
-            if vertical_dir == 0:
+            if navigation_dir == 0:
                 continue
 
             timer = self._pause_controller_nav_timer.get(joystick_id, 0.0) - dt
@@ -707,9 +708,9 @@ class GameScene:
                 timer += CONTROLLER_AXIS_REPEAT_RATE
                 self.pause_keyboard_active = True
                 if self.pause_confirm_open:
-                    self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + vertical_dir))
+                    self.pause_confirm_selected = max(0, min(1, self.pause_confirm_selected + navigation_dir))
                 else:
-                    self.pause_selected = max(0, min(3, self.pause_selected + vertical_dir))
+                    self.pause_selected = max(0, min(3, self.pause_selected + navigation_dir))
             self._pause_controller_nav_timer[joystick_id] = timer
 
     def handle_events(self, events):
