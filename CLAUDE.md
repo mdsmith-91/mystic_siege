@@ -358,7 +358,7 @@ Default button mapping (Xbox / PlayStation / Switch Pro):
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
 - A / Cross (btn 0) → confirm (`K_RETURN`)
 - B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the in-game pause menu
-- Pause / Start (btn 11 by default) → pause toggle (`K_ESCAPE` in global menus)
+- Pause / Start (btn 7 by default) → pause toggle (`K_ESCAPE` in global menus)
 
 Tune deadzone and repeat timing in `settings.py`:
 `CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`

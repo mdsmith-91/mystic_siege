@@ -144,7 +144,7 @@ CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
 CONTROLLER_CONFIRM_BUTTON = 0        # A / Cross
 CONTROLLER_BACK_BUTTON = 1           # B / Circle
-CONTROLLER_START_BUTTONS = (11,)     # Default pause/start button; extend per-controller only if needed
+CONTROLLER_START_BUTTONS = (7,)      # Default pause/start button; extend per-controller only if needed
 CONTROLLER_BINDINGS_DEFAULT = {
     "confirm": CONTROLLER_CONFIRM_BUTTON,
     "back": CONTROLLER_BACK_BUTTON,
