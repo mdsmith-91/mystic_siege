@@ -83,7 +83,7 @@ mystic_siege/
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
-│   │   ├── settings_menu.py       # Volume sliders, FPS toggle, reset, controller binding profiles
+│   │   ├── settings_menu.py       # Volume sliders (mouse + controller), FPS toggle, reset, controller binding profiles
 │   │   └── stats_menu.py          # Meta-progression stats viewer
 │   └── utils/
 │       ├── timer.py               # Reusable countdown/interval timer
@@ -195,6 +195,9 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   - global menus consume synthetic controller key events generated directly from
     `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the
     controller binding settings so confirm/back/start work reliably in menus
+  - the main Settings screen treats volume sliders as global-menu controls:
+    left/right adjusts the selected slider, and percentage display should round
+    to the intended stepped value rather than truncating floating-point drift
   - if a menu or overlay is opened from raw `JOYBUTTONDOWN` while synthetic
     controller key events are also enabled, discard any queued synthetic confirm /
     back key events at that transition point so the opening button press does not

@@ -2,7 +2,16 @@ import pygame
 from src.systems.save_system import SaveSystem
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, CONTROLLER_BINDING_LABELS
+from settings import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    GOLD,
+    CONTROLLER_BINDING_LABELS,
+    SETTINGS_SLIDER_STEP_COARSE,
+    SETTINGS_SLIDER_STEP_FINE,
+    SETTINGS_ANALOG_ADJUST_REPEAT_DELAY,
+    SETTINGS_ANALOG_ADJUST_REPEAT_RATE,
+)
 
 
 def _sdl_display_bounds() -> list[tuple[int, int, int, int]]:
@@ -97,11 +106,14 @@ class SettingsMenu:
         self.selected_controller_profile_key: str | None = None
 
         self.confirm_dialog_open = False
+        self.confirm_dialog_selected_index = 1
         self.controller_bindings_open = False
         self.controller_capture_action: str | None = None
         self.controller_capture_target: dict | None = None
         self._controller_capture_suppression: dict | None = None
         self.dragging_slider = None
+        self._slider_adjust_dir = 0
+        self._slider_adjust_timer = 0.0
         self.sliders = {}
         self.buttons = {}
         self.controller_buttons = {}
@@ -112,6 +124,17 @@ class SettingsMenu:
         self.font_small = pygame.font.SysFont("serif", 16)
 
         self._init_ui_elements()
+
+    @staticmethod
+    def _main_menu_order() -> list[str]:
+        return [
+            "music_volume",
+            "sfx_volume",
+            "show_fps",
+            "controller_bindings",
+            "reset",
+            "back",
+        ]
 
     def _init_ui_elements(self):
         cx = SCREEN_WIDTH // 2
@@ -187,6 +210,7 @@ class SettingsMenu:
         """Fire the action for the named button — shared by mouse click and keyboard ENTER."""
         if button_name == "reset":
             self.confirm_dialog_open = True
+            self.confirm_dialog_selected_index = 1
         elif button_name == "controller_bindings":
             self.controller_bindings_open = True
             self.controller_selected_index = 0
@@ -201,6 +225,110 @@ class SettingsMenu:
             self.buttons["show_fps"]["text"] = "Show FPS: " + ("ON" if new_value else "OFF")
             self.show_fps = new_value
             self.save_system.set_setting("show_fps", new_value)
+
+    def _set_slider_value(self, slider_name: str, value: float) -> None:
+        slider = self.sliders[slider_name]
+        clamped_value = max(0.0, min(1.0, value))
+        track = slider["rect"]
+        handle = slider["handle_rect"]
+
+        slider["value"] = clamped_value
+        handle.centerx = track.left + int(clamped_value * track.width)
+
+        if slider_name == "music_volume":
+            self.music_volume = clamped_value
+            self.save_system.set_setting("music_volume", clamped_value)
+            AudioManager.instance().set_music_volume(clamped_value)
+        elif slider_name == "sfx_volume":
+            self.sfx_volume = clamped_value
+            self.save_system.set_setting("sfx_volume", clamped_value)
+            AudioManager.instance().set_sfx_volume(clamped_value)
+
+    def _adjust_slider(self, slider_name: str, delta: float) -> None:
+        adjusted_value = round(self.sliders[slider_name]["value"] + delta, 4)
+        self._set_slider_value(slider_name, adjusted_value)
+
+    def _selected_main_item(self) -> str:
+        return self._main_menu_order()[self.selected_index]
+
+    @staticmethod
+    def _confirm_dialog_button_order() -> list[str]:
+        return ["yes", "cancel"]
+
+    def _activate_confirm_dialog_button(self, button_name: str) -> None:
+        if button_name == "yes":
+            self.save_system.reset()
+            InputManager.instance().reload_bindings()
+            self.confirm_dialog_open = False
+            self.music_volume = self.save_system.get_setting("music_volume")
+            self.sfx_volume = self.save_system.get_setting("sfx_volume")
+            self.show_fps = self.save_system.get_setting("show_fps")
+            self._init_ui_elements()
+            self._slider_adjust_dir = 0
+            self._slider_adjust_timer = 0.0
+            return
+
+        self.confirm_dialog_open = False
+
+    def _interactive_mouse_target(self, mouse_pos: tuple[int, int]) -> str | None:
+        for item_name in self._main_menu_order():
+            if item_name in self.sliders:
+                slider_data = self.sliders[item_name]
+                if slider_data["rect"].inflate(12, 12).collidepoint(mouse_pos) or slider_data["handle_rect"].collidepoint(mouse_pos):
+                    return item_name
+            elif item_name in self.buttons and self.buttons[item_name]["rect"].collidepoint(mouse_pos):
+                return item_name
+        return None
+
+    def _controller_hint_text(self) -> str:
+        if self.confirm_dialog_open:
+            return "Left/Right changes choice  -  Confirm selects  -  Back cancels"
+
+        selected_item = self._selected_main_item()
+        if selected_item in self.sliders:
+            return "Up/Down selects  -  Left/Right adjusts volume  -  Stick hold fine-tunes"
+
+        return "Up/Down selects  -  Confirm activates  -  Back returns"
+
+    def _active_slider_controller_axis(self) -> int:
+        input_manager = InputManager.instance()
+        for joystick_id in input_manager.get_connected_joysticks():
+            axis_x, _ = input_manager.get_movement_for_joystick(joystick_id)
+            if axis_x < 0.0:
+                return -1
+            if axis_x > 0.0:
+                return 1
+        return 0
+
+    def _update_slider_controller_adjustment(self, dt: float) -> None:
+        if self.confirm_dialog_open or self.controller_bindings_open:
+            self._slider_adjust_dir = 0
+            self._slider_adjust_timer = 0.0
+            return
+
+        selected_item = self._selected_main_item()
+        if selected_item not in self.sliders:
+            self._slider_adjust_dir = 0
+            self._slider_adjust_timer = 0.0
+            return
+
+        new_dir = self._active_slider_controller_axis()
+        if new_dir != self._slider_adjust_dir:
+            self._slider_adjust_dir = new_dir
+            if new_dir != 0:
+                self._slider_adjust_timer = SETTINGS_ANALOG_ADJUST_REPEAT_DELAY
+                self._adjust_slider(selected_item, SETTINGS_SLIDER_STEP_FINE * new_dir)
+            else:
+                self._slider_adjust_timer = 0.0
+            return
+
+        if new_dir == 0:
+            return
+
+        self._slider_adjust_timer -= dt
+        if self._slider_adjust_timer <= 0.0:
+            self._slider_adjust_timer += SETTINGS_ANALOG_ADJUST_REPEAT_RATE
+            self._adjust_slider(selected_item, SETTINGS_SLIDER_STEP_FINE * new_dir)
 
     def _controller_button_order(self) -> list[str]:
         return ["confirm", "back", "start", "reset_controller", "controller_back"]
@@ -341,18 +469,31 @@ class SettingsMenu:
         if self.confirm_dialog_open:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.confirm_dialog_open = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_UP, pygame.K_w):
+                    self.keyboard_active = True
+                    self.confirm_dialog_selected_index = max(0, self.confirm_dialog_selected_index - 1)
+                elif event.key in (pygame.K_RIGHT, pygame.K_d, pygame.K_DOWN, pygame.K_s):
+                    self.keyboard_active = True
+                    self.confirm_dialog_selected_index = min(1, self.confirm_dialog_selected_index + 1)
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    self._activate_confirm_dialog_button(
+                        self._confirm_dialog_button_order()[self.confirm_dialog_selected_index]
+                    )
+            elif event.type == pygame.MOUSEMOTION:
+                mouse_pos = pygame.mouse.get_pos()
+                for index, button_name in enumerate(self._confirm_dialog_button_order()):
+                    if self.confirm_dialog["buttons"][button_name]["rect"].collidepoint(mouse_pos):
+                        self.keyboard_active = False
+                        self.confirm_dialog_selected_index = index
+                        break
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                if self.confirm_dialog["buttons"]["yes"]["rect"].collidepoint(mouse_pos):
-                    self.save_system.reset()
-                    InputManager.instance().reload_bindings()
-                    self.confirm_dialog_open = False
-                    self.music_volume = self.save_system.get_setting("music_volume")
-                    self.sfx_volume   = self.save_system.get_setting("sfx_volume")
-                    self.show_fps     = self.save_system.get_setting("show_fps")
-                    self._init_ui_elements()
-                elif self.confirm_dialog["buttons"]["cancel"]["rect"].collidepoint(mouse_pos):
-                    self.confirm_dialog_open = False
+                for index, button_name in enumerate(self._confirm_dialog_button_order()):
+                    if self.confirm_dialog["buttons"][button_name]["rect"].collidepoint(mouse_pos):
+                        self.confirm_dialog_selected_index = index
+                        self._activate_confirm_dialog_button(button_name)
+                        break
             return
 
         if self.controller_capture_action is not None:
@@ -445,7 +586,11 @@ class SettingsMenu:
             return
 
         if event.type == pygame.MOUSEMOTION:
-            self.keyboard_active = False
+            mouse_pos = pygame.mouse.get_pos()
+            hovered_item = self._interactive_mouse_target(mouse_pos)
+            if hovered_item is not None:
+                self.keyboard_active = False
+                self.selected_index = self._main_menu_order().index(hovered_item)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -455,23 +600,36 @@ class SettingsMenu:
                 self.selected_index = max(0, self.selected_index - 1)
             elif event.key in (pygame.K_DOWN, pygame.K_s):
                 self.keyboard_active = True
-                self.selected_index = min(3, self.selected_index + 1)
+                self.selected_index = min(len(self._main_menu_order()) - 1, self.selected_index + 1)
+            elif event.key in (pygame.K_LEFT, pygame.K_a):
+                self.keyboard_active = True
+                selected_item = self._selected_main_item()
+                if selected_item in self.sliders:
+                    self._adjust_slider(selected_item, -SETTINGS_SLIDER_STEP_COARSE)
+            elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                self.keyboard_active = True
+                selected_item = self._selected_main_item()
+                if selected_item in self.sliders:
+                    self._adjust_slider(selected_item, SETTINGS_SLIDER_STEP_COARSE)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                btn_keys = ["show_fps", "controller_bindings", "reset", "back"]
-                self._activate_button(btn_keys[self.selected_index])
+                selected_item = self._selected_main_item()
+                if selected_item in self.buttons:
+                    self._activate_button(selected_item)
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
-            for slider_name, slider_data in self.sliders.items():
-                if slider_data["handle_rect"].collidepoint(mouse_pos):
-                    self.dragging_slider = slider_name
-                    return
-            btn_keys = ["show_fps", "controller_bindings", "reset", "back"]
-            for i, button_name in enumerate(btn_keys):
-                if self.buttons[button_name]["rect"].collidepoint(mouse_pos):
-                    self.selected_index = i
-                    self._activate_button(button_name)
+            for index, item_name in enumerate(self._main_menu_order()):
+                if item_name in self.sliders:
+                    slider_data = self.sliders[item_name]
+                    if slider_data["handle_rect"].collidepoint(mouse_pos):
+                        self.selected_index = index
+                        self.dragging_slider = item_name
+                        return
+            for index, item_name in enumerate(self._main_menu_order()):
+                if item_name in self.buttons and self.buttons[item_name]["rect"].collidepoint(mouse_pos):
+                    self.selected_index = index
+                    self._activate_button(item_name)
                     return
 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -484,19 +642,10 @@ class SettingsMenu:
                 track  = slider["rect"]
                 new_x     = max(track.left, min(mouse_x, track.right))
                 new_value = (new_x - track.left) / track.width
-                slider["handle_rect"].x = new_x - slider["handle_rect"].width // 2
-                slider["value"]         = new_value
-                if self.dragging_slider == "music_volume":
-                    self.music_volume = new_value
-                    self.save_system.set_setting("music_volume", new_value)
-                    AudioManager.instance().set_music_volume(new_value)
-                elif self.dragging_slider == "sfx_volume":
-                    self.sfx_volume = new_value
-                    self.save_system.set_setting("sfx_volume", new_value)
-                    AudioManager.instance().set_sfx_volume(new_value)
+                self._set_slider_value(self.dragging_slider, new_value)
 
     def update(self, dt: float):
-        pass
+        self._update_slider_controller_adjustment(dt)
 
     def draw(self, screen):
         screen.fill(BACKGROUND_COLOR)
@@ -518,9 +667,14 @@ class SettingsMenu:
         for slider_name, slider_data in self.sliders.items():
             track  = slider_data["rect"]
             handle = slider_data["handle_rect"]
+            slider_index = self._main_menu_order().index(slider_name)
+            highlighted = track.collidepoint(mouse_pos) or handle.collidepoint(mouse_pos) or (
+                self.keyboard_active and slider_index == self.selected_index
+            )
 
             # Label centered above track
-            lbl = self.font_label.render(slider_data["label"], True, LABEL_COLOR)
+            label_color = GOLD if highlighted else LABEL_COLOR
+            lbl = self.font_label.render(slider_data["label"], True, label_color)
             screen.blit(lbl, (cx - lbl.get_width() // 2, track.top - 28))
 
             # Track
@@ -533,15 +687,20 @@ class SettingsMenu:
             # Handle
             pygame.draw.rect(screen, SLIDER_HANDLE_COLOR, handle, border_radius=6)
             pygame.draw.rect(screen, GOLD, handle, 1, border_radius=6)
+            if highlighted:
+                pygame.draw.rect(screen, GOLD, track.inflate(12, 12), 2, border_radius=10)
+                pygame.draw.rect(screen, GOLD, handle.inflate(8, 8), 2, border_radius=8)
 
             # Percentage value to the right of track
-            pct = self.font_label.render(f"{int(slider_data['value'] * 100)}%", True, TEXT_COLOR)
+            pct_color = GOLD if highlighted else TEXT_COLOR
+            pct = self.font_label.render(f"{round(slider_data['value'] * 100)}%", True, pct_color)
             screen.blit(pct, (track.right + 12, track.centery - pct.get_height() // 2))
 
         # Buttons
-        btn_keys = ["show_fps", "controller_bindings", "reset", "back"]
-        for i, key in enumerate(btn_keys):
-            btn  = self.buttons[key]
+        for i, item_name in enumerate(self._main_menu_order()):
+            if item_name not in self.buttons:
+                continue
+            btn = self.buttons[item_name]
             rect = btn["rect"]
             highlighted = rect.collidepoint(mouse_pos) or (self.keyboard_active and i == self.selected_index)
             pygame.draw.rect(screen, BUTTON_HIGHLIGHT if highlighted else BUTTON_COLOR, rect, border_radius=6)
@@ -549,6 +708,12 @@ class SettingsMenu:
             text_surf = self.font_button.render(btn["text"], True, TEXT_COLOR)
             screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
                                     rect.centery - text_surf.get_height() // 2))
+
+        hint_surface = self.font_small.render(self._controller_hint_text(), True, LABEL_COLOR)
+        screen.blit(
+            hint_surface,
+            (cx - hint_surface.get_width() // 2, SCREEN_HEIGHT - 32),
+        )
 
         # Confirm dialog
         if self.confirm_dialog_open:
@@ -560,9 +725,12 @@ class SettingsMenu:
             screen.blit(msg, (dialog["rect"].centerx - msg.get_width() // 2,
                               dialog["rect"].top + 24))
 
-            for btn_data in dialog["buttons"].values():
+            for index, button_name in enumerate(self._confirm_dialog_button_order()):
+                btn_data = dialog["buttons"][button_name]
                 rect = btn_data["rect"]
-                highlighted = rect.collidepoint(mouse_pos)
+                highlighted = rect.collidepoint(mouse_pos) or (
+                    self.keyboard_active and index == self.confirm_dialog_selected_index
+                )
                 pygame.draw.rect(screen, BUTTON_HIGHLIGHT if highlighted else BUTTON_COLOR, rect, border_radius=6)
                 pygame.draw.rect(screen, GOLD, rect, 2, border_radius=6)
                 t = self.font_button.render(btn_data["text"], True, TEXT_COLOR)
