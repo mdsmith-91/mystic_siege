@@ -1,23 +1,25 @@
 import os
 import json
 from typing import Dict, Any
-from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT, FPS
+from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT
+from src.utils.fps_cap import detect_refresh_rate
 
-DEFAULT_SAVE = {
-    "total_runs": 0,
-    "total_kills": 0,
-    "total_time_played": 0.0,
-    "highest_level": 1,
-    "best_time_survived": 0.0,
-    "unlocked_heroes": ["Knight", "Wizard", "Friar", "Ranger"],
-    "settings": {
-        "music_volume": 0.5,
-        "sfx_volume": 0.8,
-        "show_fps": False,
-        "fps_cap": FPS,
-        "controller_bindings": CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
+def _build_default_save() -> Dict[str, Any]:
+    return {
+        "total_runs": 0,
+        "total_kills": 0,
+        "total_time_played": 0.0,
+        "highest_level": 1,
+        "best_time_survived": 0.0,
+        "unlocked_heroes": ["Knight", "Wizard", "Friar", "Ranger"],
+        "settings": {
+            "music_volume": 0.5,
+            "sfx_volume": 0.8,
+            "show_fps": False,
+            "fps_cap": detect_refresh_rate(),
+            "controller_bindings": CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
+        },
     }
-}
 
 
 def _deep_copy(value: Any) -> Any:
@@ -25,7 +27,7 @@ def _deep_copy(value: Any) -> Any:
 
 
 def _deep_copy_default_save() -> Dict[str, Any]:
-    return _deep_copy(DEFAULT_SAVE)
+    return _deep_copy(_build_default_save())
 
 
 def _merge_save_data(defaults: Dict[str, Any], loaded: Any) -> Dict[str, Any]:
@@ -58,13 +60,14 @@ class SaveSystem:
 
     def load(self) -> Dict[str, Any]:
         """Load save data from file or return default if not found"""
+        defaults = _build_default_save()
         try:
             with open(self.save_path, 'r') as f:
                 loaded_data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             loaded_data = {}
 
-        return _merge_save_data(DEFAULT_SAVE, loaded_data)
+        return _merge_save_data(defaults, loaded_data)
 
     def save(self, data: Dict[str, Any]) -> None:
         """Write data to save file, creating directory if needed"""
@@ -115,7 +118,7 @@ class SaveSystem:
         settings = self.data.get("settings", {})
         if key in settings:
             return settings[key]
-        return DEFAULT_SAVE["settings"][key]
+        return _build_default_save()["settings"][key]
 
     def set_setting(self, key: str, value: Any) -> None:
         """Set a setting value and save immediately"""
