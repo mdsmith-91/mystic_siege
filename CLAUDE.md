@@ -159,6 +159,10 @@ Ranger passive: +10% crit chance, arrows pierce +1 enemy
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
 
+The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
+limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
+`new_weapon` cards once that inventory is full.
+
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
 - 0s: Skeletons only
@@ -409,6 +413,8 @@ python src/utils/placeholder_assets.py
 
 1. Create `src/weapons/newweapon.py` inheriting from `BaseWeapon`
 2. Add class name string to `WEAPON_CLASSES` in `upgrade_system.py`
+3. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
+   from offering unusable `new_weapon` cards to players with full inventories
 
 **Add a new hero class:**
 

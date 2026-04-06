@@ -1,5 +1,5 @@
 import random
-from settings import HERO_CLASSES
+from settings import HERO_CLASSES, MAX_WEAPON_SLOTS
 
 # Define PASSIVE_UPGRADES as a module-level list of dicts
 PASSIVE_UPGRADES = [
@@ -142,23 +142,24 @@ class UpgradeSystem:
         # Build candidate list
         candidates = []
 
-        # Add weapons the player does NOT have (offer as "new weapon" card)
-        for weapon_class in WEAPON_CLASSES:
-            has_weapon = False
-            for weapon in player.weapons:
-                if weapon.__class__.__name__ == weapon_class:
-                    has_weapon = True
-                    break
-            if not has_weapon:
-                meta = WEAPON_META.get(weapon_class, {})
-                candidates.append({
-                    "weapon_class": weapon_class,
-                    "type": "new_weapon",
-                    "name": meta.get("name", weapon_class),
-                    "description": meta.get("new_description", "Unlock this weapon."),
-                    "icon_color": meta.get("icon_color", (100, 100, 180)),
-                    "symbol": meta.get("symbol", weapon_class[:2]),
-                })
+        # Do not offer new weapons when the inventory is already full.
+        if len(player.weapons) < MAX_WEAPON_SLOTS:
+            for weapon_class in WEAPON_CLASSES:
+                has_weapon = False
+                for weapon in player.weapons:
+                    if weapon.__class__.__name__ == weapon_class:
+                        has_weapon = True
+                        break
+                if not has_weapon:
+                    meta = WEAPON_META.get(weapon_class, {})
+                    candidates.append({
+                        "weapon_class": weapon_class,
+                        "type": "new_weapon",
+                        "name": meta.get("name", weapon_class),
+                        "description": meta.get("new_description", "Unlock this weapon."),
+                        "icon_color": meta.get("icon_color", (100, 100, 180)),
+                        "symbol": meta.get("symbol", weapon_class[:2]),
+                    })
 
         # Add weapons the player HAS but not at level 5 (offer as "upgrade" card)
         for weapon in player.weapons:
