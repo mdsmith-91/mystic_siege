@@ -23,7 +23,7 @@ _WEAPON_ICON_NAMES = {
     "ArcaneBolt": "arcane",
     "HolyNova": "nova",
     "SpectralBlade": "blade",
-    "FlameWhip": "fire",
+    "FlameBlast": "fire",
     "FrostRing": "frost",
     "LightningChain": "lightning",
     "Longbow": "longbow",

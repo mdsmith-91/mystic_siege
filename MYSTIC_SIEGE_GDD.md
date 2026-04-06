@@ -114,7 +114,7 @@ mystic_siege/
 │   │   ├── factory.py
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
-│   │   ├── flame_whip.py
+│   │   ├── flame_blast.py
 │   │   ├── spectral_blade.py
 │   │   ├── frost_ring.py
 │   │   ├── lightning_chain.py
@@ -194,7 +194,7 @@ Current implementation note:
 |---|---|---|
 | Arcane Bolt | Projectile | Auto-fires homing bolts at nearest enemy |
 | Holy Nova | Area Pulse | Expands ring of light around player, damages all in range |
-| Flame Whip | Cone | Sweeping fire arc in front of movement direction |
+| Flame Blast | Cone | Sweeping fire arc in front of movement direction |
 | Spectral Blade | Orbit | 2–4 swords orbit player and pass through enemies |
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
 | Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
@@ -209,6 +209,8 @@ Current implementation note:
   `WEAPON_CLASS_REGISTRY` and `create_weapon()`
 - weapon ids stay string-based so hero starting weapons and upgrade rewards can
   both resolve through the same factory path
+- player-facing labels may differ from those ids; the internal `FlameBlast` id is
+  presented in UI as `Flame Blast`
 
 ---
 

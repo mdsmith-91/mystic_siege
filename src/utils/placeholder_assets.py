@@ -469,7 +469,7 @@ def generate_audio_placeholders():
     maybe_write_chord("level_up.wav",       freqs=[330, 440, 550], duration_s=0.35)
     maybe_write_sine("arcane_bolt.wav",     freq_hz=880,  duration_s=0.07)
     maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
-    maybe_write_sine("flame_whip.wav",      freq_hz=330,  duration_s=0.10)
+    maybe_write_sine("flame_blast.wav",     freq_hz=330,  duration_s=0.10)
     maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)

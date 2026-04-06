@@ -71,7 +71,7 @@ mystic_siege/
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
 │   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
-│   │   ├── flame_whip.py          # Cone sweep, burn DOT, swing visual
+│   │   ├── flame_blast.py         # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   ├── lightning_chain.py     # Chains between enemies, jagged arc visual
 │   │   └── longbow.py             # Physical arrow shots, straight-line ranged damage
@@ -170,7 +170,7 @@ Current hero architecture rules:
 - ArcaneBolt — homing projectiles, 1→3 bolts
 - HolyNova — expanding damage ring, no projectile object
 - SpectralBlade — orbiting swords, continuous collision
-- FlameWhip — directional cone, burn DOT
+- FlameBlast (`Flame Blast`) — directional cone, burn DOT
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
@@ -193,9 +193,11 @@ Current weapon architecture rules:
   via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
 - Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
   or other callers.
-- Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`,
+- Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
   `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
   reference them by string.
+- Keep player-facing weapon names in metadata / weapon classes aligned with those
+  internal ids. `FlameBlast` currently uses the display name `Flame Blast`.
 - HUD chrome that is visually tied to weapon slots should also stay settings-driven.
   The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
   bar background reuses that same constant so 1P and multiplayer HUD panels keep a

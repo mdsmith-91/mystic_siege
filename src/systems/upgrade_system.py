@@ -74,7 +74,7 @@ WEAPON_CLASSES = [
     "ArcaneBolt",
     "HolyNova",
     "SpectralBlade",
-    "FlameWhip",
+    "FlameBlast",
     "FrostRing",
     "LightningChain",
     "Longbow",
@@ -102,9 +102,9 @@ WEAPON_META = {
         "icon_color": (80, 220, 200),
         "symbol": "SB",
     },
-    "FlameWhip": {
-        "name": "Flame Whip",
-        "new_description": "Lashes a cone of fire toward the nearest enemy, applying a burn over time.",
+    "FlameBlast": {
+        "name": "Flame Blast",
+        "new_description": "Blasts a cone of fire toward the nearest enemy, applying burn over time.",
         "upgrade_description": "More damage at L2 and L5, longer range at L3, longer burn duration at L4, wider cone at L5.",
         "icon_color": (240, 100, 30),
         "symbol": "FW",

@@ -9,6 +9,16 @@ from settings import (
 from src.core.player_slot import PlayerSlot
 from src.utils.input_manager import InputManager
 
+_WEAPON_DISPLAY_NAMES = {
+    "ArcaneBolt": "Arcane Bolt",
+    "HolyNova": "Holy Nova",
+    "SpectralBlade": "Spectral Blade",
+    "FlameBlast": "Flame Blast",
+    "FrostRing": "Frost Ring",
+    "LightningChain": "Lightning Chain",
+    "Longbow": "Longbow",
+}
+
 class ClassSelect:
     def __init__(
         self,
@@ -293,6 +303,9 @@ class ClassSelect:
             if back_rect.collidepoint(mouse_pos):
                 self._handle_back()
 
+    def _weapon_display_name(self, weapon_id: str) -> str:
+        return _WEAPON_DISPLAY_NAMES.get(weapon_id, weapon_id)
+
     def _handle_controller_button(self, event: pygame.event.Event) -> None:
         if not self.slot_queue_active:
             return
@@ -469,7 +482,8 @@ class ClassSelect:
 
             # Starting weapon name wrapped to fit card width
             weapon_y = y + 305
-            weapon_lines = textwrap.wrap(f"Starts with: {hero['starting_weapon']}", width=26)
+            weapon_name = self._weapon_display_name(hero["starting_weapon"])
+            weapon_lines = textwrap.wrap(f"Starts with: {weapon_name}", width=26)
             for j, line in enumerate(weapon_lines):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))

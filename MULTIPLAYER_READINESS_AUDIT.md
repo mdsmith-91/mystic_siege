@@ -72,7 +72,7 @@ the item to consciously decide.
 
 ### 2.2 Weapon owner binding
 All six weapon classes (`arcane_bolt.py`, `holy_nova.py`, `spectral_blade.py`,
-`flame_whip.py`, `frost_ring.py`, `lightning_chain.py`) bind `self.owner = owner`
+`flame_blast.py`, `frost_ring.py`, `lightning_chain.py`) bind `self.owner = owner`
 at construction. Every stat access (`self.owner.damage_multiplier`,
 `self.owner.crit_chance`, `self.owner.pos`) already works correctly per-player.
 Weapons are created per-player and need no changes to function in multiplayer.
