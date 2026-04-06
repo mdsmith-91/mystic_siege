@@ -163,9 +163,6 @@ class HUD:
             return
 
         for player in players:
-            if not player.is_downed:
-                continue
-
             poly, tip = self._build_edge_arrow(view_rect, camera.world_to_screen(player.pos))
             if poly is None or tip is None:
                 continue
@@ -173,7 +170,8 @@ class HUD:
             slot = getattr(player, "slot", None)
             slot_color = getattr(slot, "color", GOLD)
             pygame.draw.polygon(screen, slot_color, poly)
-            pygame.draw.polygon(screen, WHITE, poly, 2)
+            outline_color = WHITE if player.is_downed else BLACK
+            pygame.draw.polygon(screen, outline_color, poly, 2)
 
             label = self._render_text(self.font_14, f"P{slot.index + 1}" if slot is not None else "REV", WHITE)
             label_rect = label.get_rect()

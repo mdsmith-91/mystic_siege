@@ -725,6 +725,7 @@ Track progress here as phases are completed:
   - lobby-based slot join/leave
   - queued hero select with duplicate lockout
   - multiplayer `GameScene`/HUD/camera plumbing
+  - off-screen teammate HUD arrows, including live teammates and downed players
   - owned input handling for multiplayer-sensitive menus
   - downed/revive support
   - controller disconnect/reclaim support
