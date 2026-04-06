@@ -37,10 +37,10 @@ incremental verification phase and must continue to preserve the solo experience
 
 1. Use `InputManager` for controller state.
 2. Synthetic controller key events are acceptable for global menus.
-3. Synthetic controller key events are not sufficient for owned multiplayer menus,
-   because they do not preserve joystick identity.
-4. Owned multiplayer menus must either preserve device metadata in custom events
-   or poll the assigned device directly.
+3. Synthetic controller key events now carry source metadata, but they are still
+   not sufficient on their own for owned multiplayer menus.
+4. Owned multiplayer menus must deliberately route or reject synthetic events by
+   device identity, or poll the assigned device directly.
 
 ## Authoritative References
 
@@ -57,6 +57,10 @@ incremental verification phase and must continue to preserve the solo experience
 4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
 5. The long-term player-count target remains 4, but the current hero roster only
    supports 3 unique simultaneous selections without duplicates.
+6. Save/progression is still machine-local and aggregated across runs, including
+   multiplayer runs; there is no per-person profile split yet.
+7. XP orb collection is currently a shared pool, and equal-distance ties resolve
+   to the lowest slot index.
 
 ## Review guidelines
 

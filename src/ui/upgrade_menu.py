@@ -136,6 +136,12 @@ class UpgradeMenu:
 
     def _keyboard_event_matches_owner(self, event: pygame.event.Event) -> bool:
         cfg = self._input_config()
+
+        # Owned multiplayer menus must not trust synthetic controller KEYDOWNs;
+        # they can bleed into keyboard-owned upgrade selection.
+        if getattr(event, "synthetic_controller_event", False):
+            return False
+
         if cfg is None:
             return event.key in {
                 pygame.K_LEFT,

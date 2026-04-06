@@ -11,9 +11,11 @@ Two developers, AI-assisted workflow, small scope first.
 
 **Current state:** the single-player baseline is playable, and the local multiplayer
 migration is partially implemented. New runs currently flow through a lobby and queued
-hero select, and controller ownership plus controller-binding settings have been
-hardened for local co-op, but multiplayer still needs broader runtime verification and
-hardening.
+hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
+hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
+downed/revive runtime support, reconnect/reclaim handling, and controller-binding
+settings. The main remaining gap is runtime verification and hardening, not missing
+foundational architecture.
 **Planned direction:** finish the local co-op migration through phased, low-regression
 changes that continue to preserve the current single-player experience.
 
@@ -43,7 +45,7 @@ mystic_siege/
 ├── CLAUDE.md                      # This file
 ├── src/
 │   ├── game.py                    # Main loop, delegates to SceneManager
-│   ├── scene_manager.py           # Scene switching (menu/game/gameover)
+│   ├── scene_manager.py           # Scene switching (menu/lobby/class select/game/gameover)
 │   ├── game_scene.py              # Main gameplay — wires all systems together
 │   ├── core/                          # (created in Phase 10) Plain data types, no pygame dependency
 │   │   └── player_slot.py         # PlayerSlot dataclass — slot index, input_config, hero_data, color
@@ -81,6 +83,7 @@ mystic_siege/
 │   │   ├── hud.py                 # 1P HUD + multiplayer player panels, revive indicators, threat arrows
 │   │   ├── upgrade_menu.py        # 3-card level-up overlay, owned-player input routing
 │   │   ├── main_menu.py           # Title screen with falling ember particles
+│   │   ├── lobby_scene.py         # Slot-based join/leave lobby with keyboard/controller claims
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
 │   │   ├── settings_menu.py       # Volume/FPS-cap sliders (mouse + controller), FPS toggle, reset, controller binding profiles
@@ -182,6 +185,10 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   the legacy single-player runtime path for movement, death, and HUD behavior.
 - The practical current party cap is 3 unique players because there are 3 heroes and
   duplicate hero picks are still blocked.
+- Save/progression is still machine-local and aggregate; multiplayer runs update the
+  shared `saves/progress.json`, not per-person profiles.
+- XP orb collection is a shared pool. If two players are equally close, the lower
+  slot index wins the tie.
 - Owned multiplayer menu flows now enforce device identity:
   - lobby claims devices by slot and rejects duplicate controller claims
   - class select and upgrade menus route controller input by owned joystick instance
@@ -293,7 +300,9 @@ AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
 - Use `button_matches(..., joystick_id=...)`, `describe_binding(..., joystick_id=...)`,
   or `get_confirm_for_joystick()` instead of hardcoding controller button indices in scenes.
 - Synthetic controller `KEYDOWN` events are still acceptable for global menus, but owned
-  multiplayer menus must preserve joystick identity or poll the owning joystick directly.
+  multiplayer menus must still handle ownership deliberately even though synthetic events
+  now carry source metadata; preserving device identity in menu logic or polling the
+  owning joystick directly are both valid approaches.
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
 
@@ -315,8 +324,9 @@ ax, ay = InputManager.instance().get_movement()
 Controller button/D-pad presses are automatically translated into synthetic
 `pygame.KEYDOWN` events and posted to the pygame event queue, so global menus work
 with a controller without any extra code in the UI layer. This is not sufficient
-for owned multiplayer menus because the synthetic events do not preserve joystick
-identity.
+for owned multiplayer menus on its own: synthetic events now include source
+metadata, but menu code still has to reject or route those events explicitly to
+preserve ownership semantics.
 
 Current migration note: owned multiplayer menus now bypass that limitation on a
 case-by-case basis. `ClassSelect` and `UpgradeMenu` filter keyboard input to the
@@ -637,12 +647,12 @@ For audit/planning tasks, prefer this output order:
   the downed/revive path, while solo players enter the legacy dying/fade flow without
   delegating lethal damage to `BaseEntity.take_damage()`. Treat this override as a
   requirement whenever player death logic is touched.
-- **InputManager synthetic events carry no joystick identity (hidden menu blocker).** `_post_key()` /
-  `_post_keyup()` emit plain `KEYDOWN`/`KEYUP` events with no `joystick_id` in the payload. Menu code
-  cannot tell which controller fired `K_RETURN` or `K_ESCAPE`. Owned multiplayer menus (ClassSelect
-  slot-queue, UpgradeMenu) require either (a) a custom event payload that preserves device metadata,
-  or (b) bypassing synthetic events for owned menus and polling the assigned device directly. The
-  current implementation uses option (b) for `ClassSelect` and `UpgradeMenu`.
+- **InputManager synthetic events now carry source metadata, but owned-menu filtering is still
+  required.** `_post_key()` / `_post_keyup()` include `synthetic_controller_event` and
+  `source_instance_id` in the payload, but menu code must still reject or explicitly route those
+  events to preserve ownership semantics. `ClassSelect` and `UpgradeMenu` currently protect their
+  owned flows by filtering keyboard paths and using per-joystick polling / `JOYBUTTONDOWN` for the
+  active controller instead of trusting global synthetic confirm events.
 - **SceneManager caches ClassSelect — slot-queue routing requires a fresh instance per pass.**
   `STATE_CLASS_SELECT` is now in the always-create-fresh set, which is required for the slot-queue flow
   (ClassSelect visited N times, once per player). Keep it that way unless the scene is redesigned.
@@ -692,7 +702,25 @@ Track progress here as phases are completed:
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [x] Phase 11a — Hero-selection slot queue (V2 Phase 3: duplicate prevention and active-slot input routing are implemented, and ClassSelect now always emits `slots` for gameplay handoff)
 - [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades)
-- [ ] Phase 13 — World systems, HUD, revive, and camera polish (V2 Phases 5–7; partial: Phase 5 world systems are implemented, including multi-target camera zoom, player-list WaveManager/enemy targeting, multiplayer collision loops, and attacker-based kill credit. Phase 6 revive logic is now implemented in `GameScene` with downed-state recovery and revive-triggered defeat checks. Phase 7 HUD work is now partially implemented: `HUD` renders 1P unchanged, supports multiplayer slot-based player panels for 2–4 players, draws revive progress feedback in screen space, shows off-screen arrows for downed teammates, and `UpgradeMenu` now routes input only from the leveling player's device. Remaining work is runtime verification/polish of HUD spacing/readability and any further revive/HUD feedback tuning.)
-- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (V2 Phase 8; partial: `GameOver` now accepts optional `player_results`, replay/restart paths route back through the lobby, and the legacy `hero` GameScene handoff shim has been removed. Remaining work is runtime verification and any follow-up polish.)
+- [ ] Phase 13 — World systems, HUD, revive, and camera polish (mostly implemented; still open for runtime verification, spacing/readability tuning, and any revive/HUD cleanup surfaced by live testing)
+- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (partially implemented; still open because the readiness gate has not been cleared by 1P/2P/3P runtime verification)
+
+### Current Multiplayer Status Snapshot
+
+- Implemented in code:
+  - lobby-based slot join/leave
+  - queued hero select with duplicate lockout
+  - multiplayer `GameScene`/HUD/camera plumbing
+  - owned input handling for multiplayer-sensitive menus
+  - downed/revive support
+  - controller disconnect/reclaim support
+  - aggregate party game-over results
+- Still transitional:
+  - `input_config=None` compatibility branches remain in parts of the flow
+  - practical player cap is 3 until duplicates are allowed or a 4th hero exists
+- Still unverified in runtime:
+  - broad 1P, 2P, and 3P readiness coverage
+  - multiplayer balance/scaling
+  - spawn fairness and HUD/camera readability under edge spread
 
 Update the checkboxes as phases are completed.

@@ -5,6 +5,16 @@ own input devices, pick heroes (duplicates blocked), and play simultaneously.
 Single-player behavior is completely unchanged. Online multiplayer is explicitly
 out of scope for this guide but the architecture is designed to make it feasible later.
 
+> Status note (2026-04-05): this document remains the authoritative multiplayer
+> design/phase guide, not a pure statement of current implementation status. Large
+> parts of the slot-based migration described below are now in the repo, including
+> `PlayerSlot`, `LobbyScene`, queued `ClassSelect`, multiplayer `GameScene`
+> plumbing, multi-player HUD/camera support, revive/downed runtime support, and
+> owned menu input work. Use `README.md`, `CLAUDE.md`, and
+> `MULTIPLAYER_READINESS_GATE_REVIEW.md` for current-state and verification status.
+> Use this file for intended architecture, remaining cleanup direction, and
+> long-term phase alignment.
+
 ---
 
 ## 1. Critique of the V1 Guide

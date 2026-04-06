@@ -1,6 +1,6 @@
 # Mystic Siege
 
-A top-down medieval fantasy survivor game built with Python and pygame-ce, inspired by Vampire Survivors and Brotato. Choose a hero, survive escalating waves of enemies, collect XP, level up, and pick upgrades in 15–30 minute sessions.
+A top-down medieval fantasy survivor game built with Python and pygame-ce, inspired by Vampire Survivors and Brotato. Choose a hero, survive escalating waves, collect XP, level up, and build out a run over a 15–30 minute session.
 
 [![CI](https://github.com/mdsmith-91/mystic_siege/actions/workflows/ci.yml/badge.svg)](https://github.com/mdsmith-91/mystic_siege/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12.13-blue)
@@ -9,46 +9,67 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 ---
 
-## Features
+## What the Game Currently Is
+
+Mystic Siege is a playable survivor-style action game with:
 
 - 3 hero classes with unique passives and starting weapons
 - 6 weapon types with 5 upgrade levels each
-- 7 enemy types with distinct behaviors (melee, ranged, phasing, orbiting, splitting)
-- AI-generated 4-direction spritesheets for all 7 enemy types
-- CursedKnight frontal shield mechanic — all weapons pass hit direction for accurate 80% block
-- Progressive wave difficulty scaling over 30 minutes
-- XP orb collection and leveling system with 3-card upgrade choices
-- Visual effects: damage numbers, hit sparks, death explosions, level-up burst
-- Persistent meta-progression saved between sessions
-- Controller support with hot-plug detection, owned input routing for multiplayer-sensitive menus, and remappable bindings
-- Screenshot capture (F12), FPS counter (F3), always runs fullscreen for maximum compatibility
-- Full audio system with silent fallback — runs without any audio files
+- 7 enemy types with distinct behaviors
+- 30-minute wave progression with victory at 30:00
+- persistent machine-local meta stats in `saves/progress.json`
+- controller support, hot-plug detection, and remappable controller confirm/back/pause bindings
 
----
+Current run flow:
 
-## Current Status
+```text
+Main Menu -> Lobby -> queued Class Select -> Game -> Game Over -> Lobby or Menu
+```
 
-- Single-player is the stable baseline and should be treated as the first regression path.
-- Local multiplayer is partially implemented, not feature-complete.
-- New runs currently use `Menu -> Lobby -> queued Class Select -> Game -> Game Over`.
-- Multiplayer foundations currently in the codebase:
-  - lobby scene and per-player `PlayerSlot` metadata
-  - queued hero select with duplicate-hero prevention
-  - multi-player `GameScene` plumbing, HUD panels, camera zoom, and per-player XP state
-  - owned controller input in class select, upgrade menus, and pause
-  - downed / revive scaffolding for multiplayer runs
-  - controller bindings settings with global fallback plus per-controller profiles
-- Still in progress or not fully verified:
-  - broad 2P/3P runtime verification
-  - overall multiplayer balance and spawn scaling
-  - regression hardening around edge cases
-  - full 4-player support, because the current roster only has 3 unique heroes
+## Current Project Status
+
+### Single-player
+
+Single-player is the stable baseline. Solo runs now start through the same lobby-based scene flow as multiplayer, but the in-run solo gameplay path is still treated as the first regression path and is intended to preserve the legacy single-player feel.
+
+### Local multiplayer
+
+Local multiplayer is partially implemented and still in progress. The codebase now includes:
+
+- slot-based lobby join/leave with `PlayerSlot`
+- queued hero selection with duplicate-hero lockout
+- multiplayer-capable `GameScene` plumbing
+- per-player XP state and queued upgrade menus
+- multi-player HUD panels, threat arrows, and camera zoom support
+- downed / revive runtime support for multiplayer runs
+- owned controller handling in lobby, class select, upgrade menus, and reconnect/reclaim flows
+- controller binding settings with a global default profile plus per-controller overrides
+
+Multiplayer is not yet fully verified. The current blocker is runtime readiness, not the absence of core architecture.
+
+### Verified vs unverified
+
+Verified in repo tooling:
+
+- `python run_check.py` for import/environment integrity
+
+Not yet broadly verified in runtime:
+
+- full 1P readiness pass through the current lobby flow
+- sustained 2P gameplay
+- sustained 3P gameplay
+- broad revive/downed edge cases
+- camera readability and spawn fairness across wide party spread
+- multiplayer balance/scaling
 
 ## Current Limitations
 
-- The long-term target is 1–4 local players, but the current runtime cap is effectively 3 simultaneous players because duplicate heroes are blocked and only 3 heroes exist.
-- Solo runs still start through the lobby flow, but the in-game solo path preserves the legacy single-player gameplay behavior.
-- Automated regression coverage is minimal; most verification is still manual.
+- The design target remains 1-4 local players, but the current practical cap is 3 because duplicate hero picks are blocked and only 3 heroes currently exist.
+- Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
+- Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
+- XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
+- Some compatibility shims from the single-player migration still exist, including temporary `input_config=None` paths in parts of the flow.
+- Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
 
@@ -56,47 +77,49 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 |------|----|-------|-------|---------|-----------------|
 | Knight | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
-| Friar | 110 | 210 | 5 | Heal 1 HP per 10 XP orbs collected | Holy Nova |
-
----
+| Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
 
 ## Getting Started
 
-**Requirements:** Python 3.12.13 and the packages in `requirements.txt`
+Requirements:
+
+- Python 3.12.13
+- dependencies from `requirements.txt`
 
 ```bash
-# Clone the repo
 git clone https://github.com/mdsmith-91/mystic_siege.git
 cd mystic_siege
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Optional: generate placeholder sprites and audio if you need to recreate missing assets
-python src/utils/placeholder_assets.py
-
-# Run the game
 python main.py
 ```
 
----
+Optional first-time helper:
+
+```bash
+python src/utils/placeholder_assets.py
+```
 
 ## Controls
 
-### Keyboard & Mouse
+### Keyboard
 
 | Action | Key |
 |--------|-----|
-| Join lobby | WASD keys or Arrow keys |
-| Move | Assigned movement keys in-game |
+| Join lobby | Press WASD keys or Arrow keys |
+| Move in-game | Assigned scheme movement keys |
 | Pause | ESC |
-| Select Upgrade (solo legacy path) | 1, 2, 3 |
-| Toggle FPS Counter | F3 |
-| Take Screenshot | F12 |
+| Toggle FPS counter | F3 |
+| Take screenshot | F12 |
 
-### Controller (Xbox / PlayStation / Switch Pro)
+Owned menu keyboard bindings:
 
-Controllers are detected automatically at startup and on hot-plug.
+- `WASD` slot: `A/D` navigate, `Space` confirm, `Left Shift` back
+- `Arrows` slot: `Left/Right` navigate, `Enter` confirm, `Right Shift` back
+- solo keyboard-owned menus still allow `Enter` as a compatibility confirm path
+
+### Controller
+
+Controllers are detected at startup and on hot-plug.
 
 | Action | Input |
 |--------|-------|
@@ -104,101 +127,84 @@ Controllers are detected automatically at startup and on hot-plug.
 | Confirm / Select | Configurable in Settings |
 | Back / Cancel | Configurable in Settings |
 | Pause | Configurable in Settings |
-| Navigate menus | Left stick or D-pad (with key-repeat) |
+| Navigate menus | Left stick or D-pad |
 
 Controller binding notes:
-- `Settings -> Controller Bindings` includes a `Global Default` profile and per-controller profiles.
-- `Global Default` is the fallback for controllers without a customized profile.
-- Per-controller profiles override `Confirm`, `Back`, and `Pause / Start` and are saved in `saves/progress.json`.
-- Owned multiplayer flows still route by joystick ownership, even when multiple controllers share the same binding layout.
 
----
-
-## Weapons
-
-| Weapon | Behavior |
-|--------|----------|
-| Arcane Bolt | Homing projectiles; 1 → 3 bolts, pierce at level 4 |
-| Holy Nova | Expanding damage ring around the player |
-| Spectral Blade | Orbiting swords with per-enemy hit cooldown |
-| Flame Whip | Directional cone sweep with burn DOT |
-| Frost Ring | Expanding freeze ring that immobilizes enemies |
-| Lightning Chain | Bolt chains between up to 6 nearby enemies |
-
----
+- `Settings -> Controller Bindings` exposes a `Global Default` profile and per-controller profiles.
+- Synthetic controller key events now include source metadata, but owned multiplayer menus still must route or reject them deliberately to preserve device ownership.
+- In-run controller disconnects pause gameplay until the affected slot is reclaimed or safely remapped.
 
 ## Development
 
-```bash
-# Check all imports and verify pygame-ce version
-python run_check.py
+Useful commands:
 
-# Regenerate placeholder sprites and audio for any missing assets
+```bash
+python main.py
+python run_check.py
 python src/utils/placeholder_assets.py
 ```
 
-`run_check.py` imports the placeholder-asset utilities, so it requires `numpy` from `requirements.txt`.
+`run_check.py` validates imports and pygame-ce availability. It does not prove gameplay correctness.
 
 ## Verification
 
-Recommended verification for the current state:
+Baseline repo check:
 
 ```bash
-# Static import / environment check
 python run_check.py
 ```
 
-Manual smoke checks:
+Recommended manual verification for the current state:
 
-1. Start a solo run from the lobby, play into combat, die once, and confirm solo death/game-over behavior still works.
-2. Join two players with different input devices, pick two different heroes, start a run, and confirm both players move independently.
-3. Trigger a level-up in multiplayer and confirm only the owning player can confirm the upgrade on keyboard/controller.
-4. Back out of class select and confirm the flow returns to the lobby rather than dropping to an unrelated scene.
-5. Open `Settings -> Controller Bindings`, change `Global Default`, then change an individual controller profile and confirm they remain independent after reopening settings.
-6. With two controllers connected, select one controller profile and confirm only that controller can complete the remap capture for that profile.
+1. Start a 1P run through `Menu -> Lobby -> Class Select -> Game` and confirm movement, combat, level-up, death, and game-over behavior still work.
+2. Start a 2P run with different devices, verify independent movement/input ownership, and confirm duplicate hero selection is blocked.
+3. Trigger a multiplayer level-up and confirm only the owning slot can resolve its upgrade menu.
+4. Disconnect and reclaim a controller mid-run and confirm gameplay stays safely paused until the slot is recovered.
+5. Finish a multiplayer run and confirm the game-over screen shows party results while `saves/progress.json` updates aggregate run totals.
 
-**Adding real sprites:** Drop a PNG at the correct path under `assets/sprites/` — `ResourceLoader` picks it up automatically. No code changes needed.
+## Safe Next Work
 
-**Adding real audio:** Drop a WAV file at the correct path under `assets/audio/sfx/` — `AudioManager` loads it at game start automatically. No code changes needed.
+The safest major next work is readiness verification and cleanup, not new content. In priority order:
 
-**Adding a new enemy:** Create `src/entities/enemies/newenemy.py` inheriting from `Enemy`, add spawn data to `wave_manager.py`, and add it to the wave timeline in `_check_timeline()`.
-
-**Adding a new weapon:** Create `src/weapons/newweapon.py` inheriting from `BaseWeapon` and add the class name to `WEAPON_CLASSES` in `upgrade_system.py`.
-
----
+1. Run the real 1P -> 2P -> 3P multiplayer readiness matrix.
+2. Fix the specific regressions found there.
+3. Remove remaining migration shims such as `input_config=None` once the unified path is stable.
+4. Decide multiplayer balance/scaling policy.
+5. Add a 4th hero before treating 4P as a practical gameplay target.
 
 ## Project Structure
 
-```
+```text
 mystic_siege/
-├── main.py                  # Entry point
-├── settings.py              # All constants — never hardcode elsewhere
-├── run_check.py             # Import checker + pygame version verifier
+├── main.py
+├── settings.py
+├── run_check.py
 ├── src/
-│   ├── game.py              # Main loop, delegates to SceneManager
-│   ├── scene_manager.py     # Scene switching across menu, lobby, class select, game, and game over
-│   ├── game_scene.py        # Gameplay — wires solo and multiplayer-capable systems together
-│   ├── core/
-│   │   └── player_slot.py   # Plain per-slot session metadata
-│   ├── entities/            # Player, enemies, projectiles, XP orbs, effects
-│   ├── weapons/             # 6 weapon implementations
-│   ├── systems/             # Waves, XP, upgrades, collision, camera, saves
-│   ├── ui/                  # HUD, menus, lobby, queued class select, game over
-│   └── utils/               # ResourceLoader, AudioManager, InputManager, Spritesheet, Timer
+│   ├── game.py
+│   ├── scene_manager.py
+│   ├── game_scene.py
+│   ├── core/player_slot.py
+│   ├── entities/
+│   ├── weapons/
+│   ├── systems/
+│   ├── ui/
+│   │   ├── lobby_scene.py
+│   │   ├── class_select.py
+│   │   ├── upgrade_menu.py
+│   │   ├── hud.py
+│   │   ├── game_over.py
+│   │   ├── settings_menu.py
+│   │   └── stats_menu.py
+│   └── utils/
 └── assets/
-    ├── sprites/             # heroes / enemies / projectiles / effects / ui
-    ├── audio/               # sfx / music
-    ├── backgrounds/
-    └── fonts/
 ```
 
 ## Known Issues
 
-- Multiplayer balance is not yet tuned for larger parties.
-- The repo includes some historical ad hoc test scripts that no longer reflect the current constructors or scene flow.
-- The long-term design targets 4 local players, but the current hero roster blocks that from being fully playable without allowing duplicates or adding another hero.
-
----
+- Multiplayer runtime behavior is ahead of multiplayer runtime verification.
+- Wide-spread party positions near map edges may still need spawn fairness tuning.
+- Some older ad hoc test scripts and older planning language in the repo are historical and should not be treated as proof that a path has been runtime-tested.
 
 ## License
 
