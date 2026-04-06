@@ -441,7 +441,7 @@ class GameScene:
 
         for player in self.players:
             slot = player.slot
-            if slot is None or slot.input_config is None:
+            if slot is None:
                 continue
             cfg = slot.input_config
             if cfg.get("type") != "keyboard":
@@ -462,7 +462,7 @@ class GameScene:
         return bindings
 
     def _resolved_controller_id_for_slot(self, slot: PlayerSlot | None) -> int | None:
-        if slot is None or slot.input_config is None:
+        if slot is None:
             return None
         cfg = slot.input_config
         if cfg.get("type") != "controller":
@@ -480,7 +480,7 @@ class GameScene:
         return joystick_id
 
     def _controller_reconnect_candidate_ids(self, slot: PlayerSlot | None) -> list[int]:
-        if slot is None or slot.input_config is None:
+        if slot is None:
             return []
         cfg = slot.input_config
         if cfg.get("type") != "controller":
@@ -497,7 +497,7 @@ class GameScene:
         unresolved_players: list[Player] = []
         for player in self.players:
             slot = player.slot
-            if slot is None or slot.input_config is None:
+            if slot is None:
                 continue
             if slot.input_config.get("type") != "controller":
                 continue
@@ -573,7 +573,7 @@ class GameScene:
         controller_ids: set[int] = set()
         for player in self.players:
             slot = player.slot
-            if slot is None or slot.input_config is None:
+            if slot is None:
                 continue
             cfg = slot.input_config
             if cfg.get("type") == "controller":

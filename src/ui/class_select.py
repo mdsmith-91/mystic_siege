@@ -149,17 +149,6 @@ class ClassSelect:
         if not self._can_confirm_selected_class():
             return
 
-        if not self.slot_queue_active:
-            resolved_slot = PlayerSlot(
-                index=0,
-                input_config=None,
-                hero_data=self.selected_class,
-                color=PLAYER_COLORS[0],
-            )
-            self.next_scene = STATE_PLAYING
-            self.next_scene_kwargs = {"slots": [resolved_slot]}
-            return
-
         self.current_slot.hero_data = self.selected_class
         resolved_slots = self.confirmed_slots + [self.current_slot]
         remaining_slots = self.slots[1:]
