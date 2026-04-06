@@ -17,6 +17,7 @@ class AudioManager:
     WEAPON_BLADE = "spectral_blade"
     WEAPON_CHAIN = "lightning_chain"
     WEAPON_FROST = "frost_ring"
+    WEAPON_LONGBOW = "longbow"
 
     def __new__(cls):
         if cls._instance is None:

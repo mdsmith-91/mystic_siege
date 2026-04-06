@@ -71,7 +71,8 @@ mystic_siege/
 │   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
 │   │   ├── flame_whip.py          # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
-│   │   └── lightning_chain.py     # Chains between enemies, jagged arc visual
+│   │   ├── lightning_chain.py     # Chains between enemies, jagged arc visual
+│   │   └── longbow.py             # Physical arrow shots, straight-line ranged damage
 │   ├── systems/
 │   │   ├── wave_manager.py        # Enemy spawning timeline, elite mode, multiplayer spawn anchoring
 │   │   ├── xp_system.py           # XP collection, leveling, orb pickup radius
@@ -154,6 +155,7 @@ Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settin
 - FlameWhip — directional cone, burn DOT
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
+- Longbow — fast physical arrows, cadence/pierce/crit upgrades
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 

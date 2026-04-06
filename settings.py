@@ -64,6 +64,24 @@ ARCANE_BOLT_RANGE = 350         # max distance to target an enemy
 ARCANE_BOLT_SPREAD = 20         # degrees between each bolt in a multi-bolt burst
 ARCANE_BOLT_STAGGER = 0.3       # seconds between each bolt in a burst
 LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
+LONGBOW_BASE_DAMAGE = 24.0
+LONGBOW_BASE_COOLDOWN = 1.0
+LONGBOW_RANGE = 520
+LONGBOW_PROJECTILE_SPEED = 720
+LONGBOW_PROJECTILE_LIFETIME = 0.9
+LONGBOW_BASE_PIERCE = 0
+LONGBOW_BASE_PROJECTILE_COUNT = 1
+LONGBOW_SPREAD = 10
+LONGBOW_BASE_CRIT_BONUS = 0.05
+LONGBOW_PROJECTILE_COLOR = (170, 120, 60)
+LONGBOW_PROJECTILE_SIZE = (24, 6)
+LONGBOW_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 8.0},
+    {"base_cooldown": -0.15},
+    {"pierce": 1},
+    {"projectile_count": 1, "crit_bonus": 0.10},
+]
 
 ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit

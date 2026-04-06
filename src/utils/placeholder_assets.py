@@ -267,6 +267,7 @@ def generate_audio_placeholders():
     maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
+    maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
 
 
 def main():
