@@ -120,8 +120,8 @@ class GameScene:
         self.next_scene_kwargs = {}
 
         # 13. show_fps — read from saved settings so the settings menu toggle takes effect
-        save_system = SaveSystem()
-        self.show_fps = save_system.get_setting("show_fps")
+        self.save_system = SaveSystem()
+        self.show_fps = self.save_system.get_setting("show_fps")
         self._smooth_dt = 1 / 60  # exponential moving average of dt for stable FPS display
 
         # 14. background — use Gemini-generated image if available, else procedural tiles
@@ -528,6 +528,13 @@ class GameScene:
             self._pause_controller_nav_dir.clear()
             self._pause_controller_nav_timer.clear()
 
+    def _set_show_fps(self, value: bool) -> None:
+        self.show_fps = value
+        self.save_system.set_setting("show_fps", value)
+
+    def _toggle_show_fps(self) -> None:
+        self._set_show_fps(not self.show_fps)
+
     def _handle_keyboard_pause_event(self, event: pygame.event.Event) -> bool:
         if getattr(event, "synthetic_controller_event", False):
             # Pause ownership for controllers is handled via JOYBUTTONDOWN so a
@@ -535,7 +542,7 @@ class GameScene:
             return False
 
         if event.key == pygame.K_F3:
-            self.show_fps = not self.show_fps
+            self._toggle_show_fps()
             return True
 
         for binding in self._owned_keyboard_pause_bindings().values():
@@ -615,7 +622,7 @@ class GameScene:
                 if event.type == pygame.QUIT:
                     return
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
-                    self.show_fps = not self.show_fps
+                    self._toggle_show_fps()
             self.upgrade_menu.handle_events(events)
             return
 

@@ -192,6 +192,9 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   - `Global Default` is the fallback mapping for unknown / untouched controllers
   - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
   - profile bindings are saved in `saves/progress.json`
+  - global menus consume synthetic controller key events generated directly from
+    `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the
+    controller binding settings so confirm/back/start work reliably in menus
 
 - Time stops on level-up (upgrade menu open)
 - ESC pauses

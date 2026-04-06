@@ -359,11 +359,14 @@ class InputManager:
                 self._axis_timer = {k: v for k, v in self._axis_timer.items() if k[0] != iid}
                 self._hat_state = {k: v for k, v in self._hat_state.items() if k[0] != iid}
                 self._button_state = {k: v for k, v in self._button_state.items() if k[0] != iid}
+            elif event.type == pygame.JOYBUTTONDOWN:
+                self._handle_button_event(event.instance_id, event.button, pressed=True)
+            elif event.type == pygame.JOYBUTTONUP:
+                self._handle_button_event(event.instance_id, event.button, pressed=False)
 
         for joy in self._joysticks.values():
             self._process_axes(joy, dt)
             self._process_hats(joy)
-            self._process_buttons(joy)
 
     def get_movement(self) -> tuple[float, float]:
         for joy in self._joysticks.values():
@@ -662,27 +665,26 @@ class InputManager:
             elif hy == -1:
                 self._post_key(pygame.K_DOWN, instance_id=iid, synthetic_controller_event=True)
 
-    def _process_buttons(self, joy: pygame.joystick.Joystick) -> None:
-        iid = joy.get_instance_id()
+    def _handle_button_event(self, iid: int, button: int, *, pressed: bool) -> None:
         bindings = self._resolve_bindings(joystick_id=iid)
         button_map: dict[int, int] = {
             bindings["confirm"]: pygame.K_RETURN,
             bindings["back"]: pygame.K_ESCAPE,
         }
-        for button in bindings["start"]:
-            button_map[button] = pygame.K_ESCAPE
+        for start_button in bindings["start"]:
+            button_map[start_button] = pygame.K_ESCAPE
 
-        for btn_idx, mapped_key in button_map.items():
-            if joy.get_numbuttons() <= btn_idx:
-                continue
-            pressed = bool(joy.get_button(btn_idx))
-            state_key = (iid, btn_idx)
-            was_pressed = self._button_state.get(state_key, False)
-            if pressed and not was_pressed:
-                self._post_key(mapped_key, instance_id=iid, synthetic_controller_event=True)
-            elif not pressed and was_pressed:
-                self._post_keyup(mapped_key, instance_id=iid, synthetic_controller_event=True)
-            self._button_state[state_key] = pressed
+        mapped_key = button_map.get(button)
+        if mapped_key is None:
+            return
+
+        state_key = (iid, button)
+        was_pressed = self._button_state.get(state_key, False)
+        if pressed and not was_pressed:
+            self._post_key(mapped_key, instance_id=iid, synthetic_controller_event=True)
+        elif not pressed and was_pressed:
+            self._post_keyup(mapped_key, instance_id=iid, synthetic_controller_event=True)
+        self._button_state[state_key] = pressed
 
     @staticmethod
     def _post_key(
