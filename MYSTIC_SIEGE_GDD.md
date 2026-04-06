@@ -267,7 +267,7 @@ Current implementation note:
 Current implementation note:
 
 - single-player is the stable baseline
-- local multiplayer is partially implemented and still in verification
+- local co-op is partially implemented and still in verification
 - practical current co-op cap is 4 because duplicate heroes are blocked and the
   roster has 4 heroes
 

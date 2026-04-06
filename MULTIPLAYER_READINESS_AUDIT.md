@@ -31,9 +31,11 @@
 
 ## 1. Executive Summary
 
-The current codebase is a clean, well-structured single-player game. It was
-not designed with multiplayer in mind, but the architecture is disciplined enough
-that the migration is feasible without a full rewrite.
+> *Historical baseline: the findings below describe the codebase at audit time (2026-04-03), when multiplayer implementation was at 0%. The majority of the migration work described here has since landed in the repo. Read this section as original migration rationale and risk inventory, not current implementation status. For current state, see `README.md` and `MULTIPLAYER_READINESS_GATE_REVIEW.md`.*
+
+The codebase at audit time was a clean, well-structured single-player game. It was
+not designed with multiplayer in mind, but the architecture was disciplined enough
+that the migration was feasible without a full rewrite.
 
 **The core problem is a single pervasive assumption: `self.player` (singular).**
 It appears in 9 of the 12 key systems and at 20+ call sites in `game_scene.py`

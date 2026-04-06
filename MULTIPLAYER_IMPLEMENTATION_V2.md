@@ -299,9 +299,9 @@ damage source.
 
 | Player count | Layout |
 |---|---|
-| 1 | Existing layout, completely unchanged |
-| 2 | P1 top-left, P2 top-right; XP bar split at center |
-| 3 | P1 top-left, P2 top-center, P3 top-right; shared XP bar bottom |
+| 1 | Single panel, unchanged from solo layout |
+| 2 | P1 top-left, P2 top-right |
+| 3 | P1 top-left, P2 top-right, P3 bottom-left |
 | 4 | 2×2 corners: P1 top-left, P2 top-right, P3 bottom-left, P4 bottom-right |
 
 Draw each player's panel using a helper:
@@ -343,13 +343,15 @@ changing the base damage/death flow.
 - During upgrade menu: other players' input is consumed (read and discarded) so
   buttons don't bleed into the menu navigation.
 
-**Current InputManager limitation:** this repo's synthetic controller events are
-posted as plain `KEYDOWN` / `KEYUP` events with no joystick instance ID attached.
-That means menu code cannot reliably tell which controller generated a `K_RETURN`
-or `K_ESCAPE`. Owned multiplayer menus therefore require one of two changes:
-1. Preserve device metadata on synthetic events, using a custom event payload.
+**Current InputManager behavior:** synthetic controller events now include source
+metadata (`synthetic_controller_event` and `source_instance_id` in the event
+payload). This makes option 1 below implementable, but menu code must still
+deliberately reject or route those events to preserve device ownership — the
+metadata is available but not automatically enforced. The current implementation
+uses option 2 in `ClassSelect` and `UpgradeMenu` (polling the assigned device
+directly via `JOYBUTTONDOWN`).
+1. Filter synthetic events by `source_instance_id` in menu event handlers.
 2. Bypass synthetic menu events for owned menus and poll the assigned device directly.
-Without one of those, "filter by source device" is not implementable.
 
 ### 4.10 Device Disconnect / Hot-Plug
 

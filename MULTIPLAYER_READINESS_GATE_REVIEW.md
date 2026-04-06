@@ -9,7 +9,7 @@ Read these files first and treat them as authoritative: AGENTS.md, CLAUDE.md, MU
 ## Metadata
 
 - Review date: 2026-04-05
-- Branch: `multiplayer-improvments`
+- Branch: `multiplayer-improvments` (merged to `main` after this review was written)
 - Worktree state: dirty (`src/ui/upgrade_menu.py` modified; `MULTIPLAYER_READINESS_GATE_REVIEW.md` untracked)
 - `CODEX_REVIEW_FIX_PLAN.md`: not present
 - Authoritative docs reviewed: `AGENTS.md`, `CLAUDE.md`, `MULTIPLAYER_IMPLEMENTATION_V2.md`, `MULTIPLAYER_READINESS_AUDIT.md`
@@ -18,6 +18,12 @@ Read these files first and treat them as authoritative: AGENTS.md, CLAUDE.md, MU
 - Runtime/manual verification performed: none
 
 ## Readiness Verdict
+
+**Updated (2026-04-06):** 1P–4P runtime verification has since been completed. The gate is now cleared. The `input_config=None` compatibility shim has been removed from `src/ui/class_select.py` and the defensive guards in `src/game_scene.py` have been simplified. The remaining open items are multiplayer balance/scaling and spawn fairness under wide party spread — not core architecture gaps.
+
+The original pre-verification verdict is preserved below for historical context.
+
+---
 
 Multiplayer is structurally much improved and is mostly aligned with the documented slot-based design. The previously identified `UpgradeMenu` owned-input bug has now been fixed, and static verification remains clean.
 
