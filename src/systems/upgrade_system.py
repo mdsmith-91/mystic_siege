@@ -1,5 +1,6 @@
 import random
 from settings import HERO_CLASSES, MAX_WEAPON_SLOTS
+from src.weapons.factory import create_weapon
 
 # Define PASSIVE_UPGRADES as a module-level list of dicts
 PASSIVE_UPGRADES = [
@@ -233,30 +234,13 @@ class UpgradeSystem:
             if choice["type"] == "upgrade":
                 player.upgrade_weapon(weapon_class_name)
             else:
-                # Construct and add new weapon only when actually needed
-                if weapon_class_name == "ArcaneBolt":
-                    from src.weapons.arcane_bolt import ArcaneBolt
-                    weapon = ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "HolyNova":
-                    from src.weapons.holy_nova import HolyNova
-                    weapon = HolyNova(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "SpectralBlade":
-                    from src.weapons.spectral_blade import SpectralBlade
-                    weapon = SpectralBlade(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "FlameWhip":
-                    from src.weapons.flame_whip import FlameWhip
-                    weapon = FlameWhip(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "FrostRing":
-                    from src.weapons.frost_ring import FrostRing
-                    weapon = FrostRing(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "LightningChain":
-                    from src.weapons.lightning_chain import LightningChain
-                    weapon = LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
-                elif weapon_class_name == "Longbow":
-                    from src.weapons.longbow import Longbow
-                    weapon = Longbow(player, self.projectile_group, self.enemy_group, self.effect_group)
-                else:
-                    return
+                weapon = create_weapon(
+                    weapon_class_name,
+                    player,
+                    self.projectile_group,
+                    self.enemy_group,
+                    self.effect_group,
+                )
                 player.add_weapon(weapon)
         else:
             # If choice has "stat" key: call _apply_passive(choice, player)

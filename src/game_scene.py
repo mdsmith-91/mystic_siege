@@ -25,6 +25,7 @@ from src.ui.hud import HUD
 from src.ui.upgrade_menu import UpgradeMenu
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
+from src.weapons.factory import create_weapon
 
 class GameScene:
     def __init__(self, slots: list[PlayerSlot]):
@@ -161,32 +162,13 @@ class GameScene:
         return self.players[0]
 
     def _create_starting_weapon(self, player: Player, hero_data: dict):
-        starting_weapon = hero_data["starting_weapon"]
-
-        if starting_weapon == "ArcaneBolt":
-            from src.weapons.arcane_bolt import ArcaneBolt
-            return ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "HolyNova":
-            from src.weapons.holy_nova import HolyNova
-            return HolyNova(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "SpectralBlade":
-            from src.weapons.spectral_blade import SpectralBlade
-            return SpectralBlade(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "FlameWhip":
-            from src.weapons.flame_whip import FlameWhip
-            return FlameWhip(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "FrostRing":
-            from src.weapons.frost_ring import FrostRing
-            return FrostRing(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "LightningChain":
-            from src.weapons.lightning_chain import LightningChain
-            return LightningChain(player, self.projectile_group, self.enemy_group, self.effect_group)
-        if starting_weapon == "Longbow":
-            from src.weapons.longbow import Longbow
-            return Longbow(player, self.projectile_group, self.enemy_group, self.effect_group)
-
-        from src.weapons.arcane_bolt import ArcaneBolt
-        return ArcaneBolt(player, self.projectile_group, self.enemy_group, self.effect_group)
+        return create_weapon(
+            hero_data["starting_weapon"],
+            player,
+            self.projectile_group,
+            self.enemy_group,
+            self.effect_group,
+        )
 
     def _queue_pending_levelups(self) -> None:
         for player, xp_system in zip(self.players, self.xp_systems):

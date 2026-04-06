@@ -66,6 +66,7 @@ mystic_siege/
 │   │       └── stone_golem.py     # hp=500, mini-boss, very slow; uses golem.png 4-dir sheet
 │   ├── weapons/
 │   │   ├── base_weapon.py         # BaseWeapon — cooldown, upgrade(), fire() interface
+│   │   ├── factory.py             # Shared weapon registry + constructor helper used by gameplay systems
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
 │   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
@@ -162,6 +163,18 @@ Ranger passive: +10% crit chance, arrows pierce +1 enemy
 The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
 limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
 `new_weapon` cards once that inventory is full.
+
+Current weapon architecture rules:
+
+- All weapon tunables live in clearly grouped `settings.py` sections first.
+- Weapon classes should read class attributes and upgrade tables from `settings.py`,
+  following the current Longbow-style pattern.
+- Use the shared constructor helper in `src/weapons/factory.py` when gameplay code
+  needs to create a weapon by string id. Do not add new `if/elif` weapon factory chains
+  in `GameScene`, `UpgradeSystem`, or other callers.
+- Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`,
+  `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
+  reference them by string.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -414,8 +427,12 @@ python src/utils/placeholder_assets.py
 **Add a new weapon:**
 
 1. Create `src/weapons/newweapon.py` inheriting from `BaseWeapon`
-2. Add class name string to `WEAPON_CLASSES` in `upgrade_system.py`
-3. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
+2. Add all weapon tunables and upgrade deltas to a dedicated section in `settings.py`
+3. Follow the existing settings-driven weapon pattern: class attributes and
+   `upgrade_levels` should be sourced from `settings.py`, not hardcoded in the weapon class
+4. Register the weapon id and class in `src/weapons/factory.py`
+5. Add class name string to `WEAPON_CLASSES` and metadata to `WEAPON_META` in `upgrade_system.py`
+6. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
    from offering unusable `new_weapon` cards to players with full inventories
 
 **Add a new hero class:**

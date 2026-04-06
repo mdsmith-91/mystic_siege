@@ -21,8 +21,8 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 
 ### Phase 1 — Playable Core (MVP)
 - 1 map (castle courtyard)
-- 3 hero classes
-- 6 weapons/spells
+- 4 hero classes in the current shipped roster
+- 7 weapons/spells in the current shipped roster
 - 7 enemy types in the current shipped roster
 - Basic upgrade system (level-up choices)
 - Simple audio (placeholder/CC0)
@@ -111,12 +111,14 @@ mystic_siege/
 │   ├── weapons/
 │   │   ├── __init__.py
 │   │   ├── base_weapon.py
+│   │   ├── factory.py
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
 │   │   ├── flame_whip.py
 │   │   ├── spectral_blade.py
 │   │   ├── frost_ring.py
-│   │   └── lightning_chain.py
+│   │   ├── lightning_chain.py
+│   │   └── longbow.py
 │   │
 │   ├── systems/
 │   │   ├── __init__.py
@@ -172,6 +174,12 @@ mystic_siege/
 - **Starting Weapon:** Holy Nova (area pulse)
 - **Playstyle:** Sustain — snowballs with orb pickups
 
+### Ranger
+- **HP:** 95 | **Speed:** Medium-High | **Armor:** Low
+- **Passive:** Crit chance +10%, arrows pierce +1 enemy
+- **Starting Weapon:** Longbow (precise ranged arrows)
+- **Playstyle:** Kiter — reliable ranged pressure with scaling projectile utility
+
 ---
 
 ## 6. WEAPONS / SPELLS
@@ -184,8 +192,14 @@ mystic_siege/
 | Spectral Blade | Orbit | 2–4 swords orbit player and pass through enemies |
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
 | Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
+| Longbow | Projectile | Fires fast arrows at nearby enemies with pierce/crit scaling |
 
 Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
+
+Current implementation note:
+
+- weapon tunables and upgrade deltas are defined in `settings.py` first
+- shared weapon construction is centralized in `src/weapons/factory.py`
 
 ---
 

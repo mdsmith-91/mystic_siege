@@ -13,8 +13,8 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 Mystic Siege is a playable survivor-style action game with:
 
-- 3 hero classes with unique passives and starting weapons
-- 6 weapon types with 5 upgrade levels each
+- 4 hero classes with unique passives and starting weapons
+- 7 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
@@ -64,7 +64,7 @@ Not yet broadly verified in runtime:
 
 ## Current Limitations
 
-- The design target remains 1-4 local players, but the current practical cap is 3 because duplicate hero picks are blocked and only 3 heroes currently exist.
+- The design target remains 1-4 local players, and the current hero roster now supports 4 practical local players because there are 4 heroes and duplicate picks are blocked.
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
@@ -78,6 +78,14 @@ Not yet broadly verified in runtime:
 | Knight | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
+| Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
+
+## Weapon Architecture
+
+- `settings.py` is the source of truth for weapon tunables, including base stats, relevant visual tunables, and per-level upgrade deltas.
+- Weapon classes in `src/weapons/` reference those constants instead of hardcoding gameplay values locally.
+- Shared weapon construction now goes through `src/weapons/factory.py`, which is used by both `GameScene` and `UpgradeSystem`.
+- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
 
 ## Getting Started
 
@@ -187,6 +195,7 @@ mystic_siege/
 │   ├── core/player_slot.py
 │   ├── entities/
 │   ├── weapons/
+│   │   ├── factory.py
 │   ├── systems/
 │   ├── ui/
 │   │   ├── lobby_scene.py

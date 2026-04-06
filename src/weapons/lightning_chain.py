@@ -1,32 +1,43 @@
 import pygame
-from src.weapons.base_weapon import BaseWeapon
 from pygame.math import Vector2
 import random
+
+from settings import (
+    CRIT_MULTIPLIER,
+    LIGHTNING_CHAIN_ARC_COLOR,
+    LIGHTNING_CHAIN_ARC_JITTER,
+    LIGHTNING_CHAIN_ARC_LIFETIME,
+    LIGHTNING_CHAIN_ARC_MAX_SEGMENTS,
+    LIGHTNING_CHAIN_ARC_MIN_SEGMENTS,
+    LIGHTNING_CHAIN_ARC_WIDTH,
+    LIGHTNING_CHAIN_BASE_CHAIN_COUNT,
+    LIGHTNING_CHAIN_BASE_COOLDOWN,
+    LIGHTNING_CHAIN_BASE_DAMAGE,
+    LIGHTNING_CHAIN_BASE_STUN_CHANCE,
+    LIGHTNING_CHAIN_CHAIN_RANGE,
+    LIGHTNING_CHAIN_HIT_SPARK_COLOR,
+    LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER,
+    LIGHTNING_CHAIN_STUN_DURATION,
+    LIGHTNING_CHAIN_TARGETING_RANGE,
+    LIGHTNING_CHAIN_UPGRADE_LEVELS,
+)
 from src.utils.audio_manager import AudioManager
-from settings import LIGHTNING_CHAIN_RANGE, CRIT_MULTIPLIER
+from src.weapons.base_weapon import BaseWeapon
 
 class LightningChain(BaseWeapon):
     name = "Lightning Chain"
     description = "Strikes the nearest enemy, then chains to nearby foes."
-    base_damage = 35.0
-    base_cooldown = 1.8
-    chain_count = 3    # max enemies to chain to after initial target
-    chain_range = 150  # max distance between chain jumps
-    stun_chance = 0.0  # 0.0-1.0
-    stun_duration = 0.5
+    base_damage = LIGHTNING_CHAIN_BASE_DAMAGE
+    base_cooldown = LIGHTNING_CHAIN_BASE_COOLDOWN
+    chain_count = LIGHTNING_CHAIN_BASE_CHAIN_COUNT
+    chain_range = LIGHTNING_CHAIN_CHAIN_RANGE
+    stun_chance = LIGHTNING_CHAIN_BASE_STUN_CHANCE
+    stun_duration = LIGHTNING_CHAIN_STUN_DURATION
     IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"base_damage": 15},  # L2: +15 damage
-            {"chain_count": 2},   # L3: chains to 5 enemies
-            {"chain_range": 50},  # L4: +50 chain range
-            {"chain_count": 1, "stun_chance": 0.25}  # L5: 6 chains, stun added
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in LIGHTNING_CHAIN_UPGRADE_LEVELS]
 
         # lightning_arcs: list — each arc is {"start": Vector2, "end": Vector2, "timer": float}
         # Timer counts down from 0.12s — arcs are drawn for that long then removed.
@@ -44,11 +55,11 @@ class LightningChain(BaseWeapon):
         segment_length = direction_vector.length()
         points = [Vector2(start)]
 
-        num_midpoints = 3 + random.randint(0, 2)
+        num_midpoints = random.randint(LIGHTNING_CHAIN_ARC_MIN_SEGMENTS, LIGHTNING_CHAIN_ARC_MAX_SEGMENTS)
         for i in range(1, num_midpoints):
             t = i / num_midpoints
             midpoint = start + direction * (t * segment_length)
-            midpoint += perpendicular * random.randint(-15, 15)
+            midpoint += perpendicular * random.randint(-LIGHTNING_CHAIN_ARC_JITTER, LIGHTNING_CHAIN_ARC_JITTER)
             points.append(midpoint)
 
         points.append(Vector2(end))
@@ -62,7 +73,7 @@ class LightningChain(BaseWeapon):
 
         nearest_enemy = None
         nearest_distance_sq = float("inf")
-        max_range_sq = LIGHTNING_CHAIN_RANGE * LIGHTNING_CHAIN_RANGE
+        max_range_sq = LIGHTNING_CHAIN_TARGETING_RANGE * LIGHTNING_CHAIN_TARGETING_RANGE
 
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()
@@ -107,7 +118,7 @@ class LightningChain(BaseWeapon):
         # Chance to stun: if random() < stun_chance: freeze enemy briefly
         for i, enemy in enumerate(chain):
             # Diminish damage by 10% per hop, then roll crit independently per enemy
-            damage_multiplier = 0.9 ** i
+            damage_multiplier = LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER ** i
             is_crit = random.random() < self.owner.crit_chance
             damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
@@ -117,7 +128,7 @@ class LightningChain(BaseWeapon):
             if self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
                 DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
-                HitSpark(enemy.pos, (255, 255, 100), [self.effect_group])
+                HitSpark(enemy.pos, LIGHTNING_CHAIN_HIT_SPARK_COLOR, [self.effect_group])
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
             if random.random() < self.stun_chance:
@@ -132,7 +143,7 @@ class LightningChain(BaseWeapon):
         self.lightning_arcs.append({
             "start": Vector2(self.owner.pos),
             "end": Vector2(chain[0].pos),
-            "timer": 0.12,
+            "timer": LIGHTNING_CHAIN_ARC_LIFETIME,
             "points": self._build_arc_points(Vector2(self.owner.pos), Vector2(chain[0].pos)),
         })
         for i in range(len(chain) - 1):
@@ -141,7 +152,7 @@ class LightningChain(BaseWeapon):
             self.lightning_arcs.append({
                 "start": start,
                 "end": end,
-                "timer": 0.12,
+                "timer": LIGHTNING_CHAIN_ARC_LIFETIME,
                 "points": self._build_arc_points(Vector2(start), Vector2(end)),
             })
 
@@ -181,8 +192,8 @@ class LightningChain(BaseWeapon):
 
             pygame.draw.lines(
                 surface,
-                (255, 255, 200),
+                LIGHTNING_CHAIN_ARC_COLOR,
                 False,
                 [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points],
-                2,
+                LIGHTNING_CHAIN_ARC_WIDTH,
             )
