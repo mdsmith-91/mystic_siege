@@ -9,7 +9,7 @@ escalating waves of enemies, collect XP orbs, level up, and pick upgrades — al
 
 Two developers, AI-assisted workflow, small scope first.
 
-**Current state:** the single-player baseline is playable, and the local multiplayer
+**Current state:** the single-player baseline is playable, and the local co-op
 migration is partially implemented. New runs currently flow through a lobby and queued
 hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
 hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
@@ -184,44 +184,20 @@ limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
 
 Current weapon architecture rules:
 
-- All weapon tunables live in clearly grouped `settings.py` sections first.
-- Weapon classes should read class attributes and upgrade tables from `settings.py`
-  instead of hardcoding gameplay values in the class body.
-- Weapon creation by string id is centralized in `src/weapons/factory.py` through
-  `WEAPON_CLASS_REGISTRY` and `create_weapon()`. `GameScene` resolves each
-  hero's `starting_weapon` id through that path, and `UpgradeSystem` resolves
-  new-weapon rewards through the same shared constructor.
-- `src/weapons/__init__.py` re-exports `WEAPON_CLASS_REGISTRY` and `create_weapon`
-  so callers can import the package-level API if needed.
-- Upgrade-card presentation metadata is kept in `src/systems/upgrade_system.py`
-  via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
-- Keep the responsibility split explicit: `settings.py` owns gameplay values,
-  `src/weapons/factory.py` owns id-to-class resolution, and
-  `src/systems/upgrade_system.py` owns player-facing card metadata.
-- Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
-  or other callers. Register the weapon once in `WEAPON_CLASS_REGISTRY` and keep
-  hero data / upgrade rewards on string ids.
-- Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
-  `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
-  reference them by string.
-- Keep player-facing weapon names in metadata / weapon classes aligned with those
-  internal ids. `FlameBlast` currently uses the display name `Flame Blast`.
-- Keep scene/system callers on the string-id path even when the internal id matches
-  the class name today; do not reintroduce direct class instantiation in
-  `GameScene`, `UpgradeSystem`, or hero configuration code.
-- HUD chrome that is visually tied to weapon slots should also stay settings-driven.
-  The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
-  bar background reuses that same constant so 1P and multiplayer HUD panels keep a
-  consistent baseline treatment without duplicating color literals in `src/ui/hud.py`.
-- Weapon level HUD treatment is now shared across solo and multiplayer: player
-  panels use a settings-driven 4-segment border tracker that fills clockwise from
-  the top as levels 2–5 are earned; any unearned segments use the same gray
-  baseline as empty weapon slots.
-- The shared HUD renderer in `src/ui/hud.py` should keep caching stable data in the
-  hot path: panel tuple-to-`pygame.Rect` conversion, weapon-slot row geometry,
-  weapon icon surfaces, and repeated text surfaces should be reused rather than
-  rebuilt every frame. Offscreen downed-player revive rings should be culled, while
-  teammate threat arrows remain available as the offscreen signal.
+- Tunables and upgrade deltas live in `settings.py` first; weapon classes read from there.
+- Construction is centralized in `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` /
+  `create_weapon()`. `GameScene` and `UpgradeSystem` use this path — no new `if/elif` chains.
+- `src/weapons/__init__.py` re-exports the registry and helper for package-level imports.
+- Ownership split: `settings.py` owns gameplay values, `factory.py` owns id-to-class
+  resolution, `src/systems/upgrade_system.py` owns player-facing card metadata (`WEAPON_META`,
+  `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
+- Weapon ids are stable strings: `ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
+  `FrostRing`, `LightningChain`, `Longbow`. `FlameBlast` displays as `Flame Blast` in UI.
+- HUD chrome tied to weapon slots is also settings-driven: `HUD_EMPTY_SLOT_BG_COLOR` drives
+  both empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment border tracker
+  (fills clockwise from top as levels 2–5 are earned; unearned segments use the empty-slot gray).
+- The HUD renderer caches stable panel/slot geometry, icon surfaces, and text surfaces rather
+  than rebuilding each frame. Offscreen downed-player revive rings are culled.
 
 ### Enemies
 
@@ -235,29 +211,18 @@ Current weapon architecture rules:
 
 Current enemy architecture rules:
 
-- Enemy tunables live in grouped `settings.py` enemy sections first, including
-  shared enemy values, per-enemy config dicts, and wave/spawn balance constants.
-- Concrete enemy classes should read their stats and behavior knobs from those
-  settings-backed dicts instead of redefining local gameplay stat dicts.
-- Shared enemy spawning is centralized in `src/entities/enemies/__init__.py`
-  through `ENEMY_CLASS_REGISTRY` and `create_enemy()`. `WaveManager` should use
-  that shared helper instead of growing new enemy-specific constructor chains.
-- Keep enemy ids stable (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`,
-  `Golem`) because wave pools and settings lookups reference them by string.
-- Keep constructor signatures aligned across concrete enemy classes so the registry
-  can instantiate them through one shared call path; only consume optional runtime
-  dependencies such as `projectile_group` in the enemies that actually need them.
-- Shared enemy runtime state should stay centralized in `src/entities/enemy.py`
-  and `src/systems/wave_manager.py`: nearest-player retarget cadence, freeze /
-  stun timers, effective speed rebuilding, elite projectile scaling, and spawn
-  retry behavior near world edges belong there rather than being reimplemented in
-  individual subclasses or weapons.
-- Subclass-specific movement should plug into the base enemy movement hook instead
-  of setting `self.vel` before calling `super().update(dt)` and assuming the parent
-  will preserve it. This is how Skeleton wander and PlagueBat swoop behavior now
-  avoid being overwritten by the base chase logic.
-- Keep `MiniBat` as a local plague-bat follow-on unless a gameplay change makes it
-  a true top-level spawnable enemy.
+- Tunables (per-enemy config dicts, wave/spawn balance) live in `settings.py` first; enemy
+  classes read from those dicts instead of redefining local stat tables.
+- Construction is centralized in `src/entities/enemies/__init__.py` via `ENEMY_CLASS_REGISTRY`
+  / `create_enemy()`. `WaveManager` uses this path — no new constructor chains per enemy.
+- Enemy ids are stable strings: `Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`, `Golem`.
+  Constructor signatures share one registry-friendly shape; optional deps like `projectile_group`
+  are consumed only by enemies that need them.
+- Shared runtime state (retarget cadence, freeze/stun timers, elite scaling, edge spawn retry)
+  stays in `src/entities/enemy.py` and `src/systems/wave_manager.py`, not per-subclass.
+- Subclass-specific movement plugs into the base movement hook so custom behaviors (Skeleton
+  wander, PlagueBat swoop) aren't overwritten by parent chase logic.
+- `MiniBat` remains a plague-bat local follow-on, not a top-level wave enemy.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -273,21 +238,13 @@ Current enemy architecture rules:
 
 ### Game Loop
 
-Current runtime:
-
-```text
-Menu → Lobby → Class Select → Game → (die or 30 min) → Game Over → Menu
-```
-
-Current multiplayer-capable flow:
-
 ```text
 Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Menu
 ```
 
-- The solo baseline is preserved inside `GameScene`; a single joined slot still uses
-  the single-player runtime path for movement and death behavior, but the in-run HUD
-  now shares the same slot-panel renderer and weapon-slot treatment as multiplayer.
+- Solo and local co-op use the same scene flow. A single joined slot preserves the
+  solo runtime path for movement and death behavior, but the in-run HUD uses the
+  same slot-panel renderer and weapon-slot treatment as local co-op.
 - The practical current party cap is 4 unique players because there are 4 heroes and
   duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
@@ -394,22 +351,6 @@ Always use `AudioManager` — never call `pygame.mixer` directly:
 ```python
 from src.utils.audio_manager import AudioManager
 AudioManager.instance().play_sfx(AudioManager.PLAYER_HIT)
-
----
-
-## Controller Binding Notes
-
-- `InputManager` is the single source of truth for controller button bindings.
-- Runtime resolution order is:
-  - controller-specific profile
-  - global controller fallback
-  - code defaults in `settings.py`
-- Use `button_matches(..., joystick_id=...)`, `describe_binding(..., joystick_id=...)`,
-  or `get_confirm_for_joystick()` instead of hardcoding controller button indices in scenes.
-- Synthetic controller `KEYDOWN` events are still acceptable for global menus, but owned
-  multiplayer menus must still handle ownership deliberately even though synthetic events
-  now carry source metadata; preserving device identity in menu logic or polling the
-  owning joystick directly are both valid approaches.
 AudioManager.instance().play_music("assets/audio/music/main_theme.ogg")
 ```
 
@@ -428,35 +369,30 @@ from src.utils.input_manager import InputManager
 ax, ay = InputManager.instance().get_movement()
 ```
 
-Controller button/D-pad presses are automatically translated into synthetic
-`pygame.KEYDOWN` events and posted to the pygame event queue, so global menus work
-with a controller without any extra code in the UI layer. This is not sufficient
-for owned multiplayer menus on its own: synthetic events now include source
-metadata, but menu code still has to reject or route those events explicitly to
-preserve ownership semantics.
+- `InputManager` is the single source of truth for controller button bindings.
+- Binding resolution order: controller-specific profile → global fallback → `settings.py` defaults.
+- Use `button_matches(..., joystick_id=...)`, `describe_binding(..., joystick_id=...)`, or
+  `get_confirm_for_joystick()` — never hardcode controller button indices in scenes.
+- Controller button/D-pad presses generate synthetic `pygame.KEYDOWN` events so global menus
+  work with a controller without extra UI code. Synthetic events now carry source metadata
+  (`synthetic_controller_event`, `source_instance_id`), but owned multiplayer menus must still
+  explicitly reject or route those events — the metadata is available, not automatically enforced.
+- `ClassSelect` and `UpgradeMenu` protect owned flows by filtering keyboard paths and using
+  per-joystick polling / `JOYBUTTONDOWN` for the active controller.
+- Call `InputManager.instance().scan()` once after `pygame.init()`. Hot-plug via `JOYDEVICEADDED`.
 
-Current migration note: owned multiplayer menus now bypass that limitation on a
-case-by-case basis. `ClassSelect` and `UpgradeMenu` filter keyboard input to the
-active slot's bound keys and use per-joystick polling / `JOYBUTTONDOWN` for the
-active controller instead of trusting global synthetic confirm events. The current
-keyboard ownership bindings are:
+Keyboard ownership bindings:
 
 - `WASD`: `A/D` navigate, `Space` confirm, `Left Shift` back
 - `Arrows`: `Left/Right` navigate, `Enter` confirm, `Right Shift` back
-- Solo keyboard-owned menus still accept `Enter` as a compatibility confirm path
-  for the single joined slot
-- `ClassSelect` also accepts mouse hero selection / Confirm / Back clicks and `ESC`
-  as UI-level overrides in both solo and multiplayer, while keeping owned keyboard
-  and controller routing intact for normal slot input
+- Solo keyboard-owned menus also accept `Enter` as a compatibility confirm path
+- `ClassSelect` additionally accepts mouse clicks and `ESC` as UI-level overrides
 
-Call `InputManager.instance().scan()` once after `pygame.init()` to register
-already-connected devices. Hot-plug is handled automatically via `JOYDEVICEADDED`.
-
-Default button mapping (Xbox / PlayStation / Switch Pro):
+Default controller button mapping (Xbox / PlayStation / Switch Pro):
 
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
 - A / Cross (btn 0) → confirm (`K_RETURN`)
-- B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the in-game pause menu
+- B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the pause menu
 - Pause / Start (btn 7 by default) → pause toggle (`K_ESCAPE` in global menus)
 
 Tune deadzone and repeat timing in `settings.py`:
@@ -787,13 +723,10 @@ For audit/planning tasks, prefer this output order:
 
 ## What NOT to Do
 
-- Don't import standard `pygame` if a change would break the pygame-ce requirement
-- Don't hardcode colors, speeds, or sizes anywhere outside `settings.py`
-- Don't create new sprite groups — reuse the ones created in `game_scene.py`
+- Don't import standard `pygame` — the project depends on pygame-ce
 - Don't call `pygame.mixer` directly — use `AudioManager`
 - Don't load images directly — use `ResourceLoader`
 - Don't add unrequested features when fixing a bug — fix only what's broken
-- Don't use `List`, `Dict`, `Tuple` from `typing` — use lowercase built-in syntax
 - Don't restructure the scene graph or game loop unless explicitly asked — it touches everything
 - Don't add `settings.py` constants speculatively — only add a constant when code actually needs it
 - Don't silently change gameplay feel (speeds, damage, timing) while fixing unrelated bugs — those are separate PRs
@@ -828,8 +761,8 @@ Track progress here as phases are completed:
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
 - [x] Phase 11a — Hero-selection slot queue (V2 Phase 3: duplicate prevention and active-slot input routing are implemented, and ClassSelect now always emits `slots` for gameplay handoff)
 - [x] Phase 12 — Multiplayer GameScene/system integration (V2 Phase 4: GameScene accepts `slots`, spawns player collections from `PlayerSlot.index`, maintains per-player XP systems, and queues upgrades)
-- [ ] Phase 13 — World systems, HUD, revive, and camera polish (mostly implemented; still open for runtime verification, spacing/readability tuning, and any revive/HUD cleanup surfaced by live testing)
-- [ ] Phase 14 — Integration testing, cleanup, and regression hardening (partially implemented; still open because the readiness gate has not been cleared by 1P/2P/3P runtime verification)
+- [x] Phase 13 — World systems, HUD, revive, and camera polish (runtime-verified 1P–4P; 3-player HUD uses P1 top-left / P2 top-right / P3 bottom-left layout)
+- [x] Phase 14 — Integration testing, cleanup, and regression hardening (runtime-verified 1P–4P; input_config=None shim removed)
 
 ### Current Multiplayer Status Snapshot
 
@@ -842,11 +775,16 @@ Track progress here as phases are completed:
   - downed/revive support
   - controller disconnect/reclaim support
   - aggregate party game-over results
-- Still transitional:
-  - `input_config=None` compatibility branches remain in parts of the flow
-- Still unverified in runtime:
-  - broad 1P, 2P, and 3P readiness coverage
-  - multiplayer balance/scaling
-  - spawn fairness and HUD/camera readability under edge spread
+- Runtime-verified 1P–4P:
+  - full lobby join/leave and device ownership
+  - queued hero select with duplicate lockout
+  - upgrade queue ownership and menu isolation
+  - revive/downed behavior
+  - camera and HUD readability across 1–4 players
+  - controller disconnect/reclaim behavior
+  - save/progression updates after multiplayer runs
+- Remaining cleanup:
+  - multiplayer balance/scaling not yet tuned for larger parties
+  - spawn fairness under wide edge spread still to be validated during content work
 
 Update the checkboxes as phases are completed.

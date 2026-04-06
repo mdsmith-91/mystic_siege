@@ -79,7 +79,7 @@ recomputing `self.vel` in a way that the parent class then overwrites.
 ## Authoritative References
 
 - `MULTIPLAYER_IMPLEMENTATION_V2.md`: authoritative multiplayer design and phase plan
-- `MULTIPLAYER_READINESS_AUDIT.md`: codebase audit, risks, and implementation order
+- `MULTIPLAYER_READINESS_AUDIT.md`: codebase audit (partially historical — written at 0% multiplayer implementation); current risk inventory and migration guidance
 - `CLAUDE.md`: expanded project context and developer guidance
 
 ## Current Multiplayer Clarifications

@@ -32,9 +32,9 @@ Main Menu -> Lobby -> queued Class Select -> Game -> Game Over -> Lobby or Menu
 
 Single-player is the stable baseline. Solo runs now start through the same lobby-based scene flow as multiplayer, but the in-run solo gameplay path is still treated as the first regression path and is intended to preserve the legacy single-player feel.
 
-### Local multiplayer
+### Local co-op
 
-Local multiplayer is partially implemented and still in progress. The codebase now includes:
+Local co-op is implemented and runtime-verified for 1–4 players. The codebase includes:
 
 - slot-based lobby join/leave with `PlayerSlot`
 - queued hero selection with duplicate-hero lockout
@@ -45,22 +45,28 @@ Local multiplayer is partially implemented and still in progress. The codebase n
 - owned controller handling in lobby, class select, upgrade menus, and reconnect/reclaim flows
 - controller binding settings with a global default profile plus per-controller overrides
 
-Multiplayer is not yet fully verified. The current blocker is runtime readiness, not the absence of core architecture.
+Local co-op has been runtime-verified for 1P–4P. The remaining open items are balance tuning and spawn fairness under wide party spread, not core architecture.
 
 ### Verified vs unverified
+
+Verified in runtime (1P–4P):
+
+- full lobby join/leave and device ownership
+- queued hero select with duplicate lockout
+- upgrade queue ownership and menu isolation
+- revive/downed behavior
+- camera and HUD readability across 1–4 players
+- controller disconnect/reclaim behavior
+- save/progression updates after multiplayer runs
 
 Verified in repo tooling:
 
 - `python run_check.py` for import/environment integrity
 
-Not yet broadly verified in runtime:
+Not yet verified:
 
-- full 1P readiness pass through the current lobby flow
-- sustained 2P gameplay
-- sustained 3P gameplay
-- broad revive/downed edge cases
-- camera readability and spawn fairness across wide party spread
-- multiplayer balance/scaling
+- multiplayer balance/scaling (enemy density, wave pressure, and scaling for larger parties not yet tuned)
+- spawn fairness under wide edge-spread party positions at high player counts
 
 ## Current Limitations
 
@@ -68,7 +74,6 @@ Not yet broadly verified in runtime:
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
-- Some compatibility shims from the single-player migration still exist, including temporary `input_config=None` paths in parts of the flow.
 - Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
@@ -107,7 +112,7 @@ Not yet broadly verified in runtime:
 ## Enemy Architecture
 
 - `settings.py` is now the source of truth for enemy tunables as well, including shared enemy values, per-enemy config dicts, and wave/spawn balance data.
-- Enemy classes in `src/entities/enemies/` read their gameplay stats and behavior knobs from those settings-backed configs instead of redefining local stat dicts.
+- Enemy classes in `src/entities/enemies/` read their gameplay stats and behavior knobs from those settings-driven configs instead of redefining local stat dicts.
 - Shared enemy construction now goes through `src/entities/enemies/__init__.py` via `ENEMY_CLASS_REGISTRY` and `create_enemy()`.
 - `src/systems/wave_manager.py` resolves enemy ids through that shared helper and should not grow new enemy-specific constructor chains.
 - Enemy ids remain string-based (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`, `Golem`) because wave pools and settings lookups reference them directly.
@@ -202,13 +207,11 @@ Recommended manual verification for the current state:
 
 ## Safe Next Work
 
-The safest major next work is readiness verification and cleanup, not new content. In priority order:
+Runtime verification is complete for 1P–4P. The next work is content and balance. In priority order:
 
-1. Run the real 1P -> 2P -> 3P multiplayer readiness matrix.
-2. Fix the specific regressions found there.
-3. Remove remaining migration shims such as `input_config=None` once the unified path is stable.
-4. Decide multiplayer balance/scaling policy.
-5. Add a 4th hero before treating 4P as a practical gameplay target.
+1. Decide and implement multiplayer balance/scaling policy (enemy density, wave pressure for 2–4 players).
+2. Validate spawn fairness under wide party spread near map edges.
+3. Add new content (heroes, weapons, enemies) — the multiplayer foundation is now solid.
 
 ## Project Structure
 
@@ -241,9 +244,9 @@ mystic_siege/
 
 ## Known Issues
 
-- Multiplayer runtime behavior is ahead of multiplayer runtime verification.
-- Wide-spread party positions near map edges may still need spawn fairness tuning.
-- Some older ad hoc test scripts and older planning language in the repo are historical and should not be treated as proof that a path has been runtime-tested.
+- Multiplayer balance/scaling is not yet tuned for 2–4 player parties. Enemy density and wave pressure reflect the solo design.
+- Wide-spread party positions near map edges may still need spawn fairness tuning under high player counts.
+- Some older planning docs in the repo (e.g., `MULTIPLAYER_READINESS_AUDIT.md`) are partially historical and should not be treated as current implementation status.
 
 ## License
 
