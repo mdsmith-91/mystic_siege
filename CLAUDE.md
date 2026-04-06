@@ -83,7 +83,7 @@ mystic_siege/
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── class_select.py        # Hero card selection, shows stats + passive
 │   │   ├── game_over.py           # Victory/defeat screen with run stats
-│   │   ├── settings_menu.py       # Volume sliders, FPS toggle, reset, controller binding profiles
+│   │   ├── settings_menu.py       # Volume/FPS-cap sliders (mouse + controller), FPS toggle, reset, controller binding profiles
 │   │   └── stats_menu.py          # Meta-progression stats viewer
 │   └── utils/
 │       ├── timer.py               # Reusable countdown/interval timer
@@ -186,14 +186,25 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   - lobby claims devices by slot and rejects duplicate controller claims
   - class select and upgrade menus route controller input by owned joystick instance
   - pause only responds to joined keyboard schemes and claimed controllers
-  - disconnected claimed controllers are pruned or fail inertly instead of cross-controlling
+  - disconnected claimed controllers are pruned in the lobby, and in-run controller claims now recover by safe remap or explicit reclaim instead of cross-controlling
+  - while a claimed in-run controller is unresolved, gameplay stays paused until the affected slot is reclaimed
 - Controller bindings are configurable from Settings:
   - `Global Default` is the fallback mapping for unknown / untouched controllers
   - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
   - profile bindings are saved in `saves/progress.json`
+  - global menus consume synthetic controller key events generated directly from
+    `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the
+    controller binding settings so confirm/back/start work reliably in menus
+  - the main Settings screen treats its sliders as global-menu controls:
+    left/right adjusts the selected slider, and percentage/FPS display should
+    round to the intended stepped value rather than truncating floating-point drift
+  - if a menu or overlay is opened from raw `JOYBUTTONDOWN` while synthetic
+    controller key events are also enabled, discard any queued synthetic confirm /
+    back key events at that transition point so the opening button press does not
+    immediately activate the first control in the new UI
 
 - Time stops on level-up (upgrade menu open)
-- ESC pauses
+- ESC pauses, and controller `Back` unpauses from the pause menu like `ESC`
 - F3 toggles FPS counter
 - F12 saves screenshot
 
@@ -328,7 +339,8 @@ Default button mapping (Xbox / PlayStation / Switch Pro):
 
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
 - A / Cross (btn 0) → confirm (`K_RETURN`)
-- B / Circle (btn 1), Start / Options (btn 7/9) → back / pause (`K_ESCAPE`)
+- B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the in-game pause menu
+- Start / Options (btn 7/9) → pause toggle (`K_ESCAPE` in global menus)
 
 Tune deadzone and repeat timing in `settings.py`:
 `CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`
@@ -539,6 +551,20 @@ These rules apply to all multiplayer-related changes.
 5. **Be careful with camera, collision, and HUD changes.** These are likely to become more
    expensive first as multiplayer is added.
 
+6. **Prefer one-pass resolution for shared gameplay systems.** If a mechanic evaluates the same
+   shared world state for multiple players each frame (for example XP orbs, shared target queries,
+   or other pickup ownership decisions), prefer a single deterministic pass at the system or scene
+   level over repeated nested per-player scans.
+
+7. **Cache stable UI render results and prefer cheaper transforms in gameplay rendering.** Reuse
+   repeated HUD text surfaces where practical, and avoid expensive per-frame scaling/filtering in
+   the world draw path unless the visual quality difference is important enough to justify the cost.
+
+8. **Cull and reuse before rewriting the render path.** In gameplay rendering, first eliminate
+   offscreen sprite/effect work and reuse cached world/UI surfaces before considering larger camera
+   or pipeline rewrites. Full-frame zoom scaling is a known cost center, so changes there should be
+   driven by real profiling rather than speculative refactors.
+
 ---
 
 ## Temporary Debug Code
@@ -601,7 +627,7 @@ For audit/planning tasks, prefer this output order:
 - Duplicate hero picks must be blocked cleanly
 - Device claims must be unique
 - Upgrade menus must not allow input bleed from non-active players
-- Controller disconnects should fail safely, not crash
+- Controller disconnects should fail safely, not crash, and should pause gameplay until players are ready; reconnects may auto-resume only on a unique strong match, otherwise the slot must be explicitly reclaimed
 - HUD and camera changes must remain readable in 1P
 - Save/progression behavior must remain sane if a multiplayer run is introduced later
 - Pause/menu ownership should be explicit, not accidental

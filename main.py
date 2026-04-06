@@ -1,6 +1,7 @@
 import pygame
 import sys
 from src.game import Game
+from src.utils.fps_cap import detect_refresh_rate
 
 if __name__ == "__main__":
     # Pre-init mixer with explicit params before pygame.init() to avoid
@@ -25,10 +26,8 @@ if __name__ == "__main__":
     # Create pygame.time.Clock
     clock = pygame.time.Clock()
 
-    # Cap to the monitor's refresh rate; fall back to 60 if undetectable
-    refresh_rate = pygame.display.get_current_refresh_rate()
-    if refresh_rate <= 0:
-        refresh_rate = 60
+    # Detect the current runtime ceiling from the active display; fall back to 60 if undetectable
+    refresh_rate = detect_refresh_rate()
 
     # Initialize controller support — scan for already-connected devices
     from src.utils.input_manager import InputManager

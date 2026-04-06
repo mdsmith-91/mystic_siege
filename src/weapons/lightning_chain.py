@@ -31,6 +31,28 @@ class LightningChain(BaseWeapon):
         # lightning_arcs: list — each arc is {"start": Vector2, "end": Vector2, "timer": float}
         # Timer counts down from 0.12s — arcs are drawn for that long then removed.
         self.lightning_arcs = []
+        self.stunned_enemies: dict[object, float] = {}
+
+    def _build_arc_points(self, start: Vector2, end: Vector2) -> list[Vector2]:
+        """Freeze the arc geometry once so draw() avoids per-frame random work."""
+        direction_vector = end - start
+        if direction_vector.length_squared() == 0:
+            return [Vector2(start), Vector2(end)]
+
+        direction = direction_vector.normalize()
+        perpendicular = Vector2(-direction.y, direction.x)
+        segment_length = direction_vector.length()
+        points = [Vector2(start)]
+
+        num_midpoints = 3 + random.randint(0, 2)
+        for i in range(1, num_midpoints):
+            t = i / num_midpoints
+            midpoint = start + direction * (t * segment_length)
+            midpoint += perpendicular * random.randint(-15, 15)
+            points.append(midpoint)
+
+        points.append(Vector2(end))
+        return points
 
     def fire(self):
         """Strike the nearest enemy and chain to nearby foes."""
@@ -39,18 +61,19 @@ class LightningChain(BaseWeapon):
             return
 
         nearest_enemy = None
-        nearest_distance = float('inf')
+        nearest_distance_sq = float("inf")
+        max_range_sq = LIGHTNING_CHAIN_RANGE * LIGHTNING_CHAIN_RANGE
 
         for enemy in self.enemy_group:
-            distance = (enemy.pos - self.owner.pos).length()
-            if distance < nearest_distance:
-                nearest_distance = distance
+            distance_sq = (enemy.pos - self.owner.pos).length_squared()
+            if distance_sq < nearest_distance_sq:
+                nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
         if not nearest_enemy:
             return
 
-        if nearest_distance > LIGHTNING_CHAIN_RANGE:
+        if nearest_distance_sq > max_range_sq:
             return
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN)
@@ -62,15 +85,16 @@ class LightningChain(BaseWeapon):
 
         for _ in range(self.chain_count):
             closest_enemy = None
-            closest_distance = float('inf')
+            closest_distance_sq = float("inf")
+            chain_range_sq = self.chain_range * self.chain_range
 
             for enemy in self.enemy_group:
                 if enemy.sprite_id in enemies_hit:
                     continue
 
-                distance = (enemy.pos - chain[-1].pos).length()
-                if distance <= self.chain_range and distance < closest_distance:
-                    closest_distance = distance
+                distance_sq = (enemy.pos - chain[-1].pos).length_squared()
+                if distance_sq <= chain_range_sq and distance_sq < closest_distance_sq:
+                    closest_distance_sq = distance_sq
                     closest_enemy = enemy
 
             if closest_enemy:
@@ -102,12 +126,14 @@ class LightningChain(BaseWeapon):
                     enemy.max_speed = enemy.speed
                 enemy.speed = 0
                 enemy.freeze_timer = self.stun_duration
+                self.stunned_enemies[enemy] = self.stun_duration
 
         # Store arc positions for drawing — first arc runs from player to initial target
         self.lightning_arcs.append({
             "start": Vector2(self.owner.pos),
             "end": Vector2(chain[0].pos),
-            "timer": 0.12
+            "timer": 0.12,
+            "points": self._build_arc_points(Vector2(self.owner.pos), Vector2(chain[0].pos)),
         })
         for i in range(len(chain) - 1):
             start = chain[i].pos
@@ -115,7 +141,8 @@ class LightningChain(BaseWeapon):
             self.lightning_arcs.append({
                 "start": start,
                 "end": end,
-                "timer": 0.12
+                "timer": 0.12,
+                "points": self._build_arc_points(Vector2(start), Vector2(end)),
             })
 
     def update(self, dt):
@@ -131,50 +158,31 @@ class LightningChain(BaseWeapon):
             else:
                 i += 1
 
-        # Tick stun timers on all enemies and restore speed when stun expires
-        for enemy in self.enemy_group:
-            if getattr(enemy, 'freeze_timer', 0) > 0:
-                enemy.freeze_timer -= dt
-                if enemy.freeze_timer <= 0:
+        # Tick stun timers only on currently stunned enemies.
+        for enemy in list(self.stunned_enemies.keys()):
+            remaining = self.stunned_enemies[enemy] - dt
+            if remaining <= 0 or not enemy.alive():
+                if enemy.alive():
                     enemy.freeze_timer = 0
                     if hasattr(enemy, 'max_speed'):
                         enemy.speed = enemy.max_speed
+                del self.stunned_enemies[enemy]
+                continue
+
+            self.stunned_enemies[enemy] = remaining
+            enemy.freeze_timer = remaining
 
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs."""
         for arc in self.lightning_arcs:
-            start = arc["start"]
-            end = arc["end"]
-
-            # Draw jagged yellow/white lines (zigzag between start and end with 3-4 midpoints
-            # randomly offset ±15px perpendicular)
-
-            # Calculate direction and perpendicular
-            direction_vector = end - start
-            # Check if the vector is zero-length to avoid normalization error
-            if direction_vector.length() == 0:
+            points = arc["points"]
+            if len(points) < 2:
                 continue
 
-            direction = direction_vector.normalize()
-            perpendicular = Vector2(-direction.y, direction.x)
-
-            # Create points for the arc
-            points = [start]
-
-            # Add 3-4 midpoints with random offsets
-            num_midpoints = 3 + random.randint(0, 2)  # 3-5 midpoints
-            for i in range(1, num_midpoints):
-                t = i / num_midpoints
-                midpoint = start + direction * (t * (end - start).length())
-
-                # Add random offset perpendicular to the direction
-                offset = perpendicular * (random.randint(-15, 15))
-                midpoint += offset
-
-                points.append(midpoint)
-
-            points.append(end)
-
-            # Draw the arc
-            pygame.draw.lines(surface, (255, 255, 200), False,  # Yellow/white color
-                            [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points], 2)
+            pygame.draw.lines(
+                surface,
+                (255, 255, 200),
+                False,
+                [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points],
+                2,
+            )

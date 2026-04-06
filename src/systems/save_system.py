@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Dict, Any
-from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT
+from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT, FPS
 
 DEFAULT_SAVE = {
     "total_runs": 0,
@@ -14,6 +14,7 @@ DEFAULT_SAVE = {
         "music_volume": 0.5,
         "sfx_volume": 0.8,
         "show_fps": False,
+        "fps_cap": FPS,
         "controller_bindings": CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
     }
 }
@@ -47,6 +48,13 @@ class SaveSystem:
     def __init__(self):
         self.save_path = "saves/progress.json"
         self.data = self.load()
+        self._last_mtime = self._get_save_mtime()
+
+    def _get_save_mtime(self) -> float | None:
+        try:
+            return os.path.getmtime(self.save_path)
+        except FileNotFoundError:
+            return None
 
     def load(self) -> Dict[str, Any]:
         """Load save data from file or return default if not found"""
@@ -63,6 +71,17 @@ class SaveSystem:
         os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
         with open(self.save_path, 'w') as f:
             json.dump(data, f, indent=2)
+        self._last_mtime = self._get_save_mtime()
+
+    def reload_if_changed(self) -> bool:
+        """Reload shared save data when another SaveSystem instance has written it."""
+        current_mtime = self._get_save_mtime()
+        if current_mtime == self._last_mtime:
+            return False
+
+        self.data = self.load()
+        self._last_mtime = current_mtime
+        return True
 
     def update_after_run(self, run_result: Dict[str, Any]) -> None:
         """Update persistent stats based on run result and save"""

@@ -26,6 +26,29 @@ class HUD:
         self.font_32 = pygame.font.SysFont("serif", 32)
         self.font_20 = pygame.font.SysFont("serif", 20)
         self.font_48 = pygame.font.SysFont("serif", 48)
+        self._text_cache: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
+        self._panel_surface_cache: dict[tuple[int, int], pygame.Surface] = {}
+
+    def _render_text(
+        self,
+        font: pygame.font.Font,
+        text: str,
+        color: tuple[int, int, int],
+    ) -> pygame.Surface:
+        key = (id(font), text, color)
+        cached = self._text_cache.get(key)
+        if cached is None:
+            cached = font.render(text, True, color)
+            self._text_cache[key] = cached
+        return cached
+
+    def _get_panel_surface(self, size: tuple[int, int]) -> pygame.Surface:
+        cached = self._panel_surface_cache.get(size)
+        if cached is None:
+            cached = pygame.Surface(size, pygame.SRCALPHA)
+            cached.fill(UI_BG)
+            self._panel_surface_cache[size] = cached
+        return cached
 
     def _build_edge_arrow(self, view_rect: pygame.Rect, screen_pos: pygame.Vector2):
         screen_left = view_rect.left
@@ -122,7 +145,7 @@ class HUD:
             pygame.draw.polygon(screen, slot_color, poly)
             pygame.draw.polygon(screen, WHITE, poly, 2)
 
-            label = self.font_14.render(f"P{slot.index + 1}" if slot is not None else "REV", True, WHITE)
+            label = self._render_text(self.font_14, f"P{slot.index + 1}" if slot is not None else "REV", WHITE)
             label_rect = label.get_rect()
             label_rect.center = (int(tip[0]), int(tip[1]))
             if tip[0] <= HUD_SAFE_LEFT + _ARROW_TIP + 1:
@@ -152,22 +175,22 @@ class HUD:
 
     def _draw_shared_info(self, screen, wave_manager, show_fps: bool, fps: float) -> None:
         timer_text = wave_manager.get_elapsed_str()
-        timer_surface = self.font_32.render(timer_text, True, WHITE)
-        timer_shadow = self.font_32.render(timer_text, True, BLACK)
+        timer_surface = self._render_text(self.font_32, timer_text, WHITE)
+        timer_shadow = self._render_text(self.font_32, timer_text, BLACK)
         tx = SCREEN_WIDTH // 2 - timer_surface.get_width() // 2
         screen.blit(timer_shadow, (tx + 2, 12))
         screen.blit(timer_surface, (tx, 10))
 
         warning = wave_manager.get_warning()
         if warning:
-            warning_surface = self.font_48.render(warning, True, (255, 100, 0))
-            warning_shadow = self.font_48.render(warning, True, BLACK)
+            warning_surface = self._render_text(self.font_48, warning, (255, 100, 0))
+            warning_shadow = self._render_text(self.font_48, warning, BLACK)
             wx = SCREEN_WIDTH // 2 - warning_surface.get_width() // 2
             screen.blit(warning_shadow, (wx + 3, 203))
             screen.blit(warning_surface, (wx, 200))
 
         if show_fps:
-            fps_text = self.font_16.render(f"FPS {fps:.0f}", True, WHITE)
+            fps_text = self._render_text(self.font_16, f"FPS {fps:.0f}", WHITE)
             fps_rect = fps_text.get_rect(midtop=(SCREEN_WIDTH // 2, 50))
             screen.blit(fps_text, fps_rect)
 
@@ -193,7 +216,7 @@ class HUD:
             weapon = player.weapons[i]
             letter = weapon.name[0] if weapon.name else "?"
             letter_font = self.font_16 if slot_size >= 36 else self.font_14
-            text = letter_font.render(letter, True, WHITE)
+            text = self._render_text(letter_font, letter, WHITE)
             screen.blit(text, text.get_rect(center=slot_rect.center))
 
             pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
@@ -241,7 +264,7 @@ class HUD:
         self._draw_bar(screen, hp_bar_rect, hp_ratio, fill_color)
 
         hp_display = max(0, int(player.hp))
-        text = self.font_16.render(f"HP  {hp_display} / {int(player.max_hp)}", True, WHITE)
+        text = self._render_text(self.font_16, f"HP  {hp_display} / {int(player.max_hp)}", WHITE)
         screen.blit(text, (230, 20))
 
         stat_lines = []
@@ -269,7 +292,7 @@ class HUD:
 
         stat_y = 48
         for label, color in stat_lines:
-            surf = self.font_14.render(label, True, color)
+            surf = self._render_text(self.font_14, label, color)
             screen.blit(surf, (20, stat_y))
             stat_y += 16
 
@@ -277,13 +300,13 @@ class HUD:
         xp_progress = xp_system.xp_progress()
         self._draw_bar(screen, xp_bar_rect, xp_progress, XP_COLOR)
 
-        lvl_text = self.font_16.render(f"LVL {xp_system.current_level}", True, WHITE)
+        lvl_text = self._render_text(self.font_16, f"LVL {xp_system.current_level}", WHITE)
         lvl_rect = lvl_text.get_rect(midleft=(10, xp_bar_rect.centery))
         screen.blit(lvl_text, lvl_rect)
 
-        kill_text = self.font_16.render(f"KILLS  {player.kill_count}", True, WHITE)
+        kill_text = self._render_text(self.font_16, f"KILLS  {player.kill_count}", WHITE)
         screen.blit(kill_text, (SCREEN_WIDTH - kill_text.get_width() - 10, 20))
-        class_text = self.font_14.render(player.hero_class.upper(), True, (180, 160, 120))
+        class_text = self._render_text(self.font_14, player.hero_class.upper(), (180, 160, 120))
         screen.blit(class_text, (SCREEN_WIDTH - class_text.get_width() - 10, 40))
 
         weapon_slot_width = max(40, HUD_PANEL_WEAPON_SLOT_WIDTH)
@@ -295,8 +318,7 @@ class HUD:
         self._draw_shared_info(screen, wave_manager, show_fps, fps)
 
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera) -> None:
-        panel_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
-        panel_surface.fill(UI_BG)
+        panel_surface = self._get_panel_surface(rect.size)
         screen.blit(panel_surface, rect.topleft)
         pygame.draw.rect(screen, slot.color, rect, 2, border_radius=6)
 
@@ -304,8 +326,8 @@ class HUD:
         inner_y = rect.y + HUD_PANEL_PADDING
         inner_width = rect.width - HUD_PANEL_PADDING * 2
 
-        title = self.font_16.render(f"P{slot.index + 1}  {player.hero_class.upper()}", True, WHITE)
-        kills = self.font_14.render(f"KILLS {player.kill_count}", True, GOLD)
+        title = self._render_text(self.font_16, f"P{slot.index + 1}  {player.hero_class.upper()}", WHITE)
+        kills = self._render_text(self.font_14, f"KILLS {player.kill_count}", GOLD)
         screen.blit(title, (inner_x + 20, inner_y))
         screen.blit(kills, (rect.right - HUD_PANEL_PADDING - kills.get_width(), inner_y + 2))
         pygame.draw.circle(screen, slot.color, (inner_x + 8, inner_y + 10), 6)
@@ -323,11 +345,11 @@ class HUD:
             hp_color = HP_LOW_COLOR
         self._draw_bar(screen, hp_rect, hp_ratio, hp_color)
         hp_label = "DOWNED" if player.is_downed else f"HP  {max(0, int(player.hp))} / {int(player.max_hp)}"
-        screen.blit(self.font_14.render(hp_label, True, WHITE), (inner_x, hp_rect.bottom + 1))
+        screen.blit(self._render_text(self.font_14, hp_label, WHITE), (inner_x, hp_rect.bottom + 1))
 
         xp_rect = pygame.Rect(inner_x, hp_rect.bottom + 18, inner_width, HUD_PANEL_BAR_HEIGHT)
         self._draw_bar(screen, xp_rect, xp_system.xp_progress(), XP_COLOR)
-        lvl_text = self.font_14.render(f"LVL {xp_system.current_level}", True, WHITE)
+        lvl_text = self._render_text(self.font_14, f"LVL {xp_system.current_level}", WHITE)
         status_y = xp_rect.bottom + 1
         screen.blit(lvl_text, (inner_x, status_y))
 
@@ -335,7 +357,11 @@ class HUD:
             progress = 0
             if REVIVE_DURATION > 0:
                 progress = int((player.revive_timer / REVIVE_DURATION) * 100)
-            revive_text = self.font_14.render(f"REVIVE {max(0, min(100, progress))}%", True, slot.color)
+            revive_text = self._render_text(
+                self.font_14,
+                f"REVIVE {max(0, min(100, progress))}%",
+                slot.color,
+            )
             screen.blit(revive_text, (rect.right - HUD_PANEL_PADDING - revive_text.get_width(), xp_rect.bottom + 2))
 
         slot_size = HUD_PANEL_WEAPON_SLOT_SIZE

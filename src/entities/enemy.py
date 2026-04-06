@@ -65,10 +65,16 @@ class Enemy(BaseEntity):
         self._target = value
 
     def _pick_target(self):
-        alive_players = [player for player in self.player_list if player.is_alive]
-        if not alive_players:
-            return None
-        return min(alive_players, key=lambda player: (player.pos - self.pos).length_squared())
+        best_player = None
+        best_dist_sq = 0.0
+        for player in self.player_list:
+            if not player.is_alive:
+                continue
+            dist_sq = (player.pos - self.pos).length_squared()
+            if best_player is None or dist_sq < best_dist_sq:
+                best_player = player
+                best_dist_sq = dist_sq
+        return best_player
 
     def _refresh_target(self) -> None:
         """Refresh the cached target on demand instead of on every access."""
@@ -93,19 +99,24 @@ class Enemy(BaseEntity):
             self.vel = Vector2(0, 0)
         elif self.behavior == "chase":
             direction = target.pos - self.pos
-            if direction.length() > 0:
-                direction = direction.normalize()
-                self.vel = direction * self.speed
+            distance_sq = direction.length_squared()
+            if distance_sq > 0:
+                self.vel = direction * (self.speed / (distance_sq ** 0.5))
+            else:
+                self.vel = Vector2(0, 0)
         elif self.behavior == "ranged":
             direction = target.pos - self.pos
-            distance = direction.length()
-            if distance > 0:
-                direction = direction.normalize()
+            distance_sq = direction.length_squared()
+            if distance_sq > 0:
+                distance = distance_sq ** 0.5
+                direction *= 1.0 / distance
                 # Stop at 200px from target
                 if distance > 200:
                     self.vel = direction * self.speed
                 else:
                     self.vel = Vector2(0, 0)
+            else:
+                self.vel = Vector2(0, 0)
 
         # Update position
         super().update(dt)

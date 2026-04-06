@@ -55,15 +55,18 @@ class HolyNova(BaseWeapon):
 
             # Expand the ring
             ring["radius"] += self.expand_speed * dt
+            inner_radius = max(0, ring["radius"] - self.ring_width)
+            outer_radius = ring["radius"] + self.ring_width
+            inner_radius_sq = inner_radius * inner_radius
+            outer_radius_sq = outer_radius * outer_radius
 
             # Check circle-vs-rect overlap against each enemy
             for enemy in self.enemy_group:
                 # Calculate distance from ring center to enemy center
-                distance = (enemy.pos - self.owner.pos).length()
+                distance_sq = (enemy.pos - self.owner.pos).length_squared()
 
                 # Check if enemy is within the ring
-                if (distance >= ring["radius"] - self.ring_width and
-                    distance <= ring["radius"] + self.ring_width):
+                if inner_radius_sq <= distance_sq <= outer_radius_sq:
 
                     # Check if this enemy has already been damaged by this ring
                     if enemy.sprite_id not in ring["enemies_hit"]:
