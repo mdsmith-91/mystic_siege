@@ -440,6 +440,10 @@ class GameScene:
                 return player
         return unresolved_players[0]
 
+    def _disconnect_pause_active(self) -> bool:
+        """Return True while any claimed controller is disconnected mid-run."""
+        return bool(self._unresolved_controller_players())
+
     def _bind_controller_slot(self, slot: PlayerSlot, joystick_id: int) -> None:
         slot.input_config = InputManager.instance().build_controller_input_config(joystick_id)
 
@@ -633,6 +637,11 @@ class GameScene:
         # When in-game settings overlay is open, delegate update to the settings menu
         if self._settings_open:
             self._settings_menu.update(dt)
+            return
+
+        if self._disconnect_pause_active():
+            if self.paused:
+                self._update_pause_controller_navigation(dt)
             return
 
         # If paused or upgrade_menu is open (and not yet dismissed): return
