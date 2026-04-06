@@ -126,11 +126,11 @@ class UpgradeMenu:
             if joystick_id is None:
                 return (
                     "Controller disconnected"
-                    f"  -  reconnect and press {InputManager.instance().describe_binding('confirm')} or {InputManager.instance().describe_binding('start')} to reclaim"
+                    f"  -  reconnect and press {InputManager.instance().describe_help_binding('confirm')} or {InputManager.instance().describe_help_binding('start')} to reclaim"
                 )
             return (
                 f"Controller {joystick_id + 1}: stick or D-pad to choose"
-                f"  -  {InputManager.instance().describe_binding('confirm', joystick_id=joystick_id)} confirms"
+                f"  -  {InputManager.instance().describe_help_binding('confirm')} confirms"
             )
         return "Choose and confirm with the owning input device"
 

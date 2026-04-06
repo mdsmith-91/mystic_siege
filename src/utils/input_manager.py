@@ -5,6 +5,7 @@ from settings import (
     CONTROLLER_AXIS_REPEAT_RATE,
     CONTROLLER_BINDINGS_DEFAULT,
     CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
+    CONTROLLER_HELP_LABELS,
 )
 from src.systems.save_system import SaveSystem
 
@@ -62,6 +63,10 @@ class InputManager:
                 return f"Btn {binding[0]}"
             return ", ".join(f"Btn {button}" for button in binding)
         return f"Btn {binding}"
+
+    def describe_help_binding(self, action: str) -> str:
+        """Semantic label for on-screen help text."""
+        return CONTROLLER_HELP_LABELS.get(action, action.title())
 
     def set_binding(
         self,

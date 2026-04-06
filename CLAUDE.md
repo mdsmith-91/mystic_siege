@@ -206,6 +206,8 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 - Controller bindings are configurable from Settings:
   - `Global Default` is the fallback mapping for unknown / untouched controllers
   - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
+  - player-facing on-screen help should use semantic action names (`Confirm`,
+    `Back`, `Start`) rather than raw button numbers such as `Btn 7`
   - profile bindings are saved in `saves/progress.json`
   - global menus consume synthetic controller key events generated directly from
     `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the

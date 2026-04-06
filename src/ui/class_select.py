@@ -201,12 +201,12 @@ class ClassSelect:
             if joystick_id is None:
                 return (
                     f"Player {self.current_slot.index + 1}: controller disconnected"
-                    f"  -  reconnect and press {input_manager.describe_binding('confirm')} or {input_manager.describe_binding('start')} to reclaim"
+                    f"  -  reconnect and press {input_manager.describe_help_binding('confirm')} or {input_manager.describe_help_binding('start')} to reclaim"
                 )
             return (
                 f"Controller {joystick_id + 1}: stick, D-pad, or click to choose"
-                f"  -  {input_manager.describe_binding('confirm', joystick_id=joystick_id)} or click confirms"
-                f"  -  {input_manager.describe_binding('back', joystick_id=joystick_id)}, ESC, or Back click backs"
+                f"  -  {input_manager.describe_help_binding('confirm')} or click confirms"
+                f"  -  {input_manager.describe_help_binding('back')}, ESC, or Back click backs"
             )
         return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
 

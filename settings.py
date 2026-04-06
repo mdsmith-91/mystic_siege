@@ -159,6 +159,11 @@ CONTROLLER_BINDING_LABELS = {
     "back": "Back",
     "start": "Pause / Start",
 }
+CONTROLLER_HELP_LABELS = {
+    "confirm": "Confirm",
+    "back": "Back",
+    "start": "Start",
+}
 
 # KEYBOARD INPUT SCHEMES
 KEYBOARD_WASD_BINDINGS = {
