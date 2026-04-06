@@ -350,6 +350,15 @@ class GameScene:
         )
         return make(0), make(1), make(2), make(3)
 
+    @staticmethod
+    def _discard_pending_synthetic_controller_keys() -> None:
+        """Prevent controller confirm bleed when opening the pause settings overlay."""
+        pending_key_events = pygame.event.get((pygame.KEYDOWN, pygame.KEYUP))
+        for event in pending_key_events:
+            if getattr(event, "synthetic_controller_event", False):
+                continue
+            pygame.event.post(event)
+
     def _activate_pause_button(self, index: int):
         """Fire the action for the pause menu button at the given index."""
         if index == 0:
@@ -358,6 +367,7 @@ class GameScene:
             from src.ui.settings_menu import SettingsMenu
             self._settings_menu = SettingsMenu()
             self._settings_open = True
+            self._discard_pending_synthetic_controller_keys()
         elif index == 2:
             self.next_scene = STATE_LOBBY
         elif index == 3:

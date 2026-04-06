@@ -195,6 +195,10 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   - global menus consume synthetic controller key events generated directly from
     `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the
     controller binding settings so confirm/back/start work reliably in menus
+  - if a menu or overlay is opened from raw `JOYBUTTONDOWN` while synthetic
+    controller key events are also enabled, discard any queued synthetic confirm /
+    back key events at that transition point so the opening button press does not
+    immediately activate the first control in the new UI
 
 - Time stops on level-up (upgrade menu open)
 - ESC pauses
