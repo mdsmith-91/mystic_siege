@@ -305,6 +305,10 @@ def _draw_player_panel(screen, player, xp_system, rect: pygame.Rect, slot: Playe
 
 The panel rect is computed from slot index and total active player count.
 This is the only place that knows about screen positions.
+Current HUD note: the multiplayer weapon-level tracker now uses the slot border
+instead of a pip row. Occupied slots show 4 border segments that start empty at
+level 1, then fill clockwise from the top as levels 2–5 are earned. Unearned
+segments use the same gray as empty weapon slots.
 
 ### 4.8 Downed / Revive / Game Over Rules
 

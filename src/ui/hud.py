@@ -5,6 +5,8 @@ from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_MED_COLOR, HP_LOW_COLOR, XP_COLOR,
     MAX_WEAPON_SLOTS, WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
     WEAPON_SLOT_PIP_Y_OFFSET, HUD_EMPTY_SLOT_BG_COLOR, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
+    WEAPON_SLOT_LEVEL_BORDER_SEGMENTS, WEAPON_SLOT_LEVEL_BORDER_WIDTH, WEAPON_SLOT_LEVEL_BORDER_GAP,
+    WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR, WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR,
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
@@ -229,6 +231,7 @@ class HUD:
         left: int,
         top: int,
         slot_size: int,
+        show_upgrade_pips: bool = True,
     ) -> None:
         slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
         for i in range(MAX_WEAPON_SLOTS):
@@ -237,10 +240,9 @@ class HUD:
             pygame.draw.rect(screen, HUD_EMPTY_SLOT_BG_COLOR, slot_rect, border_radius=4)
 
             if i >= len(player.weapons):
-                pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1, border_radius=4)
+                pygame.draw.rect(screen, WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR, slot_rect, 1, border_radius=4)
                 continue
 
-            pygame.draw.rect(screen, (255, 215, 0), slot_rect, 2, border_radius=4)
             weapon = player.weapons[i]
             icon = self._get_weapon_icon(weapon, slot_size)
             if icon is not None:
@@ -251,16 +253,69 @@ class HUD:
                 text = self._render_text(letter_font, letter, WHITE)
                 screen.blit(text, text.get_rect(center=slot_rect.center))
 
-            pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
-            pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_rect.width // 6))
-            pip_y_offset = max(4, min(WEAPON_SLOT_PIP_Y_OFFSET, slot_size // 5))
-            total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * pip_spacing
-            pip_start_x = slot_rect.centerx - total_pip_width // 2
-            pip_y = slot_rect.bottom - pip_y_offset - pip_radius
-            for p in range(WEAPON_SLOT_PIP_COUNT):
-                pip_x = pip_start_x + p * pip_spacing
-                color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon.level else WEAPON_SLOT_PIP_EMPTY_COLOR
-                pygame.draw.circle(screen, color, (pip_x, pip_y), pip_radius)
+            if show_upgrade_pips:
+                pygame.draw.rect(screen, WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR, slot_rect, 2, border_radius=4)
+                pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
+                pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_rect.width // 6))
+                pip_y_offset = max(4, min(WEAPON_SLOT_PIP_Y_OFFSET, slot_size // 5))
+                total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * pip_spacing
+                pip_start_x = slot_rect.centerx - total_pip_width // 2
+                pip_y = slot_rect.bottom - pip_y_offset - pip_radius
+                for p in range(WEAPON_SLOT_PIP_COUNT):
+                    pip_x = pip_start_x + p * pip_spacing
+                    color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon.level else WEAPON_SLOT_PIP_EMPTY_COLOR
+                    pygame.draw.circle(screen, color, (pip_x, pip_y), pip_radius)
+                continue
+
+            self._draw_weapon_level_border(screen, slot_rect, weapon.level)
+
+    def _draw_weapon_level_border(
+        self,
+        screen,
+        slot_rect: pygame.Rect,
+        weapon_level: int,
+    ) -> None:
+        border_width = WEAPON_SLOT_LEVEL_BORDER_WIDTH
+        segment_gap = WEAPON_SLOT_LEVEL_BORDER_GAP
+        filled_segments = max(
+            0,
+            min(WEAPON_SLOT_LEVEL_BORDER_SEGMENTS, weapon_level - 1),
+        )
+
+        segment_rects = (
+            pygame.Rect(
+                slot_rect.left + segment_gap,
+                slot_rect.top,
+                max(1, slot_rect.width - (segment_gap * 2)),
+                border_width,
+            ),
+            pygame.Rect(
+                slot_rect.right - border_width,
+                slot_rect.top + segment_gap,
+                border_width,
+                max(1, slot_rect.height - (segment_gap * 2)),
+            ),
+            pygame.Rect(
+                slot_rect.left + segment_gap,
+                slot_rect.bottom - border_width,
+                max(1, slot_rect.width - (segment_gap * 2)),
+                border_width,
+            ),
+            pygame.Rect(
+                slot_rect.left,
+                slot_rect.top + segment_gap,
+                border_width,
+                max(1, slot_rect.height - (segment_gap * 2)),
+            ),
+        )
+
+        for index, segment_rect in enumerate(segment_rects):
+            color = (
+                WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR
+                if index < filled_segments
+                else WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR
+            )
+            pygame.draw.rect(screen, color, segment_rect, border_radius=border_width)
 
     def _draw_revive_indicator(self, screen, player, slot_color, camera) -> None:
         if not player.is_downed:
@@ -381,7 +436,7 @@ class HUD:
         total_weapon_width = (MAX_WEAPON_SLOTS * weapon_slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
         weapon_slots_x = SCREEN_WIDTH - total_weapon_width - 5
         weapon_slots_y = SCREEN_HEIGHT - 65
-        self._draw_weapon_slots(screen, player, weapon_slots_x, weapon_slots_y, 40)
+        self._draw_weapon_slots(screen, player, weapon_slots_x, weapon_slots_y, 40, show_upgrade_pips=True)
 
         self._draw_shared_info(screen, wave_manager, show_fps, fps)
 
@@ -437,7 +492,7 @@ class HUD:
         total_slots_width = (MAX_WEAPON_SLOTS * slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
         weapon_left = rect.centerx - total_slots_width // 2
         weapon_top = status_y + self.font_14.get_height() + 4
-        self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)
+        self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size, show_upgrade_pips=False)
         self._draw_revive_indicator(screen, player, slot.color, camera)
         if show_stat_bonuses:
             self._draw_panel_stat_lines(screen, player, rect)

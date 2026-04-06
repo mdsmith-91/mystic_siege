@@ -13,6 +13,10 @@
 > guidance plus a risk inventory, not as a statement of today's implementation
 > percentage. For current status and remaining unverified behavior, defer to
 > `README.md`, `CLAUDE.md`, and `MULTIPLAYER_READINESS_GATE_REVIEW.md`.
+> HUD presentation note (2026-04-06): multiplayer weapon panels now use a
+> 4-segment border tracker around occupied weapon slots instead of the older pip
+> row concept. Treat any pip-row discussion below as historical unless it is
+> explicitly about the preserved single-player HUD path.
 
 ---
 

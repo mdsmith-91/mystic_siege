@@ -200,6 +200,10 @@ Current weapon architecture rules:
   The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
   bar background reuses that same constant so 1P and multiplayer HUD panels keep a
   consistent baseline treatment without duplicating color literals in `src/ui/hud.py`.
+- Weapon level HUD treatment is now intentionally split by mode: 1P keeps the
+  familiar pip row, while multiplayer weapon panels use a settings-driven 4-segment
+  border tracker that fills clockwise from the top as levels 2–5 are earned; any
+  unearned segments use the same gray baseline as empty weapon slots.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -511,7 +515,9 @@ the coding rules above.
    feature, add them to `settings.py` first, then reference them. Never hardcode
    "temporary" values directly in game code.
    This includes HUD presentation values such as shared weapon-slot / bar background
-   colors when the UI is intentionally reusing the same visual treatment.
+   colors when the UI is intentionally reusing the same visual treatment, and
+   multiplayer weapon-level border segment settings when the HUD chrome is used as
+   the upgrade tracker.
 
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.
