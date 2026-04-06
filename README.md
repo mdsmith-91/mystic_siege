@@ -91,7 +91,9 @@ Not yet broadly verified in runtime:
 
 - `settings.py` is the source of truth for weapon tunables, including base stats, relevant visual tunables, and per-level upgrade deltas.
 - Weapon classes in `src/weapons/` reference those constants instead of hardcoding gameplay values locally.
-- Shared weapon construction now goes through `src/weapons/factory.py`, which is used by both `GameScene` and `UpgradeSystem`.
+- Shared weapon construction now goes through `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` and `create_weapon()`, which are used by both `GameScene` and `UpgradeSystem`.
+- `src/weapons/__init__.py` re-exports the registry and constructor helper as the package-level weapon API.
+- `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
 
 ## Getting Started
@@ -202,6 +204,7 @@ mystic_siege/
 │   ├── core/player_slot.py
 │   ├── entities/
 │   ├── weapons/
+│   │   ├── __init__.py
 │   │   ├── factory.py
 │   ├── systems/
 │   ├── ui/

@@ -65,6 +65,7 @@ mystic_siege/
 │   │       ├── lich_familiar.py   # hp=35, orbits player, fires slow orbs; uses lich.png 4-dir sheet
 │   │       └── stone_golem.py     # hp=500, mini-boss, very slow; uses golem.png 4-dir sheet
 │   ├── weapons/
+│   │   ├── __init__.py           # Re-exports weapon registry + create_weapon helper
 │   │   ├── base_weapon.py         # BaseWeapon — cooldown, upgrade(), fire() interface
 │   │   ├── factory.py             # Shared weapon registry + constructor helper used by gameplay systems
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
@@ -181,11 +182,17 @@ limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
 Current weapon architecture rules:
 
 - All weapon tunables live in clearly grouped `settings.py` sections first.
-- Weapon classes should read class attributes and upgrade tables from `settings.py`,
-  following the current Longbow-style pattern.
-- Use the shared constructor helper in `src/weapons/factory.py` when gameplay code
-  needs to create a weapon by string id. Do not add new `if/elif` weapon factory chains
-  in `GameScene`, `UpgradeSystem`, or other callers.
+- Weapon classes should read class attributes and upgrade tables from `settings.py`
+  instead of hardcoding gameplay values in the class body.
+- Weapon creation by string id is centralized in `src/weapons/factory.py` through
+  `WEAPON_CLASS_REGISTRY` and `create_weapon()`. `GameScene` starting weapons and
+  `UpgradeSystem` new-weapon rewards both go through that path.
+- `src/weapons/__init__.py` re-exports `WEAPON_CLASS_REGISTRY` and `create_weapon`
+  so callers can import the package-level API if needed.
+- Upgrade-card presentation metadata is kept in `src/systems/upgrade_system.py`
+  via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
+- Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
+  or other callers.
 - Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`,
   `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
   reference them by string.
@@ -444,9 +451,10 @@ python src/utils/placeholder_assets.py
 2. Add all weapon tunables and upgrade deltas to a dedicated section in `settings.py`
 3. Follow the existing settings-driven weapon pattern: class attributes and
    `upgrade_levels` should be sourced from `settings.py`, not hardcoded in the weapon class
-4. Register the weapon id and class in `src/weapons/factory.py`
-5. Add class name string to `WEAPON_CLASSES` and metadata to `WEAPON_META` in `upgrade_system.py`
-6. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
+4. Register the weapon id and class in `src/weapons/factory.py` (`WEAPON_CLASS_REGISTRY`)
+5. Export it from `src/weapons/__init__.py` if package-level imports should expose it
+6. Add the weapon id to `WEAPON_CLASSES` and add card metadata to `WEAPON_META` in `upgrade_system.py`
+7. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
    from offering unusable `new_weapon` cards to players with full inventories
 
 **Add a new hero class:**
@@ -735,7 +743,7 @@ Track progress here as phases are completed:
 
 - [x] Phase 1 — Project scaffold (settings, main, utils)
 - [x] Phase 2 — Core entities (player, enemy, projectile, xp orb)
-- [x] Phase 3 — Weapons (all 6)
+- [x] Phase 3 — Weapons (all 7)
 - [x] Phase 4 — Systems (waves, xp, upgrades, camera, collision)
 - [x] Phase 5 — UI (hud, menus, upgrade cards)
 - [x] Phase 6 — Integration (game scene, scene wiring, run_check)

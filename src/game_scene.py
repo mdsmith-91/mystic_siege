@@ -124,6 +124,7 @@ class GameScene:
         # 13. show_fps — read from saved settings so the settings menu toggle takes effect
         self.save_system = SaveSystem()
         self.show_fps = self.save_system.get_setting("show_fps")
+        self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
         self._smooth_dt = 1 / 60  # exponential moving average of dt for stable FPS display
 
         # 14. background — use Gemini-generated image if available, else procedural tiles
@@ -616,6 +617,7 @@ class GameScene:
                 # Back/ESC in settings returns to pause screen
                 self._settings_open = False
                 self.show_fps = self._settings_menu.show_fps
+                self.show_stat_bonuses = self._settings_menu.show_stat_bonuses
                 self._settings_menu.next_scene = None
             return
 
@@ -782,6 +784,7 @@ class GameScene:
             self.players,
             self.xp_systems,
             self.wave_manager,
+            self.show_stat_bonuses,
             self.show_fps,
             fps,
             self.camera,

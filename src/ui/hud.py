@@ -282,23 +282,7 @@ class HUD:
                 HUD_REVIVE_RING_WIDTH,
             )
 
-    def _draw_single_player(self, screen, player, xp_system, wave_manager, show_fps=False, fps=0):
-        """Preserve the familiar 1P HUD layout."""
-
-        hp_bar_rect = pygame.Rect(20, 20, 200, 20)
-        hp_ratio = max(0.0, player.hp / player.max_hp)
-        if hp_ratio > 0.5:
-            fill_color = HP_COLOR
-        elif hp_ratio > 0.25:
-            fill_color = HP_MED_COLOR
-        else:
-            fill_color = HP_LOW_COLOR
-        self._draw_bar(screen, hp_bar_rect, hp_ratio, fill_color)
-
-        hp_display = max(0, int(player.hp))
-        text = self._render_text(self.font_16, f"HP  {hp_display} / {int(player.max_hp)}", WHITE)
-        screen.blit(text, (230, 20))
-
+    def _stat_lines(self, player) -> list[tuple[str, tuple[int, int, int]]]:
         stat_lines = []
         if player.speed > player.base_speed:
             spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
@@ -321,12 +305,64 @@ class HUD:
             stat_lines.append((f"XP  +{xp_pct}%", (200, 255, 200)))
         if player.pickup_radius > PICKUP_RADIUS:
             stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
+        return stat_lines
 
-        stat_y = 48
+    def _draw_stat_lines(
+        self,
+        screen,
+        stat_lines: list[tuple[str, tuple[int, int, int]]],
+        start_x: int,
+        start_y: int,
+        align_right: bool = False,
+    ) -> None:
+        stat_y = start_y
         for label, color in stat_lines:
             surf = self._render_text(self.font_14, label, color)
-            screen.blit(surf, (20, stat_y))
+            if align_right:
+                screen.blit(surf, (start_x - surf.get_width(), stat_y))
+            else:
+                screen.blit(surf, (start_x, stat_y))
             stat_y += 16
+
+    def _draw_panel_stat_lines(
+        self,
+        screen,
+        player,
+        rect: pygame.Rect,
+    ) -> None:
+        stat_lines = self._stat_lines(player)
+        if not stat_lines:
+            return
+
+        align_right = rect.centerx >= SCREEN_WIDTH // 2
+        if rect.centery < SCREEN_HEIGHT // 2:
+            start_y = rect.bottom + 6
+        else:
+            total_height = len(stat_lines) * 16
+            start_y = rect.top - total_height - 6
+
+        start_x = rect.right if align_right else rect.left
+        self._draw_stat_lines(screen, stat_lines, start_x, start_y, align_right)
+
+    def _draw_single_player(self, screen, player, xp_system, wave_manager, show_stat_bonuses=False, show_fps=False, fps=0):
+        """Preserve the familiar 1P HUD layout."""
+
+        hp_bar_rect = pygame.Rect(20, 20, 200, 20)
+        hp_ratio = max(0.0, player.hp / player.max_hp)
+        if hp_ratio > 0.5:
+            fill_color = HP_COLOR
+        elif hp_ratio > 0.25:
+            fill_color = HP_MED_COLOR
+        else:
+            fill_color = HP_LOW_COLOR
+        self._draw_bar(screen, hp_bar_rect, hp_ratio, fill_color)
+
+        hp_display = max(0, int(player.hp))
+        text = self._render_text(self.font_16, f"HP  {hp_display} / {int(player.max_hp)}", WHITE)
+        screen.blit(text, (230, 20))
+
+        if show_stat_bonuses:
+            self._draw_stat_lines(screen, self._stat_lines(player), 20, 48)
 
         xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 20, SCREEN_WIDTH, 20)
         xp_progress = xp_system.xp_progress()
@@ -349,7 +385,7 @@ class HUD:
 
         self._draw_shared_info(screen, wave_manager, show_fps, fps)
 
-    def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera) -> None:
+    def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera, show_stat_bonuses: bool) -> None:
         panel_surface = self._get_panel_surface(rect.size)
         screen.blit(panel_surface, rect.topleft)
         pygame.draw.rect(screen, slot.color, rect, 2, border_radius=6)
@@ -403,14 +439,16 @@ class HUD:
         weapon_top = status_y + self.font_14.get_height() + 4
         self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)
         self._draw_revive_indicator(screen, player, slot.color, camera)
+        if show_stat_bonuses:
+            self._draw_panel_stat_lines(screen, player, rect)
 
-    def draw(self, screen, players, xp_systems, wave_manager, show_fps=False, fps=0, camera=None):
+    def draw(self, screen, players, xp_systems, wave_manager, show_stat_bonuses=False, show_fps=False, fps=0, camera=None):
         """Draw all in-game overlay UI in screen space (no camera offset)."""
         if not players or not xp_systems:
             return
 
         if len(players) == 1:
-            self._draw_single_player(screen, players[0], xp_systems[0], wave_manager, show_fps, fps)
+            self._draw_single_player(screen, players[0], xp_systems[0], wave_manager, show_stat_bonuses, show_fps, fps)
             return
 
         layout = HUD_PANEL_TUPLES[len(players)]
@@ -419,6 +457,6 @@ class HUD:
             if slot is None:
                 continue
             rect = pygame.Rect(layout[slot.index])
-            self._draw_player_panel(screen, player, xp_system, rect, slot, camera)
+            self._draw_player_panel(screen, player, xp_system, rect, slot, camera, show_stat_bonuses)
 
         self._draw_shared_info(screen, wave_manager, show_fps, fps)
