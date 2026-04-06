@@ -10,8 +10,8 @@ from settings import (
     LONGBOW_PROJECTILE_LIFETIME,
     LONGBOW_PROJECTILE_SIZE,
     LONGBOW_PROJECTILE_SPEED,
-    LONGBOW_RANGE,
     LONGBOW_SPREAD,
+    LONGBOW_TARGETING_RANGE,
     LONGBOW_UPGRADE_LEVELS,
 )
 from src.entities.projectile import Projectile
@@ -57,7 +57,7 @@ class Longbow(BaseWeapon):
 
         nearest_enemy = None
         nearest_distance_sq = float("inf")
-        max_range_sq = LONGBOW_RANGE * LONGBOW_RANGE
+        max_range_sq = LONGBOW_TARGETING_RANGE * LONGBOW_TARGETING_RANGE
 
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()

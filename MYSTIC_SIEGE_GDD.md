@@ -21,8 +21,8 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 
 ### Phase 1 — Playable Core (MVP)
 - 1 map (castle courtyard)
-- 3 hero classes
-- 6 weapons/spells
+- 4 hero classes in the current shipped roster
+- 7 weapons/spells in the current shipped roster
 - 7 enemy types in the current shipped roster
 - Basic upgrade system (level-up choices)
 - Simple audio (placeholder/CC0)
@@ -111,12 +111,14 @@ mystic_siege/
 │   ├── weapons/
 │   │   ├── __init__.py
 │   │   ├── base_weapon.py
+│   │   ├── factory.py
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
-│   │   ├── flame_whip.py
+│   │   ├── flame_blast.py
 │   │   ├── spectral_blade.py
 │   │   ├── frost_ring.py
-│   │   └── lightning_chain.py
+│   │   ├── lightning_chain.py
+│   │   └── longbow.py
 │   │
 │   ├── systems/
 │   │   ├── __init__.py
@@ -172,6 +174,18 @@ mystic_siege/
 - **Starting Weapon:** Holy Nova (area pulse)
 - **Playstyle:** Sustain — snowballs with orb pickups
 
+### Ranger
+- **HP:** 95 | **Speed:** Medium-High | **Armor:** Low
+- **Passive:** Crit chance +10%, arrows pierce +1 enemy
+- **Starting Weapon:** Longbow (precise ranged arrows)
+- **Playstyle:** Kiter — reliable ranged pressure with scaling projectile utility
+
+Current implementation note:
+
+- hero definitions remain plain dicts in `settings.py`
+- hero passive gameplay modifiers are now configured declaratively per hero via a `passives` mapping
+- runtime systems read those passive values instead of depending on hero-name branches where a config lookup is sufficient
+
 ---
 
 ## 6. WEAPONS / SPELLS
@@ -180,12 +194,23 @@ mystic_siege/
 |---|---|---|
 | Arcane Bolt | Projectile | Auto-fires homing bolts at nearest enemy |
 | Holy Nova | Area Pulse | Expands ring of light around player, damages all in range |
-| Flame Whip | Cone | Sweeping fire arc in front of movement direction |
+| Flame Blast | Cone | Sweeping fire arc in front of movement direction |
 | Spectral Blade | Orbit | 2–4 swords orbit player and pass through enemies |
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
 | Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
+| Longbow | Projectile | Fires fast arrows at nearby enemies with pierce/crit scaling |
 
 Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
+
+Current implementation note:
+
+- weapon tunables and upgrade deltas are defined in `settings.py` first
+- shared weapon construction is centralized in `src/weapons/factory.py` via
+  `WEAPON_CLASS_REGISTRY` and `create_weapon()`
+- weapon ids stay string-based so hero starting weapons and upgrade rewards can
+  both resolve through the same factory path
+- player-facing labels may differ from those ids; the internal `FlameBlast` id is
+  presented in UI as `Flame Blast`
 
 ---
 
@@ -200,6 +225,21 @@ Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 | Stone Golem | 500 | Very Slow | One-time mini-boss, high HP |
 | Cursed Knight | 80 | Medium | Frontal shield blocks 80% damage |
 | Lich Familiar | 35 | Medium | Orbits player, fires slow magic orbs |
+
+Current implementation note:
+
+- enemy tunables and wave/spawn balance values are defined in `settings.py` first
+- shared enemy construction is centralized in `src/entities/enemies/__init__.py`
+  via `ENEMY_CLASS_REGISTRY` and `create_enemy()`
+- enemy ids stay string-based so settings-driven wave pools and spawn lookups can
+  resolve through the same shared path
+- concrete enemy constructors now share one registry-friendly call shape; optional
+  dependencies such as `projectile_group` are only consumed by enemies that need them
+- shared enemy runtime state such as retarget cadence, freeze / stun timers,
+  effective speed rebuilding, elite projectile scaling, and spawn retry behavior
+  near world edges is centralized in the base enemy / wave systems
+- subclass-specific movement goes through the base enemy movement hook so custom
+  behaviors like Skeleton wander and Plague Bat swoop movement remain active
 
 ---
 
@@ -228,7 +268,8 @@ Current implementation note:
 
 - single-player is the stable baseline
 - local multiplayer is partially implemented and still in verification
-- practical current co-op cap is 3 because duplicate heroes are blocked and the roster has 3 heroes
+- practical current co-op cap is 4 because duplicate heroes are blocked and the
+  roster has 4 heroes
 
 ---
 

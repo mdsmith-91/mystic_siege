@@ -1,37 +1,38 @@
-import pygame
-from src.weapons.base_weapon import BaseWeapon
-from src.entities.projectile import Projectile
 from pygame.math import Vector2
-from settings import ARCANE_BOLT_RANGE, ARCANE_BOLT_SPREAD, ARCANE_BOLT_STAGGER, CRIT_MULTIPLIER
+from settings import (
+    ARCANE_BOLT_BASE_BOLT_COUNT,
+    ARCANE_BOLT_BASE_COOLDOWN,
+    ARCANE_BOLT_BASE_DAMAGE,
+    ARCANE_BOLT_BASE_PIERCE,
+    ARCANE_BOLT_PROJECTILE_COLOR,
+    ARCANE_BOLT_PROJECTILE_SPEED,
+    ARCANE_BOLT_SPREAD,
+    ARCANE_BOLT_STAGGER,
+    ARCANE_BOLT_TARGETING_RANGE,
+    ARCANE_BOLT_UPGRADE_LEVELS,
+)
+from src.entities.projectile import Projectile
 from src.utils.audio_manager import AudioManager
+from src.weapons.base_weapon import BaseWeapon
 
 class ArcaneBolt(BaseWeapon):
     name = "Arcane Bolt"
     description = "Fires homing bolts at the nearest enemy."
-    base_damage = 20.0
-    base_cooldown = 1.2
-    bolt_count = 1
+    base_damage = ARCANE_BOLT_BASE_DAMAGE
+    base_cooldown = ARCANE_BOLT_BASE_COOLDOWN
+    bolt_count = ARCANE_BOLT_BASE_BOLT_COUNT
+    pierce = ARCANE_BOLT_BASE_PIERCE
     homing = True
-    projectile_color = (160, 80, 255)
+    projectile_color = ARCANE_BOLT_PROJECTILE_COLOR
     IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
 
-        self.pierce = 0
-
         # Bolts queued to fire after a short stagger delay
         # Each entry: {"delay": float, "direction": Vector2, "target": enemy}
         self.pending_bolts: list[dict] = []
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"base_damage": 10},           # L2: +10 damage
-            {"bolt_count": 1},             # L3: fire 2 bolts (spread slightly)
-            {"pierce": 1},                 # L4: bolts pierce 1 enemy
-            {"bolt_count": 1, "base_damage": 15}  # L5: 3 bolts, more damage
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in ARCANE_BOLT_UPGRADE_LEVELS]
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
         """Spawn a single projectile in the given direction."""
@@ -39,7 +40,7 @@ class ArcaneBolt(BaseWeapon):
         Projectile(
             pos=self.owner.pos,
             direction=direction,
-            speed=400,
+            speed=ARCANE_BOLT_PROJECTILE_SPEED,
             damage=damage,
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
@@ -58,7 +59,7 @@ class ArcaneBolt(BaseWeapon):
 
         nearest_enemy = None
         nearest_distance_sq = float("inf")
-        max_range_sq = ARCANE_BOLT_RANGE * ARCANE_BOLT_RANGE
+        max_range_sq = ARCANE_BOLT_TARGETING_RANGE * ARCANE_BOLT_TARGETING_RANGE
 
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()
@@ -71,7 +72,13 @@ class ArcaneBolt(BaseWeapon):
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_ARCANE)
 
-        base_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+        base_direction = nearest_enemy.pos - self.owner.pos
+        if base_direction.length_squared() > 0:
+            base_direction = base_direction.normalize()
+        elif self.owner.facing.length_squared() > 0:
+            base_direction = self.owner.facing.normalize()
+        else:
+            base_direction = Vector2(1, 0)
 
         for i in range(self.bolt_count):
             direction = base_direction

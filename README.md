@@ -13,8 +13,8 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 Mystic Siege is a playable survivor-style action game with:
 
-- 3 hero classes with unique passives and starting weapons
-- 6 weapon types with 5 upgrade levels each
+- 4 hero classes with unique passives and starting weapons
+- 7 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
@@ -64,7 +64,7 @@ Not yet broadly verified in runtime:
 
 ## Current Limitations
 
-- The design target remains 1-4 local players, but the current practical cap is 3 because duplicate hero picks are blocked and only 3 heroes currently exist.
+- The design target remains 1-4 local players, and the current hero roster now supports 4 practical local players because there are 4 heroes and duplicate picks are blocked.
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
@@ -78,6 +78,43 @@ Not yet broadly verified in runtime:
 | Knight | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
+| Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
+
+## Hero Architecture
+
+- `settings.py` is also the source of truth for hero definitions through `HERO_CLASSES`.
+- Each hero record now includes declarative passive config in a `passives` dict, in addition to display text in `passive_desc`.
+- Current runtime systems read those passive values instead of hardcoding hero-name checks for Knight, Wizard, Friar, and Ranger behavior.
+- Hero records remain plain dicts so lobby, class select, and gameplay can keep using the current lightweight data flow.
+
+## Weapon Architecture
+
+- `settings.py` is the source of truth for weapon tunables, including base stats, relevant visual tunables, and per-level upgrade deltas.
+- Weapon classes in `src/weapons/` reference those constants instead of hardcoding gameplay values locally.
+- Shared weapon construction now goes through `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` and `create_weapon()`.
+- Hero `starting_weapon` values in `settings.HERO_CLASSES` are string ids, and `GameScene` resolves those ids through `create_weapon()` when building each player's starting loadout.
+- Upgrade unlocks stay string-based as well: `UpgradeSystem` offers and applies weapon rewards by id, then resolves those ids through the same shared factory path.
+- `src/weapons/__init__.py` re-exports the registry and constructor helper as the package-level weapon API.
+- `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
+- The intended ownership split is: `settings.py` for gameplay values, `src/weapons/factory.py` for id-to-class lookup, and `src/systems/upgrade_system.py` for player-facing card metadata.
+- `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
+- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
+- Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.
+- HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
+- The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
+- The shared HUD renderer now caches stable panel rect conversion, weapon-slot row geometry, weapon icon surfaces, and text surfaces inside `src/ui/hud.py` rather than rebuilding equivalent data every frame. Offscreen downed-player revive rings are culled while teammate threat arrows remain active.
+
+## Enemy Architecture
+
+- `settings.py` is now the source of truth for enemy tunables as well, including shared enemy values, per-enemy config dicts, and wave/spawn balance data.
+- Enemy classes in `src/entities/enemies/` read their gameplay stats and behavior knobs from those settings-backed configs instead of redefining local stat dicts.
+- Shared enemy construction now goes through `src/entities/enemies/__init__.py` via `ENEMY_CLASS_REGISTRY` and `create_enemy()`.
+- `src/systems/wave_manager.py` resolves enemy ids through that shared helper and should not grow new enemy-specific constructor chains.
+- Enemy ids remain string-based (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`, `Golem`) because wave pools and settings lookups reference them directly.
+- Concrete enemy constructors now follow one shared call shape so the registry can instantiate them uniformly; optional dependencies such as `projectile_group` should only be consumed by enemies that need them.
+- Shared enemy runtime state now lives in the base enemy / wave systems as well: retarget cadence, freeze / stun timers, effective speed rebuilding, elite projectile scaling, and spawn retry behavior near map edges are centralized instead of being ad hoc per subclass or per weapon.
+- Enemy-specific movement should be expressed through the base enemy movement hook so subclass behaviors such as Skeleton wander and PlagueBat swoop remain active when the parent class updates targeting and movement each frame.
+- `MiniBat` remains a plague-bat local follow-on spawned on death, not a top-level wave enemy.
 
 ## Getting Started
 
@@ -187,6 +224,8 @@ mystic_siege/
 │   ├── core/player_slot.py
 │   ├── entities/
 │   ├── weapons/
+│   │   ├── __init__.py
+│   │   ├── factory.py
 │   ├── systems/
 │   ├── ui/
 │   │   ├── lobby_scene.py

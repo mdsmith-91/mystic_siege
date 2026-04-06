@@ -1,34 +1,38 @@
 import pygame
-from src.weapons.base_weapon import BaseWeapon
-from pygame.math import Vector2
-import math
 import random
+from pygame.math import Vector2
+
+from settings import (
+    CRIT_MULTIPLIER,
+    SPECTRAL_BLADE_BASE_BLADE_COUNT,
+    SPECTRAL_BLADE_BASE_COOLDOWN,
+    SPECTRAL_BLADE_BASE_DAMAGE,
+    SPECTRAL_BLADE_BLADE_COLOR,
+    SPECTRAL_BLADE_BLADE_SIZE,
+    SPECTRAL_BLADE_HIT_COOLDOWN,
+    SPECTRAL_BLADE_HIT_SPARK_COLOR,
+    SPECTRAL_BLADE_ORBIT_RADIUS,
+    SPECTRAL_BLADE_ORBIT_SPEED,
+    SPECTRAL_BLADE_UPGRADE_LEVELS,
+)
 from src.utils.audio_manager import AudioManager
-from settings import CRIT_MULTIPLIER
+from src.weapons.base_weapon import BaseWeapon
 
 class SpectralBlade(BaseWeapon):
     name = "Spectral Blade"
     description = "Spectral swords orbit the player, passing through enemies."
-    base_damage = 18.0
-    base_cooldown = 0.0  # no cooldown — orbiting continuously
-    blade_count = 2
-    orbit_radius = 90
-    orbit_speed = 180  # degrees per second
-    blade_size = (24, 8)
+    base_damage = SPECTRAL_BLADE_BASE_DAMAGE
+    base_cooldown = SPECTRAL_BLADE_BASE_COOLDOWN
+    blade_count = SPECTRAL_BLADE_BASE_BLADE_COUNT
+    orbit_radius = SPECTRAL_BLADE_ORBIT_RADIUS
+    orbit_speed = SPECTRAL_BLADE_ORBIT_SPEED
+    blade_size = SPECTRAL_BLADE_BLADE_SIZE
     orbit_angle = 0.0  # current rotation, increments each frame
     IS_SPELL = False
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"blade_count": 1},      # L2: 3 blades
-            {"orbit_speed": 60},     # L3: faster rotation
-            {"orbit_radius": 20},    # L4: wider orbit
-            {"blade_count": 1, "base_damage": 12}  # L5: 4 blades, more damage
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in SPECTRAL_BLADE_UPGRADE_LEVELS]
 
         # Per-enemy hit cooldown dict: {enemy_id: timer} — each enemy can only be hit once per 0.5s
         self.enemy_cooldowns = {}
@@ -69,10 +73,10 @@ class SpectralBlade(BaseWeapon):
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
                             DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
-                            HitSpark(enemy.pos, (100, 150, 255), [self.effect_group])
+                            HitSpark(enemy.pos, SPECTRAL_BLADE_HIT_SPARK_COLOR, [self.effect_group])
 
                         # Start 0.5s cooldown for that enemy
-                        self.enemy_cooldowns[enemy.sprite_id] = 0.5
+                        self.enemy_cooldowns[enemy.sprite_id] = SPECTRAL_BLADE_HIT_COOLDOWN
 
         # Update cooldown timers
         for enemy_id in list(self.enemy_cooldowns.keys()):
@@ -95,6 +99,6 @@ class SpectralBlade(BaseWeapon):
             blade_rect.center = blade_pos
 
             # Draw the blade (simple rectangle for now)
-            pygame.draw.rect(surface, (100, 150, 255),
+            pygame.draw.rect(surface, SPECTRAL_BLADE_BLADE_COLOR,
                            (blade_rect.x - camera_offset.x, blade_rect.y - camera_offset.y,
                             blade_rect.width, blade_rect.height))

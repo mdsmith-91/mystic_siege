@@ -4,9 +4,20 @@ from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
     STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_LOBBY, PLAYER_COLORS,
     CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+    CLASS_SELECT_TITLE_Y, CLASS_SELECT_PROMPT_MARGIN_TOP,
 )
 from src.core.player_slot import PlayerSlot
 from src.utils.input_manager import InputManager
+
+_WEAPON_DISPLAY_NAMES = {
+    "ArcaneBolt": "Arcane Bolt",
+    "HolyNova": "Holy Nova",
+    "SpectralBlade": "Spectral Blade",
+    "FlameBlast": "Flame Blast",
+    "FrostRing": "Frost Ring",
+    "LightningChain": "Lightning Chain",
+    "Longbow": "Longbow",
+}
 
 class ClassSelect:
     def __init__(
@@ -201,12 +212,12 @@ class ClassSelect:
             if joystick_id is None:
                 return (
                     f"Player {self.current_slot.index + 1}: controller disconnected"
-                    f"  -  reconnect and press {input_manager.describe_binding('confirm')} or {input_manager.describe_binding('start')} to reclaim"
+                    f"  -  reconnect and press {input_manager.describe_help_binding('confirm')} or {input_manager.describe_help_binding('start')} to reclaim"
                 )
             return (
                 f"Controller {joystick_id + 1}: stick, D-pad, or click to choose"
-                f"  -  {input_manager.describe_binding('confirm', joystick_id=joystick_id)} or click confirms"
-                f"  -  {input_manager.describe_binding('back', joystick_id=joystick_id)}, ESC, or Back click backs"
+                f"  -  {input_manager.describe_help_binding('confirm')} or click confirms"
+                f"  -  {input_manager.describe_help_binding('back')}, ESC, or Back click backs"
             )
         return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
 
@@ -291,6 +302,9 @@ class ClassSelect:
             back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
             if back_rect.collidepoint(mouse_pos):
                 self._handle_back()
+
+    def _weapon_display_name(self, weapon_id: str) -> str:
+        return _WEAPON_DISPLAY_NAMES.get(weapon_id, weapon_id)
 
     def _handle_controller_button(self, event: pygame.event.Event) -> None:
         if not self.slot_queue_active:
@@ -392,7 +406,8 @@ class ClassSelect:
         if self.slot_queue_active:
             title = f"PLAYER {self.current_slot.index + 1} - CHOOSE YOUR HERO"
         title_surface = self.font_title.render(title, True, (255, 255, 255))
-        screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
+        title_y = CLASS_SELECT_TITLE_Y
+        screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, title_y))
 
         # 3. Draw one card per hero class.
         card_width = 260
@@ -467,7 +482,8 @@ class ClassSelect:
 
             # Starting weapon name wrapped to fit card width
             weapon_y = y + 305
-            weapon_lines = textwrap.wrap(f"Starts with: {hero['starting_weapon']}", width=26)
+            weapon_name = self._weapon_display_name(hero["starting_weapon"])
+            weapon_lines = textwrap.wrap(f"Starts with: {weapon_name}", width=26)
             for j, line in enumerate(weapon_lines):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))
@@ -533,9 +549,10 @@ class ClassSelect:
             else:
                 prompt = "Use your assigned controls to choose"
             prompt_surface = self.font_small.render(prompt, True, (180, 180, 180))
+            prompt_y = title_y + title_surface.get_height() + CLASS_SELECT_PROMPT_MARGIN_TOP
             screen.blit(
                 prompt_surface,
-                (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, 108),
+                (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, prompt_y),
             )
 
             if self.selected_class is None:

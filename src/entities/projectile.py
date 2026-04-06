@@ -2,7 +2,6 @@ import pygame
 from pygame.math import Vector2
 import random
 from settings import WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER
-import math
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
@@ -75,17 +74,19 @@ class Projectile(pygame.sprite.Sprite):
     def update(self, dt):
         # Home toward original target only while it's still alive — fly straight once it dies
         if self.homing and self.original_target and self.original_target.alive():
-            target_direction = (self.original_target.pos - self.pos).normalize()
-            angle_diff = self.direction.angle_to(target_direction)
+            target_offset = self.original_target.pos - self.pos
+            if target_offset.length_squared() > 0:
+                target_direction = target_offset.normalize()
+                angle_diff = self.direction.angle_to(target_direction)
 
-            # Limit turning speed to 120 degrees per second
-            max_turn = 120 * dt
-            if angle_diff > max_turn:
-                angle_diff = max_turn
-            elif angle_diff < -max_turn:
-                angle_diff = -max_turn
+                # Limit turning speed to 120 degrees per second
+                max_turn = 120 * dt
+                if angle_diff > max_turn:
+                    angle_diff = max_turn
+                elif angle_diff < -max_turn:
+                    angle_diff = -max_turn
 
-            self.direction = self.direction.rotate(angle_diff)
+                self.direction = self.direction.rotate(angle_diff)
 
         # pos += direction * speed * dt
         self.pos += self.direction * self.speed * dt

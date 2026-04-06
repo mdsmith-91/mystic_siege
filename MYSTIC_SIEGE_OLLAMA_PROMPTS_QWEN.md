@@ -80,7 +80,7 @@ mystic_siege/
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
 │   │   ├── spectral_blade.py
-│   │   ├── flame_whip.py
+│   │   ├── flame_blast.py
 │   │   ├── frost_ring.py
 │   │   └── lightning_chain.py
 │   ├── systems/
@@ -551,15 +551,15 @@ Include a draw(surface, camera_offset) method called from game_scene.
 Output the complete file. Wait for confirmation.
 
 
---- PROMPT 3E — Flame Whip ---
+--- PROMPT 3E — Flame Blast ---
 
-Generate src/weapons/flame_whip.py — FlameWhip(BaseWeapon):
+Generate src/weapons/flame_blast.py — FlameBlast(BaseWeapon):
 
-name = "Flame Whip"
-description = "Lashes a cone of fire in your facing direction."
+name = "Flame Blast"
+description = "Blasts a cone of fire toward the nearest enemy."
 base_damage = 30.0
 base_cooldown = 1.5
-cone_range = 120
+cone_range = 150
 cone_angle = 90  # degrees total arc
 burn_damage = 5.0  # per second
 burn_duration = 2.0  # seconds
@@ -568,11 +568,11 @@ Track burning enemies: dict {enemy_id: remaining_burn_time}
 On update: tick down burn timers, apply burn_damage * dt to still-burning enemies.
 
 fire(self):
-- Get owner.facing direction
+- Find nearest enemy and aim the cone toward it
 - For each enemy in enemy_group:
     dist = distance from owner.pos to enemy.pos
     if dist > cone_range: skip
-    angle_to_enemy = angle between owner.facing and direction to enemy
+    angle_to_enemy = angle between the stored fire direction and direction to enemy
     if angle_to_enemy <= cone_angle/2: hit the enemy
       - deal base_damage * owner.damage_multiplier
       - apply burn (add to burn dict)
@@ -790,7 +790,7 @@ Define PASSIVE_UPGRADES as a module-level list of dicts:
     +5% Cooldown Reduc  → stat="cooldown_reduction",value=0.05, color=(255,140,60)
 
 Define WEAPON_CLASSES as module-level list of weapon class names (strings):
-  ["ArcaneBolt","HolyNova","SpectralBlade","FlameWhip","FrostRing","LightningChain"]
+  ["ArcaneBolt","HolyNova","SpectralBlade","FlameBlast","FrostRing","LightningChain"]
 
 get_random_choices(self, player) -> list[dict]:
 - Build candidate list:
@@ -1129,7 +1129,7 @@ draw(self, screen):
   2. For each sprite in all_sprites (sorted by rect.bottom for depth):
        screen.blit(sprite.image, camera.apply(sprite))
        sprite.draw_health_bar(screen, camera.offset) if enemy
-  3. Draw weapon effects that need explicit draw calls (SpectralBlade, FlameWhip arc, etc.)
+  3. Draw weapon effects that need explicit draw calls (SpectralBlade, FlameBlast arc, etc.)
   4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
   5. If upgrade_menu: upgrade_menu.draw(screen)
   6. If paused: draw "PAUSED" centered in large text with semi-transparent overlay
@@ -1177,7 +1177,7 @@ Class-level constants for SFX names:
   LEVEL_UP = "level_up"
   WEAPON_ARCANE = "arcane_bolt"
   WEAPON_NOVA = "holy_nova"
-  WEAPON_WHIP = "flame_whip"
+  WEAPON_FLAME_BLAST = "flame_blast"
   WEAPON_BLADE = "spectral_blade"
   WEAPON_CHAIN = "lightning_chain"
   WEAPON_FROST = "frost_ring"

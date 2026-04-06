@@ -15,6 +15,11 @@ from settings import (
     SETTINGS_ANALOG_ADJUST_REPEAT_DELAY,
     SETTINGS_ANALOG_ADJUST_REPEAT_RATE,
     SETTINGS_SLIDER_VALUE_X_OFFSET,
+    SETTINGS_BUTTON_WIDTH,
+    SETTINGS_BUTTON_HEIGHT,
+    SETTINGS_BUTTON_START_Y,
+    SETTINGS_BUTTON_ROW_GAP,
+    SETTINGS_BUTTON_COLUMN_GAP,
 )
 from src.utils.fps_cap import detect_refresh_rate, clamp_fps_cap
 
@@ -102,6 +107,7 @@ class SettingsMenu:
         self.music_volume = self.save_system.get_setting("music_volume")
         self.sfx_volume   = self.save_system.get_setting("sfx_volume")
         self.show_fps     = self.save_system.get_setting("show_fps")
+        self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
         self.fps_cap_limit = detect_refresh_rate()
         self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)
 
@@ -138,11 +144,22 @@ class SettingsMenu:
             "music_volume",
             "sfx_volume",
             "fps_cap",
-            "show_fps",
             "controller_bindings",
+            "show_fps",
             "reset",
+            "show_stat_bonuses",
             "back",
         ]
+
+    @staticmethod
+    def _button_navigation() -> dict[str, dict[str, str]]:
+        return {
+            "controller_bindings": {"up": "fps_cap", "down": "reset", "right": "show_fps"},
+            "show_fps": {"up": "fps_cap", "down": "show_stat_bonuses", "left": "controller_bindings"},
+            "reset": {"up": "controller_bindings", "down": "back", "right": "show_stat_bonuses"},
+            "show_stat_bonuses": {"up": "show_fps", "down": "back", "left": "reset"},
+            "back": {"up": "reset"},
+        }
 
     def _init_ui_elements(self):
         cx = SCREEN_WIDTH // 2
@@ -150,9 +167,10 @@ class SettingsMenu:
         slider_height = 20
         slider_x      = cx - slider_width // 2
 
-        button_width  = 240
-        button_height = 50
-        button_x      = cx - button_width // 2
+        button_width = SETTINGS_BUTTON_WIDTH
+        button_height = SETTINGS_BUTTON_HEIGHT
+        left_button_x = cx - SETTINGS_BUTTON_COLUMN_GAP // 2 - button_width
+        right_button_x = cx + SETTINGS_BUTTON_COLUMN_GAP // 2
 
         # Sliders
         self.sliders["music_volume"] = {
@@ -177,22 +195,42 @@ class SettingsMenu:
 
         # Buttons (navigable)
         self.buttons["show_fps"] = {
-            "rect":  pygame.Rect(button_x, 410, button_width, button_height),
+            "rect":  pygame.Rect(right_button_x, SETTINGS_BUTTON_START_Y, button_width, button_height),
             "text":  "Show FPS: " + ("ON" if self.show_fps else "OFF"),
             "value": self.show_fps,
         }
+        self.buttons["show_stat_bonuses"] = {
+            "rect":  pygame.Rect(
+                right_button_x,
+                SETTINGS_BUTTON_START_Y + SETTINGS_BUTTON_ROW_GAP,
+                button_width,
+                button_height,
+            ),
+            "text":  "Show Stat Bonuses: " + ("ON" if self.show_stat_bonuses else "OFF"),
+            "value": self.show_stat_bonuses,
+        }
         self.buttons["controller_bindings"] = {
-            "rect":  pygame.Rect(button_x, 480, button_width, button_height),
+            "rect":  pygame.Rect(left_button_x, SETTINGS_BUTTON_START_Y, button_width, button_height),
             "text":  "Controller Bindings",
             "value": None,
         }
         self.buttons["reset"] = {
-            "rect":  pygame.Rect(button_x, 550, button_width, button_height),
+            "rect":  pygame.Rect(
+                left_button_x,
+                SETTINGS_BUTTON_START_Y + SETTINGS_BUTTON_ROW_GAP,
+                button_width,
+                button_height,
+            ),
             "text":  "Reset Progress",
             "value": None,
         }
         self.buttons["back"] = {
-            "rect":  pygame.Rect(button_x, 620, button_width, button_height),
+            "rect":  pygame.Rect(
+                left_button_x,
+                SETTINGS_BUTTON_START_Y + SETTINGS_BUTTON_ROW_GAP * 2,
+                button_width,
+                button_height,
+            ),
             "text":  "Back",
             "value": None,
         }
@@ -240,6 +278,12 @@ class SettingsMenu:
             self.buttons["show_fps"]["text"] = "Show FPS: " + ("ON" if new_value else "OFF")
             self.show_fps = new_value
             self.save_system.set_setting("show_fps", new_value)
+        elif button_name == "show_stat_bonuses":
+            new_value = not self.buttons["show_stat_bonuses"]["value"]
+            self.buttons["show_stat_bonuses"]["value"] = new_value
+            self.buttons["show_stat_bonuses"]["text"] = "Show Stat Bonuses: " + ("ON" if new_value else "OFF")
+            self.show_stat_bonuses = new_value
+            self.save_system.set_setting("show_stat_bonuses", new_value)
 
     def _slider_min_value(self, slider_name: str) -> float:
         if slider_name == "fps_cap":
@@ -301,6 +345,18 @@ class SettingsMenu:
     def _selected_main_item(self) -> str:
         return self._main_menu_order()[self.selected_index]
 
+    def _move_button_selection(self, direction: str) -> bool:
+        selected_item = self._selected_main_item()
+        if selected_item not in self.buttons:
+            return False
+
+        destination = self._button_navigation().get(selected_item, {}).get(direction)
+        if destination is None:
+            return False
+
+        self.selected_index = self._main_menu_order().index(destination)
+        return True
+
     @staticmethod
     def _confirm_dialog_button_order() -> list[str]:
         return ["yes", "cancel"]
@@ -313,6 +369,7 @@ class SettingsMenu:
             self.music_volume = self.save_system.get_setting("music_volume")
             self.sfx_volume = self.save_system.get_setting("sfx_volume")
             self.show_fps = self.save_system.get_setting("show_fps")
+            self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
             self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)
             self._init_ui_elements()
             self._slider_adjust_dir = 0
@@ -338,6 +395,9 @@ class SettingsMenu:
         selected_item = self._selected_main_item()
         if selected_item in self.sliders:
             return "Up/Down selects  -  Left/Right adjusts setting  -  Stick hold fine-tunes"
+
+        if selected_item in self.buttons:
+            return "Up/Down selects  -  Left/Right moves across buttons  -  Confirm activates  -  Back returns"
 
         return "Up/Down selects  -  Confirm activates  -  Back returns"
 
@@ -648,20 +708,26 @@ class SettingsMenu:
                 self.next_scene = "menu"
             elif event.key in (pygame.K_UP, pygame.K_w):
                 self.keyboard_active = True
-                self.selected_index = max(0, self.selected_index - 1)
+                if not self._move_button_selection("up"):
+                    self.selected_index = max(0, self.selected_index - 1)
             elif event.key in (pygame.K_DOWN, pygame.K_s):
                 self.keyboard_active = True
-                self.selected_index = min(len(self._main_menu_order()) - 1, self.selected_index + 1)
+                if not self._move_button_selection("down"):
+                    self.selected_index = min(len(self._main_menu_order()) - 1, self.selected_index + 1)
             elif event.key in (pygame.K_LEFT, pygame.K_a):
                 self.keyboard_active = True
                 selected_item = self._selected_main_item()
                 if selected_item in self.sliders:
                     self._adjust_slider(selected_item, -SETTINGS_SLIDER_STEP_COARSE)
+                else:
+                    self._move_button_selection("left")
             elif event.key in (pygame.K_RIGHT, pygame.K_d):
                 self.keyboard_active = True
                 selected_item = self._selected_main_item()
                 if selected_item in self.sliders:
                     self._adjust_slider(selected_item, SETTINGS_SLIDER_STEP_COARSE)
+                else:
+                    self._move_button_selection("right")
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 selected_item = self._selected_main_item()
                 if selected_item in self.buttons:

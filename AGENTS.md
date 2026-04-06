@@ -24,6 +24,40 @@ incremental verification phase and must continue to preserve the solo experience
 6. Keep scene transition kwargs lightweight. No live sprites, surfaces, or file handles.
 7. Be explicit about what was verified versus not verified.
 
+HUD/UI note: shared HUD chrome should stay settings-driven. If HP/XP bars intentionally
+match empty weapon slots, reuse the same `settings.py` constant instead of duplicating
+the color in `src/ui/hud.py`. In the current HUD, solo and multiplayer use the same
+slot-panel HUD treatment, including the 4-segment border tracker that fills clockwise
+from the top and uses the empty-slot gray for unearned sections. Keep the shared HUD
+render path allocation-aware as well: cache stable panel/weapon-slot geometry inside
+`HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
+draws instead of rebuilding equivalent screen-space work every frame.
+
+Weapon architecture note: weapon tunables should follow the same settings-driven
+pattern as heroes and enemies. Keep weapon stats, upgrade deltas, and relevant
+visual knobs in clearly grouped `settings.py` weapon sections first. Shared weapon
+construction should go through `src/weapons/factory.py` via
+`WEAPON_CLASS_REGISTRY` / `create_weapon()` instead of growing new constructor
+chains in `game_scene.py`, `upgrade_system.py`, or other callers. Hero
+`starting_weapon` fields and upgrade rewards should stay on stable string ids, and
+package-level imports should continue to flow through `src/weapons/__init__.py`
+when callers need the shared registry/helper surface. Player-facing weapon card
+metadata should stay in `src/systems/upgrade_system.py` (`WEAPON_META` /
+`WEAPON_CLASSES`) rather than being duplicated into gameplay constructors or hero
+records.
+
+Enemy architecture note: enemy tunables should now follow the same settings-driven
+pattern as heroes and weapons. Keep enemy stats, per-enemy gameplay knobs, and
+wave/spawn balance values in clearly grouped `settings.py` enemy sections first.
+Concrete enemy classes should read those values instead of redefining local stat
+dicts, and shared enemy spawning should go through the enemy registry/helper in
+`src/entities/enemies/__init__.py` instead of growing new constructor chains in
+`wave_manager.py`. Shared enemy runtime state such as targeting cadence, freeze /
+stun timers, effective speed rebuilding, elite projectile scaling, and spawn retry
+behavior near map edges should stay centralized in the base enemy / wave systems.
+Subclass-specific movement should plug into the base enemy movement hook instead of
+recomputing `self.vel` in a way that the parent class then overwrites.
+
 ## Multiplayer Rules
 
 1. No new hard-coded P1/P2 architecture.

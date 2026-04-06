@@ -13,6 +13,19 @@
 > guidance plus a risk inventory, not as a statement of today's implementation
 > percentage. For current status and remaining unverified behavior, defer to
 > `README.md`, `CLAUDE.md`, and `MULTIPLAYER_READINESS_GATE_REVIEW.md`.
+> HUD presentation note (2026-04-06): multiplayer weapon panels now use a
+> 4-segment border tracker around occupied weapon slots instead of the older pip
+> row concept. Treat any pip-row discussion below as historical unless it is
+> explicitly about the preserved single-player HUD path.
+> Weapon architecture note (2026-04-06): the repo now uses centralized weapon-id
+> lookup through `src/weapons/factory.py` (`WEAPON_CLASS_REGISTRY` +
+> `create_weapon()`) for both hero starting weapons and upgrade unlocks. Treat any
+> older direct-instantiation / `if/elif` starting-weapon discussion below as
+> historical migration guidance unless it is explicitly called out as current state.
+> `src/weapons/__init__.py` re-exports that shared registry/helper surface, and
+> `src/systems/upgrade_system.py` owns player-facing weapon card metadata
+> (`WEAPON_META` / `WEAPON_CLASSES`) while `settings.py` remains the source of
+> truth for gameplay values.
 
 ---
 
@@ -67,11 +80,15 @@ design choice — see Section 6.2. The XPSystem itself is clean; the orb semanti
 the item to consciously decide.
 
 ### 2.2 Weapon owner binding
-All six weapon classes (`arcane_bolt.py`, `holy_nova.py`, `spectral_blade.py`,
-`flame_whip.py`, `frost_ring.py`, `lightning_chain.py`) bind `self.owner = owner`
+All seven weapon classes (`arcane_bolt.py`, `holy_nova.py`, `spectral_blade.py`,
+`flame_blast.py`, `frost_ring.py`, `lightning_chain.py`, `longbow.py`) bind `self.owner = owner`
 at construction. Every stat access (`self.owner.damage_multiplier`,
 `self.owner.crit_chance`, `self.owner.pos`) already works correctly per-player.
 Weapons are created per-player and need no changes to function in multiplayer.
+The current repo also centralizes weapon construction through the shared
+`create_weapon()` factory path rather than scene-local weapon branches, with
+player-facing unlock metadata kept in `UpgradeSystem` instead of weapon
+constructors or hero records.
 
 ### 2.3 UpgradeSystem is already player-agnostic
 `upgrade_system.py` receives a player reference only at `get_random_choices(player)`
@@ -134,8 +151,10 @@ dataclasses like `PlayerSlot` are acceptable if their fields stay JSON-safe.
   `def __init__(self, slots: list[PlayerSlot])` (V2 Phase 4).
 - `self.player = Player(...)` (line 34) — singular. Must become
   `self.players: list[Player]`.
-- Starting weapon assignment (lines 41–64) is an `if/elif` chain keyed on a single
-  `hero["starting_weapon"]`. Must become a loop over `slots`.
+- Starting weapon assignment was an `if/elif` chain keyed on a single
+  `hero["starting_weapon"]` at audit time. In the current repo, that migration has
+  landed: `GameScene` loops over `slots` and resolves each hero's weapon id through
+  the shared weapon factory.
 - `self.wave_manager = WaveManager(self.player, ...)` (line 70) — passes single player.
 - `self.xp_system = XPSystem()` (line 73) — single XP instance. Must become
   `self.xp_systems: list[XPSystem]`, one per slot.

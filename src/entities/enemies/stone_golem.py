@@ -1,8 +1,7 @@
 import pygame
-from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import STONE_GOLEM_ENEMY_DATA
 
 # Column indices matching direction order in golem_meta.json
 _DIR_DOWN  = 0
@@ -11,16 +10,16 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class StoneGolem(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Golem",
-            "hp": 500,
-            "speed": 40,
-            "damage": 40,
-            "xp_value": 80,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, STONE_GOLEM_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         # Scale to 64x64 to reflect the golem's mini-boss stature

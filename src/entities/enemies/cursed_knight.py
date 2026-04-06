@@ -2,7 +2,7 @@ import pygame
 from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import WORLD_WIDTH, WORLD_HEIGHT
+from settings import CURSED_KNIGHT_ENEMY_DATA
 
 # Column indices matching direction order in knight_enemy_meta.json
 _DIR_DOWN  = 0
@@ -11,19 +11,21 @@ _DIR_RIGHT = 2
 _DIR_UP    = 3
 
 class CursedKnight(Enemy):
-    def __init__(self, pos, player_list, all_groups: tuple, xp_orb_group=None, effect_group=None):
-        enemy_data = {
-            "name": "Knight",
-            "hp": 80,
-            "speed": 110,
-            "damage": 20,
-            "xp_value": 15,
-            "behavior": "chase"
-        }
-        super().__init__(pos, player_list, all_groups, enemy_data, xp_orb_group, effect_group)
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        xp_orb_group=None,
+        effect_group=None,
+        projectile_group=None,
+    ):
+        super().__init__(pos, player_list, all_groups, CURSED_KNIGHT_ENEMY_DATA, xp_orb_group, effect_group)
 
         # Shield mechanic — faces toward player each frame
         self.shield_facing = Vector2(1, 0)
+        self.shield_block_angle = CURSED_KNIGHT_ENEMY_DATA["shield_block_angle"]
+        self.shield_damage_multiplier = CURSED_KNIGHT_ENEMY_DATA["shield_damage_multiplier"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/knight_enemy.png", 32, 32)
@@ -49,8 +51,8 @@ class CursedKnight(Enemy):
         """Apply damage with frontal shield mechanic — 80% reduction when hit from the front."""
         if hit_direction is not None and hasattr(self, 'shield_facing'):
             angle = self.shield_facing.angle_to(hit_direction)
-            if abs(angle) < 60:
-                amount = amount * 0.2
+            if abs(angle) < self.shield_block_angle:
+                amount = amount * self.shield_damage_multiplier
 
         super().take_damage(amount, hit_direction=hit_direction, attacker=attacker)
 

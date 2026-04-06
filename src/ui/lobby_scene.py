@@ -196,9 +196,9 @@ class LobbyScene:
         screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, 30))
 
         input_manager = InputManager.instance()
-        confirm_label = input_manager.describe_binding("confirm")
-        back_label = input_manager.describe_binding("back")
-        start_label = input_manager.describe_binding("start")
+        confirm_label = input_manager.describe_help_binding("confirm")
+        back_label = input_manager.describe_help_binding("back")
+        start_label = input_manager.describe_help_binding("start")
 
         # Instructions
         inst = f"Press WASD, Arrow keys, or controller {confirm_label} to join or leave"

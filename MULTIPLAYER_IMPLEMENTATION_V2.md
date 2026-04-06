@@ -12,6 +12,14 @@ out of scope for this guide but the architecture is designed to make it feasible
 > plumbing, multi-player HUD/camera support, revive/downed runtime support, and
 > owned menu input work. Use `README.md`, `CLAUDE.md`, and
 > `MULTIPLAYER_READINESS_GATE_REVIEW.md` for current-state and verification status.
+> Weapon architecture note (2026-04-06): the repo now resolves both hero starting
+> weapons and upgrade unlocks through `src/weapons/factory.py`
+> (`WEAPON_CLASS_REGISTRY` + `create_weapon()`). Treat any older discussion that
+> assumes scene-local weapon constructor branches as historical migration context.
+> `src/weapons/__init__.py` now re-exports that shared registry/helper surface, and
+> `src/systems/upgrade_system.py` owns player-facing weapon card metadata
+> (`WEAPON_META` / `WEAPON_CLASSES`) while `settings.py` stays authoritative for
+> gameplay tunables.
 > Use this file for intended architecture, remaining cleanup direction, and
 > long-term phase alignment.
 
@@ -305,6 +313,10 @@ def _draw_player_panel(screen, player, xp_system, rect: pygame.Rect, slot: Playe
 
 The panel rect is computed from slot index and total active player count.
 This is the only place that knows about screen positions.
+Current HUD note: the multiplayer weapon-level tracker now uses the slot border
+instead of a pip row. Occupied slots show 4 border segments that start empty at
+level 1, then fill clockwise from the top as levels 2–5 are earned. Unearned
+segments use the same gray as empty weapon slots.
 
 ### 4.8 Downed / Revive / Game Over Rules
 

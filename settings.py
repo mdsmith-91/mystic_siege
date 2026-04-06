@@ -63,13 +63,124 @@ FRIAR_HEAL_PER_XP = 0.1  # HP healed per XP point collected
 
 # WEAPONS
 MAX_WEAPON_SLOTS = 6
-ARCANE_BOLT_RANGE = 350         # max distance to target an enemy
-ARCANE_BOLT_SPREAD = 20         # degrees between each bolt in a multi-bolt burst
-ARCANE_BOLT_STAGGER = 0.3       # seconds between each bolt in a burst
-LIGHTNING_CHAIN_RANGE = 400  # max distance to initial target for lightning chain
+
+# Arcane Bolt
+ARCANE_BOLT_BASE_DAMAGE = 20.0
+ARCANE_BOLT_BASE_COOLDOWN = 1.2
+ARCANE_BOLT_BASE_BOLT_COUNT = 1
+ARCANE_BOLT_BASE_PIERCE = 0
+ARCANE_BOLT_TARGETING_RANGE = 350
+ARCANE_BOLT_SPREAD = 20
+ARCANE_BOLT_STAGGER = 0.3
+ARCANE_BOLT_PROJECTILE_SPEED = 400
+ARCANE_BOLT_PROJECTILE_COLOR = (160, 80, 255)
+ARCANE_BOLT_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 10},
+    {"bolt_count": 1},
+    {"pierce": 1},
+    {"bolt_count": 1, "base_damage": 15},
+]
+
+# Holy Nova
+HOLY_NOVA_BASE_DAMAGE = 25.0
+HOLY_NOVA_BASE_COOLDOWN = 2.0
+HOLY_NOVA_BASE_RADIUS = 80
+HOLY_NOVA_EXPAND_SPEED = 200
+HOLY_NOVA_RING_WIDTH = 8
+HOLY_NOVA_RING_COLOR = (255, 230, 100)
+HOLY_NOVA_HIT_SPARK_COLOR = (255, 230, 100)
+HOLY_NOVA_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 15},
+    {"base_radius": 40},
+    {"base_cooldown": -0.4},
+    {"base_damage": 20, "ring_width": -4},
+]
+
+# Spectral Blade
+SPECTRAL_BLADE_BASE_DAMAGE = 18.0
+SPECTRAL_BLADE_BASE_COOLDOWN = 0.0
+SPECTRAL_BLADE_BASE_BLADE_COUNT = 2
+SPECTRAL_BLADE_ORBIT_RADIUS = 90
+SPECTRAL_BLADE_ORBIT_SPEED = 180
+SPECTRAL_BLADE_BLADE_SIZE = (24, 8)
+SPECTRAL_BLADE_BLADE_COLOR = (100, 150, 255)
+SPECTRAL_BLADE_HIT_SPARK_COLOR = (100, 150, 255)
+SPECTRAL_BLADE_HIT_COOLDOWN = 0.5
+SPECTRAL_BLADE_UPGRADE_LEVELS = [
+    {},
+    {"blade_count": 1},
+    {"orbit_speed": 60},
+    {"orbit_radius": 20},
+    {"blade_count": 1, "base_damage": 12},
+]
+
+# Flame Blast
+FLAME_BLAST_BASE_DAMAGE = 30.0
+FLAME_BLAST_BASE_COOLDOWN = 1.5
+FLAME_BLAST_CONE_RANGE = 150
+FLAME_BLAST_CONE_ANGLE = 90
+FLAME_BLAST_BURN_DAMAGE = 5.0
+FLAME_BLAST_BURN_DURATION = 2.0
+FLAME_BLAST_SWING_DURATION = 0.2
+FLAME_BLAST_SWING_POINT_COUNT = 10
+FLAME_BLAST_EFFECT_COLOR = (255, 100, 0)
+FLAME_BLAST_HIT_SPARK_COLOR = (255, 100, 0)
+FLAME_BLAST_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 15},
+    {"cone_range": 40},
+    {"burn_duration": 1.5},
+    {"cone_angle": 30, "base_damage": 20},
+]
+
+# Frost Ring
+FROST_RING_BASE_DAMAGE = 15.0
+FROST_RING_BASE_COOLDOWN = 3.0
+FROST_RING_SPEED = 80
+FROST_RING_MAX_RADIUS = 200
+FROST_RING_FREEZE_DURATION = 1.5
+FROST_RING_HALF_WIDTH = 5
+FROST_RING_DRAW_WIDTH = 3
+FROST_RING_COLOR = (0, 200, 255)
+FROST_RING_HIT_SPARK_COLOR = (0, 200, 255)
+FROST_RING_UPGRADE_LEVELS = [
+    {},
+    {"freeze_duration": 0.5},
+    {"base_damage": 10},
+    {"ring_speed": 30},
+    {"base_cooldown": -0.8, "max_radius": 80},
+]
+
+# Lightning Chain
+LIGHTNING_CHAIN_BASE_DAMAGE = 35.0
+LIGHTNING_CHAIN_BASE_COOLDOWN = 1.8
+LIGHTNING_CHAIN_TARGETING_RANGE = 400
+LIGHTNING_CHAIN_BASE_CHAIN_COUNT = 3
+LIGHTNING_CHAIN_CHAIN_RANGE = 150
+LIGHTNING_CHAIN_BASE_STUN_CHANCE = 0.0
+LIGHTNING_CHAIN_STUN_DURATION = 0.5
+LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER = 0.9
+LIGHTNING_CHAIN_ARC_LIFETIME = 0.12
+LIGHTNING_CHAIN_ARC_MIN_SEGMENTS = 3
+LIGHTNING_CHAIN_ARC_MAX_SEGMENTS = 5
+LIGHTNING_CHAIN_ARC_JITTER = 15
+LIGHTNING_CHAIN_ARC_COLOR = (255, 255, 200)
+LIGHTNING_CHAIN_ARC_WIDTH = 2
+LIGHTNING_CHAIN_HIT_SPARK_COLOR = (255, 255, 100)
+LIGHTNING_CHAIN_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 15},
+    {"chain_count": 2},
+    {"chain_range": 50},
+    {"chain_count": 1, "stun_chance": 0.25},
+]
+
+# Longbow
 LONGBOW_BASE_DAMAGE = 24.0
 LONGBOW_BASE_COOLDOWN = 1.0
-LONGBOW_RANGE = 520
+LONGBOW_TARGETING_RANGE = 520
 LONGBOW_PROJECTILE_SPEED = 720
 LONGBOW_PROJECTILE_LIFETIME = 0.9
 LONGBOW_BASE_PIERCE = 0
@@ -86,30 +197,170 @@ LONGBOW_UPGRADE_LEVELS = [
     {"projectile_count": 1, "crit_bonus": 0.10},
 ]
 
+# ENEMIES
+# Shared enemy runtime tunables
+ENEMY_BASE_ATTACK_COOLDOWN = 1.0
 ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than this
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit
 ENEMY_RETARGET_INTERVAL = 0.25  # seconds between nearest-player retarget scans
-LICH_FIRE_RANGE = 450           # pixels — lich only fires when within this distance of the player
+ENEMY_SPAWN_OFFSCREEN_MARGIN = 150
+ENEMY_SPAWN_POSITION_ATTEMPTS = 8
+ENEMY_WARNING_DURATION = 3.0
+ENEMY_ELITE_HP_MULTIPLIER = 1.5
+ENEMY_ELITE_DAMAGE_MULTIPLIER = 1.5
 
-# SPAWNING
-INITIAL_SPAWN_RATE = 3.0
-MIN_SPAWN_RATE = 0.3
+# Enemy archetype data
+SKELETON_ENEMY_DATA = {
+    "name": "Skeleton",
+    "hp": 30,
+    "speed": 80,
+    "damage": 10,
+    "xp_value": 5,
+    "behavior": "chase",
+    "wander_angle_max": 5.0,
+    "wander_angle_change_interval": 0.5,
+}
+
+DARK_GOBLIN_ENEMY_DATA = {
+    "name": "Goblin",
+    "hp": 20,
+    "speed": 160,
+    "damage": 8,
+    "xp_value": 4,
+    "behavior": "chase",
+}
+
+WRAITH_ENEMY_DATA = {
+    "name": "Wraith",
+    "hp": 40,
+    "speed": 120,
+    "damage": 15,
+    "xp_value": 10,
+    "behavior": "chase",
+    "lunge_cooldown": 3.0,
+    "lunge_duration": 0.4,
+    "lunge_speed_multiplier": 3.0,
+}
+
+PLAGUE_BAT_ENEMY_DATA = {
+    "name": "Bat",
+    "hp": 15,
+    "speed": 220,
+    "damage": 8,
+    "xp_value": 6,
+    "behavior": "chase",
+    "split_chance": 0.4,
+    "split_count": 2,
+    "wave_frequency": 4.0,
+    "wave_amplitude": 0.5,
+    "sprite_scale": (20, 20),
+}
+
+MINI_BAT_ENEMY_DATA = {
+    "name": "Mini Bat",
+    "hp": 7,
+    "speed": 280,
+    "damage": 4,
+    "xp_value": 3,
+    "behavior": "chase",
+    "split_chance": 0.0,
+    "split_count": 0,
+    "wave_frequency": PLAGUE_BAT_ENEMY_DATA["wave_frequency"],
+    "wave_amplitude": PLAGUE_BAT_ENEMY_DATA["wave_amplitude"],
+    "sprite_scale": (14, 14),
+}
+
+CURSED_KNIGHT_ENEMY_DATA = {
+    "name": "Knight",
+    "hp": 80,
+    "speed": 110,
+    "damage": 20,
+    "xp_value": 15,
+    "behavior": "chase",
+    "shield_block_angle": 60.0,
+    "shield_damage_multiplier": 0.2,
+}
+
+LICH_FAMILIAR_ENEMY_DATA = {
+    "name": "Lich",
+    "hp": 35,
+    "speed": 90,
+    "damage": 12,
+    "xp_value": 12,
+    "behavior": "orbit",
+    "orbit_radius": 200,
+    "orbit_angular_speed": 45.0,
+    "fire_interval": 2.5,
+    "projectile_speed": 120,
+    "projectile_damage": 12,
+    "projectile_lifetime": 4.0,
+    "projectile_color": (200, 60, 255),
+    "fire_range": 450,
+}
+
+STONE_GOLEM_ENEMY_DATA = {
+    "name": "Golem",
+    "hp": 500,
+    "speed": 40,
+    "damage": 40,
+    "xp_value": 80,
+    "behavior": "chase",
+}
+
+ENEMY_DATA_BY_ID = {
+    "Skeleton": SKELETON_ENEMY_DATA,
+    "Goblin": DARK_GOBLIN_ENEMY_DATA,
+    "Wraith": WRAITH_ENEMY_DATA,
+    "Bat": PLAGUE_BAT_ENEMY_DATA,
+    "MiniBat": MINI_BAT_ENEMY_DATA,
+    "Knight": CURSED_KNIGHT_ENEMY_DATA,
+    "Lich": LICH_FAMILIAR_ENEMY_DATA,
+    "Golem": STONE_GOLEM_ENEMY_DATA,
+}
+
+# Wave / spawn tunables
+WAVE_INITIAL_ACTIVE_POOL = ["Skeleton"]
+WAVE_INITIAL_SPAWN_RATE = 3.0
+WAVE_GOBLIN_UNLOCK_TIME = 60
+WAVE_GOBLIN_SPAWN_RATE = 2.5
+WAVE_GOBLIN_PACK_MIN = 3
+WAVE_GOBLIN_PACK_MAX = 5
+WAVE_WRAITH_UNLOCK_TIME = 120
+WAVE_WRAITH_SPAWN_RATE = 2.0
+WAVE_BAT_UNLOCK_TIME = 300
+WAVE_BAT_SPAWN_RATE = 1.5
+WAVE_BAT_WARNING_TEXT = "BATS INCOMING!"
+WAVE_GOLEM_EVENT_TIME = 480
+WAVE_GOLEM_COUNT = 1
+WAVE_GOLEM_WARNING_TEXT = "GOLEM APPROACHES!"
+WAVE_KNIGHT_LICH_UNLOCK_TIME = 600
+WAVE_KNIGHT_LICH_SPAWN_RATE = 1.0
+WAVE_ELITE_MODE_TIME = 900
+WAVE_ELITE_SPAWN_RATE = 0.7
+WAVE_ELITE_WARNING_TEXT = "ELITE ENEMIES ARISE!"
+WAVE_FINAL_ASSAULT_TIME = 1200
+WAVE_FINAL_ASSAULT_SPAWN_RATE = 0.5
+WAVE_FINAL_ASSAULT_WARNING_TEXT = "FINAL ASSAULT!"
+WAVE_VICTORY_TIME = 1800
 
 # UI
 HUD_FONT_SIZE = 24
 SMALL_FONT_SIZE = 16
 TITLE_FONT_SIZE = 72
-WEAPON_SLOT_PIP_COUNT = 5
-WEAPON_SLOT_PIP_RADIUS = 3
-WEAPON_SLOT_PIP_SPACING = 7
-WEAPON_SLOT_PIP_Y_OFFSET = 6
-WEAPON_SLOT_PIP_FILLED_COLOR = (255, 215, 0)
-WEAPON_SLOT_PIP_EMPTY_COLOR = (80, 80, 80)
+CLASS_SELECT_TITLE_Y = 28
+CLASS_SELECT_PROMPT_MARGIN_TOP = 12
+HUD_EMPTY_SLOT_BG_COLOR = (40, 40, 40)
+WEAPON_SLOT_LEVEL_BORDER_SEGMENTS = 4
+WEAPON_SLOT_LEVEL_BORDER_WIDTH = 2
+WEAPON_SLOT_LEVEL_BORDER_GAP = 4
+WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR = (255, 215, 0)
+WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR = (80, 80, 80)
 HUD_PANEL_PADDING = 10
 HUD_PANEL_BAR_HEIGHT = 12
 HUD_PANEL_WEAPON_SLOT_SIZE = 40
 HUD_PANEL_WEAPON_SLOT_WIDTH = 40
 HUD_PANEL_WEAPON_SLOT_GAP = 4
+HUD_PANEL_CORNER_RADIUS = 6
 HUD_REVIVE_RING_RADIUS = 28
 HUD_REVIVE_RING_WIDTH = 4
 SETTINGS_SLIDER_STEP_COARSE = 0.05
@@ -117,12 +368,18 @@ SETTINGS_SLIDER_STEP_FINE = 0.02
 SETTINGS_ANALOG_ADJUST_REPEAT_DELAY = 0.2
 SETTINGS_ANALOG_ADJUST_REPEAT_RATE = 0.08
 SETTINGS_SLIDER_VALUE_X_OFFSET = 24
+SETTINGS_BUTTON_WIDTH = 240
+SETTINGS_BUTTON_HEIGHT = 50
+SETTINGS_BUTTON_START_Y = 390
+SETTINGS_BUTTON_ROW_GAP = 65
+SETTINGS_BUTTON_COLUMN_GAP = 40
+HUD_PANEL_TOP_LEFT = (20, 20, 320, 148)
 HUD_PANEL_TUPLES = {
     1: {
-        0: (20, 20, 360, 120),
+        0: HUD_PANEL_TOP_LEFT,
     },
     2: {
-        0: (20, 20, 320, 148),
+        0: HUD_PANEL_TOP_LEFT,
         1: (940, 20, 320, 148),
     },
     3: {
@@ -144,7 +401,7 @@ CONTROLLER_AXIS_REPEAT_DELAY = 0.4   # seconds before held axis starts repeating
 CONTROLLER_AXIS_REPEAT_RATE = 0.15   # seconds between repeats while axis is held
 CONTROLLER_CONFIRM_BUTTON = 0        # A / Cross
 CONTROLLER_BACK_BUTTON = 1           # B / Circle
-CONTROLLER_START_BUTTONS = (11,)     # Default pause/start button; extend per-controller only if needed
+CONTROLLER_START_BUTTONS = (7,)      # Default pause/start button; extend per-controller only if needed
 CONTROLLER_BINDINGS_DEFAULT = {
     "confirm": CONTROLLER_CONFIRM_BUTTON,
     "back": CONTROLLER_BACK_BUTTON,
@@ -158,6 +415,11 @@ CONTROLLER_BINDING_LABELS = {
     "confirm": "Confirm",
     "back": "Back",
     "start": "Pause / Start",
+}
+CONTROLLER_HELP_LABELS = {
+    "confirm": "Confirm",
+    "back": "Back",
+    "start": "Start",
 }
 
 # KEYBOARD INPUT SCHEMES
@@ -188,6 +450,15 @@ PAUSE_BUTTON_SPACING = 18
 PAUSE_BUTTON_COLOR = (30, 20, 10)
 PAUSE_BUTTON_HOVER_COLOR = (40, 30, 20)
 PAUSE_BUTTON_TEXT_COLOR = (255, 255, 255)
+PAUSE_CONFIRM_DIALOG_WIDTH = 420
+PAUSE_CONFIRM_DIALOG_HEIGHT = 180
+PAUSE_CONFIRM_DIALOG_BG_COLOR = (20, 15, 10)
+PAUSE_CONFIRM_BUTTON_WIDTH = 150
+PAUSE_CONFIRM_BUTTON_HEIGHT = 44
+PAUSE_CONFIRM_MESSAGE_FONT_SIZE = 20
+PAUSE_CONFIRM_BUTTON_Y_OFFSET = 112
+PAUSE_CONFIRM_BUTTON_INSET = 36
+PAUSE_CONFIRM_MESSAGE_Y_OFFSET = 34
 
 # MULTIPLAYER
 MAX_PLAYERS = 4
@@ -225,7 +496,8 @@ STATE_STATS = "stats"
 STATE_LOBBY = "lobby"
 
 # HERO_CLASSES list of hero dicts, each with keys:
-# name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite)
+# name, hp, speed, armor, passive_desc, starting_weapon, color (RGB for placeholder sprite),
+# sprite, and passives (declarative gameplay modifiers used by Player/XP/collision systems)
 HERO_CLASSES = [
     {
         "name": "Knight",
@@ -235,7 +507,11 @@ HERO_CLASSES = [
         "passive_desc": "Takes 15% less damage. Immune to knockback.",
         "starting_weapon": "SpectralBlade",
         "color": (180, 140, 60),
-        "sprite": "assets/sprites/heroes/knight.png"
+        "sprite": "assets/sprites/heroes/knight.png",
+        "passives": {
+            "damage_taken_multiplier": 0.85,
+            "knockback_immune": True,
+        },
     },
     {
         "name": "Wizard",
@@ -245,7 +521,11 @@ HERO_CLASSES = [
         "passive_desc": "Spells deal 20% more damage. +10% crit chance.",
         "starting_weapon": "ArcaneBolt",
         "color": (160, 60, 220),
-        "sprite": "assets/sprites/heroes/wizard.png"
+        "sprite": "assets/sprites/heroes/wizard.png",
+        "passives": {
+            "crit_chance_bonus": WIZARD_CRIT_CHANCE_BONUS,
+            "spell_damage_bonus_pct": WIZARD_SPELL_DAMAGE_BONUS,
+        },
     },
     {
         "name": "Friar",
@@ -255,7 +535,10 @@ HERO_CLASSES = [
         "passive_desc": "Heals 1 HP per 10 XP gained.",
         "starting_weapon": "HolyNova",
         "color": (200, 180, 120),
-        "sprite": "assets/sprites/heroes/friar.png"
+        "sprite": "assets/sprites/heroes/friar.png",
+        "passives": {
+            "heal_per_xp": FRIAR_HEAL_PER_XP,
+        },
     },
     {
         "name": "Ranger",
@@ -265,6 +548,10 @@ HERO_CLASSES = [
         "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
         "starting_weapon": "Longbow",
         "color": (90, 170, 110),
-        "sprite": "assets/sprites/heroes/ranger.png"
+        "sprite": "assets/sprites/heroes/ranger.png",
+        "passives": {
+            "crit_chance_bonus": RANGER_CRIT_CHANCE_BONUS,
+            "projectile_pierce_bonus": RANGER_PROJECTILE_PIERCE_BONUS,
+        },
     }
 ]

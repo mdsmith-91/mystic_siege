@@ -14,8 +14,10 @@ migration is partially implemented. New runs currently flow through a lobby and 
 hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
 hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
 downed/revive runtime support, reconnect/reclaim handling, and controller-binding
-settings. The main remaining gap is runtime verification and hardening, not missing
-foundational architecture.
+settings. Weapon creation is now also centralized through the shared
+`src/weapons/factory.py` registry/helper path for both hero starting weapons and
+upgrade unlocks. The main remaining gap is runtime verification and hardening, not
+missing foundational architecture.
 **Planned direction:** finish the local co-op migration through phased, low-regression
 changes that continue to preserve the current single-player experience.
 
@@ -57,6 +59,7 @@ mystic_siege/
 │   │   ├── xp_orb.py              # XP orb — bobbing animation, auto-collect
 │   │   ├── effects.py             # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect
 │   │   └── enemies/
+│   │       ├── __init__.py        # Enemy registry + create_enemy helper for shared spawn construction
 │   │       ├── skeleton.py        # hp=30, slow, slight random wander; uses skeleton.png 4-dir sheet
 │   │       ├── dark_goblin.py     # hp=20, fast, spawns in groups; uses goblin.png 4-dir sheet
 │   │       ├── wraith.py          # hp=40, phases walls, periodic lunge; uses wraith.png 4-dir sheet
@@ -65,11 +68,13 @@ mystic_siege/
 │   │       ├── lich_familiar.py   # hp=35, orbits player, fires slow orbs; uses lich.png 4-dir sheet
 │   │       └── stone_golem.py     # hp=500, mini-boss, very slow; uses golem.png 4-dir sheet
 │   ├── weapons/
+│   │   ├── __init__.py           # Re-exports weapon registry + create_weapon helper
 │   │   ├── base_weapon.py         # BaseWeapon — cooldown, upgrade(), fire() interface
+│   │   ├── factory.py             # Shared weapon registry + constructor helper used by gameplay systems
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
 │   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
-│   │   ├── flame_whip.py          # Cone sweep, burn DOT, swing visual
+│   │   ├── flame_blast.py         # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   ├── lightning_chain.py     # Chains between enemies, jagged arc visual
 │   │   └── longbow.py             # Physical arrow shots, straight-line ranged damage
@@ -81,7 +86,7 @@ mystic_siege/
 │   │   ├── camera.py              # Single-target follow + multi-target zoomed camera
 │   │   └── save_system.py         # JSON meta-progression + controller binding persistence in saves/progress.json
 │   ├── ui/
-│   │   ├── hud.py                 # 1P HUD + multiplayer player panels, revive indicators, threat arrows
+│   │   ├── hud.py                 # Shared in-run HUD panels, revive indicators, threat arrows
 │   │   ├── upgrade_menu.py        # 3-card level-up overlay, owned-player input routing
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── lobby_scene.py         # Slot-based join/leave lobby with keyboard/controller claims
@@ -149,12 +154,26 @@ Wizard passive: +20% spell damage, +10% crit chance
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
 
+Current hero architecture rules:
+
+- Hero definitions stay in `settings.HERO_CLASSES` as plain dicts used directly by
+  `ClassSelect`, `GameScene`, and `Player`.
+- Base stats, sprite path, starting weapon, passive text, and passive gameplay config
+  should all be authored in the hero record first.
+- Hero passive behavior is now declarative via each hero dict's `passives` mapping.
+  Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
+  `crit_chance_bonus`, `spell_damage_bonus_pct`, `projectile_pierce_bonus`, and
+  `heal_per_xp`.
+- Do not add new hero-name `if/elif` passive branches in gameplay systems when a
+  passive can be expressed as hero config and read by `Player`, `XPSystem`, or
+  collision/runtime code.
+
 ### Weapons (all have 5 upgrade levels)
 
 - ArcaneBolt — homing projectiles, 1→3 bolts
 - HolyNova — expanding damage ring, no projectile object
 - SpectralBlade — orbiting swords, continuous collision
-- FlameWhip — directional cone, burn DOT
+- FlameBlast (`Flame Blast`) — directional cone, burn DOT
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
@@ -162,6 +181,83 @@ Ranger passive: +10% crit chance, arrows pierce +1 enemy
 The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
 limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
 `new_weapon` cards once that inventory is full.
+
+Current weapon architecture rules:
+
+- All weapon tunables live in clearly grouped `settings.py` sections first.
+- Weapon classes should read class attributes and upgrade tables from `settings.py`
+  instead of hardcoding gameplay values in the class body.
+- Weapon creation by string id is centralized in `src/weapons/factory.py` through
+  `WEAPON_CLASS_REGISTRY` and `create_weapon()`. `GameScene` resolves each
+  hero's `starting_weapon` id through that path, and `UpgradeSystem` resolves
+  new-weapon rewards through the same shared constructor.
+- `src/weapons/__init__.py` re-exports `WEAPON_CLASS_REGISTRY` and `create_weapon`
+  so callers can import the package-level API if needed.
+- Upgrade-card presentation metadata is kept in `src/systems/upgrade_system.py`
+  via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
+- Keep the responsibility split explicit: `settings.py` owns gameplay values,
+  `src/weapons/factory.py` owns id-to-class resolution, and
+  `src/systems/upgrade_system.py` owns player-facing card metadata.
+- Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
+  or other callers. Register the weapon once in `WEAPON_CLASS_REGISTRY` and keep
+  hero data / upgrade rewards on string ids.
+- Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
+  `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
+  reference them by string.
+- Keep player-facing weapon names in metadata / weapon classes aligned with those
+  internal ids. `FlameBlast` currently uses the display name `Flame Blast`.
+- Keep scene/system callers on the string-id path even when the internal id matches
+  the class name today; do not reintroduce direct class instantiation in
+  `GameScene`, `UpgradeSystem`, or hero configuration code.
+- HUD chrome that is visually tied to weapon slots should also stay settings-driven.
+  The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
+  bar background reuses that same constant so 1P and multiplayer HUD panels keep a
+  consistent baseline treatment without duplicating color literals in `src/ui/hud.py`.
+- Weapon level HUD treatment is now shared across solo and multiplayer: player
+  panels use a settings-driven 4-segment border tracker that fills clockwise from
+  the top as levels 2–5 are earned; any unearned segments use the same gray
+  baseline as empty weapon slots.
+- The shared HUD renderer in `src/ui/hud.py` should keep caching stable data in the
+  hot path: panel tuple-to-`pygame.Rect` conversion, weapon-slot row geometry,
+  weapon icon surfaces, and repeated text surfaces should be reused rather than
+  rebuilt every frame. Offscreen downed-player revive rings should be culled, while
+  teammate threat arrows remain available as the offscreen signal.
+
+### Enemies
+
+- Skeleton — slow melee, slight random wander
+- Goblin — fast melee, spawns in packs
+- Wraith — phases walls, periodic lunge
+- PlagueBat — arc movement, can split into mini bats
+- CursedKnight — frontal shield reduces incoming damage
+- LichFamiliar — orbits the target and fires slow enemy projectiles
+- StoneGolem — high-HP mini-boss
+
+Current enemy architecture rules:
+
+- Enemy tunables live in grouped `settings.py` enemy sections first, including
+  shared enemy values, per-enemy config dicts, and wave/spawn balance constants.
+- Concrete enemy classes should read their stats and behavior knobs from those
+  settings-backed dicts instead of redefining local gameplay stat dicts.
+- Shared enemy spawning is centralized in `src/entities/enemies/__init__.py`
+  through `ENEMY_CLASS_REGISTRY` and `create_enemy()`. `WaveManager` should use
+  that shared helper instead of growing new enemy-specific constructor chains.
+- Keep enemy ids stable (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`,
+  `Golem`) because wave pools and settings lookups reference them by string.
+- Keep constructor signatures aligned across concrete enemy classes so the registry
+  can instantiate them through one shared call path; only consume optional runtime
+  dependencies such as `projectile_group` in the enemies that actually need them.
+- Shared enemy runtime state should stay centralized in `src/entities/enemy.py`
+  and `src/systems/wave_manager.py`: nearest-player retarget cadence, freeze /
+  stun timers, effective speed rebuilding, elite projectile scaling, and spawn
+  retry behavior near world edges belong there rather than being reimplemented in
+  individual subclasses or weapons.
+- Subclass-specific movement should plug into the base enemy movement hook instead
+  of setting `self.vel` before calling `super().update(dt)` and assuming the parent
+  will preserve it. This is how Skeleton wander and PlagueBat swoop behavior now
+  avoid being overwritten by the base chase logic.
+- Keep `MiniBat` as a local plague-bat follow-on unless a gameplay change makes it
+  a true top-level spawnable enemy.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -190,7 +286,8 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 ```
 
 - The solo baseline is preserved inside `GameScene`; a single joined slot still uses
-  the legacy single-player runtime path for movement, death, and HUD behavior.
+  the single-player runtime path for movement and death behavior, but the in-run HUD
+  now shares the same slot-panel renderer and weapon-slot treatment as multiplayer.
 - The practical current party cap is 4 unique players because there are 4 heroes and
   duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
@@ -206,6 +303,8 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 - Controller bindings are configurable from Settings:
   - `Global Default` is the fallback mapping for unknown / untouched controllers
   - controller profiles can override `Confirm`, `Back`, and `Pause / Start`
+  - player-facing on-screen help should use semantic action names (`Confirm`,
+    `Back`, `Start`) rather than raw button numbers such as `Btn 7`
   - profile bindings are saved in `saves/progress.json`
   - global menus consume synthetic controller key events generated directly from
     `JOYBUTTONDOWN` / `JOYBUTTONUP`; keep those mappings in sync with the
@@ -358,7 +457,7 @@ Default button mapping (Xbox / PlayStation / Switch Pro):
 - Left stick / D-pad → movement + menu navigation (with key-repeat on stick)
 - A / Cross (btn 0) → confirm (`K_RETURN`)
 - B / Circle (btn 1) → back (`K_ESCAPE`) and unpause from the in-game pause menu
-- Pause / Start (btn 11 by default) → pause toggle (`K_ESCAPE` in global menus)
+- Pause / Start (btn 7 by default) → pause toggle (`K_ESCAPE` in global menus)
 
 Tune deadzone and repeat timing in `settings.py`:
 `CONTROLLER_DEADZONE`, `CONTROLLER_AXIS_REPEAT_DELAY`, `CONTROLLER_AXIS_REPEAT_RATE`
@@ -406,27 +505,38 @@ python src/utils/placeholder_assets.py
 **Add a new enemy:**
 
 1. Create `src/entities/enemies/newenemy.py` inheriting from `Enemy`
-2. Add spawn data dict to `wave_manager.py`
-3. Add to wave timeline in `wave_manager._check_timeline()`
+2. Add that enemy's tunables to the enemy sections in `settings.py`
+3. Register the enemy id and class in `src/entities/enemies/__init__.py`
+4. Add the enemy id to the relevant settings-driven wave pool / timeline values
+5. Update `wave_manager.py` only where timeline behavior needs to expose the new id
 
 **Add a new weapon:**
 
 1. Create `src/weapons/newweapon.py` inheriting from `BaseWeapon`
-2. Add class name string to `WEAPON_CLASSES` in `upgrade_system.py`
-3. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
+2. Add all weapon tunables and upgrade deltas to a dedicated section in `settings.py`
+3. Follow the existing settings-driven weapon pattern: class attributes and
+   `upgrade_levels` should be sourced from `settings.py`, not hardcoded in the weapon class
+4. Register the weapon id and class in `src/weapons/factory.py` (`WEAPON_CLASS_REGISTRY`)
+5. Reference that weapon id from hero `starting_weapon` fields or upgrade rewards instead of
+   instantiating the class directly in scene/system code
+6. Export it from `src/weapons/__init__.py` if package-level imports should expose it
+7. Add the weapon id to `WEAPON_CLASSES` and add card metadata to `WEAPON_META` in `upgrade_system.py`
+8. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
    from offering unusable `new_weapon` cards to players with full inventories
 
 **Add a new hero class:**
 
 1. Add a new dict entry to `HERO_CLASSES` in `settings.py` with `name`, `hp`, `speed`,
-   `armor`, `starting_weapon`, and `passive_description`
-2. Update `class_select.py` if layout logic assumes a fixed hero count
-3. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
+   `armor`, `starting_weapon`, `passive_desc`, `sprite`, and a `passives` dict
+   when the hero has gameplay modifiers
+2. Prefer declarative passive keys in the hero record over adding hero-name checks
+   in runtime code
+3. Update `class_select.py` if layout logic assumes a fixed hero count
+4. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
 
 **Tune difficulty:**
 
-- Edit wave timing and spawn rates in `wave_manager.py`
-- Edit enemy stats in the data dicts at the top of `wave_manager.py`
+- Edit enemy and wave/spawn balance tunables in `settings.py`
 - Edit hero/weapon base stats in `settings.py`
 
 **Add a real sprite:**
@@ -462,6 +572,10 @@ the coding rules above.
 6. **Keep `settings.py` the source of truth.** When adding new tunable values for a
    feature, add them to `settings.py` first, then reference them. Never hardcode
    "temporary" values directly in game code.
+   This includes HUD presentation values such as shared weapon-slot / bar background
+   colors when the UI is intentionally reusing the same visual treatment, and
+   multiplayer weapon-level border segment settings when the HUD chrome is used as
+   the upgrade tracker.
 
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.
@@ -699,7 +813,7 @@ Track progress here as phases are completed:
 
 - [x] Phase 1 — Project scaffold (settings, main, utils)
 - [x] Phase 2 — Core entities (player, enemy, projectile, xp orb)
-- [x] Phase 3 — Weapons (all 6)
+- [x] Phase 3 — Weapons (all 7)
 - [x] Phase 4 — Systems (waves, xp, upgrades, camera, collision)
 - [x] Phase 5 — UI (hud, menus, upgrade cards)
 - [x] Phase 6 — Integration (game scene, scene wiring, run_check)
@@ -723,6 +837,7 @@ Track progress here as phases are completed:
   - lobby-based slot join/leave
   - queued hero select with duplicate lockout
   - multiplayer `GameScene`/HUD/camera plumbing
+  - off-screen teammate HUD arrows, including live teammates and downed players
   - owned input handling for multiplayer-sensitive menus
   - downed/revive support
   - controller disconnect/reclaim support

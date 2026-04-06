@@ -1,32 +1,34 @@
 import pygame
-from src.weapons.base_weapon import BaseWeapon
-from pygame.math import Vector2
-import math
 import random
+from pygame.math import Vector2
+
+from settings import (
+    CRIT_MULTIPLIER,
+    HOLY_NOVA_BASE_COOLDOWN,
+    HOLY_NOVA_BASE_DAMAGE,
+    HOLY_NOVA_BASE_RADIUS,
+    HOLY_NOVA_EXPAND_SPEED,
+    HOLY_NOVA_HIT_SPARK_COLOR,
+    HOLY_NOVA_RING_COLOR,
+    HOLY_NOVA_RING_WIDTH,
+    HOLY_NOVA_UPGRADE_LEVELS,
+)
 from src.utils.audio_manager import AudioManager
-from settings import CRIT_MULTIPLIER
+from src.weapons.base_weapon import BaseWeapon
 
 class HolyNova(BaseWeapon):
     name = "Holy Nova"
     description = "Emits an expanding ring of holy light, damaging all enemies it touches."
-    base_damage = 25.0
-    base_cooldown = 2.0
-    base_radius = 80
-    expand_speed = 200  # px per second
-    ring_width = 8
+    base_damage = HOLY_NOVA_BASE_DAMAGE
+    base_cooldown = HOLY_NOVA_BASE_COOLDOWN
+    base_radius = HOLY_NOVA_BASE_RADIUS
+    expand_speed = HOLY_NOVA_EXPAND_SPEED
+    ring_width = HOLY_NOVA_RING_WIDTH
     IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"base_damage": 15},  # L2: +15 damage
-            {"base_radius": 40},  # L3: +40 radius
-            {"base_cooldown": -0.4},  # L4: -0.4 cooldown
-            {"base_damage": 20, "ring_width": -4}  # L5: more damage, narrower ring
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in HOLY_NOVA_UPGRADE_LEVELS]
 
         # Keep a list of active rings
         self.rings = []
@@ -80,7 +82,7 @@ class HolyNova(BaseWeapon):
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
                             DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
-                            HitSpark(enemy.pos, (255, 230, 100), [self.effect_group])
+                            HitSpark(enemy.pos, HOLY_NOVA_HIT_SPARK_COLOR, [self.effect_group])
 
             # Remove rings that exceed max_radius
             if ring["radius"] > ring["max_radius"]:
@@ -97,4 +99,4 @@ class HolyNova(BaseWeapon):
             )
             radius = int(ring["radius"])
             if radius > 0:
-                pygame.draw.circle(surface, (255, 230, 100), center, radius, self.ring_width)
+                pygame.draw.circle(surface, HOLY_NOVA_RING_COLOR, center, radius, self.ring_width)

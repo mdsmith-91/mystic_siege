@@ -1,32 +1,36 @@
 import pygame
-from src.weapons.base_weapon import BaseWeapon
-from pygame.math import Vector2
-import math
 import random
+from pygame.math import Vector2
+
+from settings import (
+    CRIT_MULTIPLIER,
+    FROST_RING_BASE_COOLDOWN,
+    FROST_RING_BASE_DAMAGE,
+    FROST_RING_COLOR,
+    FROST_RING_DRAW_WIDTH,
+    FROST_RING_FREEZE_DURATION,
+    FROST_RING_HALF_WIDTH,
+    FROST_RING_HIT_SPARK_COLOR,
+    FROST_RING_MAX_RADIUS,
+    FROST_RING_SPEED,
+    FROST_RING_UPGRADE_LEVELS,
+)
 from src.utils.audio_manager import AudioManager
-from settings import CRIT_MULTIPLIER
+from src.weapons.base_weapon import BaseWeapon
 
 class FrostRing(BaseWeapon):
     name = "Frost Ring"
     description = "Expands a freezing ring outward, temporarily immobilizing enemies."
-    base_damage = 15.0
-    base_cooldown = 3.0
-    ring_speed = 80  # px per second outward
-    max_radius = 200
-    freeze_duration = 1.5
+    base_damage = FROST_RING_BASE_DAMAGE
+    base_cooldown = FROST_RING_BASE_COOLDOWN
+    ring_speed = FROST_RING_SPEED
+    max_radius = FROST_RING_MAX_RADIUS
+    freeze_duration = FROST_RING_FREEZE_DURATION
     IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"freeze_duration": 0.5},  # L2: +0.5 freeze duration
-            {"base_damage": 10},  # L3: +10 damage
-            {"ring_speed": 30},  # L4: +30 ring speed
-            {"base_cooldown": -0.8, "max_radius": 80}  # L5: more frequent, bigger reach
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in FROST_RING_UPGRADE_LEVELS]
 
         # Track frozen enemies by live enemy reference to avoid repeated group scans.
         self.frozen_enemies: dict[object, float] = {}
@@ -54,8 +58,8 @@ class FrostRing(BaseWeapon):
         for enemy in list(self.frozen_enemies.keys()):
             remaining = self.frozen_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
-                if enemy.alive() and hasattr(enemy, 'max_speed'):
-                    enemy.speed = enemy.max_speed
+                if enemy.alive() and hasattr(enemy, "_refresh_speed"):
+                    enemy._refresh_speed()
                 del self.frozen_enemies[enemy]
                 continue
 
@@ -68,8 +72,8 @@ class FrostRing(BaseWeapon):
 
             # Expand the ring
             ring["radius"] += self.ring_speed * dt
-            inner_radius = max(0, ring["radius"] - 5)
-            outer_radius = ring["radius"] + 5
+            inner_radius = max(0, ring["radius"] - FROST_RING_HALF_WIDTH)
+            outer_radius = ring["radius"] + FROST_RING_HALF_WIDTH
             inner_radius_sq = inner_radius * inner_radius
             outer_radius_sq = outer_radius * outer_radius
 
@@ -92,13 +96,14 @@ class FrostRing(BaseWeapon):
                         if self.effect_group is not None:
                             from src.entities.effects import DamageNumber, HitSpark
                             DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
-                            HitSpark(enemy.pos, (0, 200, 255), [self.effect_group])
+                            HitSpark(enemy.pos, FROST_RING_HIT_SPARK_COLOR, [self.effect_group])
 
-                        # Freeze enemy — only save max_speed if not already frozen
+                        # Freeze enemy through the shared enemy status timer so
+                        # lunge/boss movement modifiers can coexist safely.
                         self.frozen_enemies[enemy] = self.freeze_duration
-                        if enemy.speed > 0:
-                            enemy.max_speed = enemy.speed
-                        enemy.speed = 0
+                        enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), self.freeze_duration)
+                        if hasattr(enemy, "_refresh_speed"):
+                            enemy._refresh_speed()
 
                         # Add to done set
                         ring["damage_done"].add(enemy.sprite_id)
@@ -115,6 +120,6 @@ class FrostRing(BaseWeapon):
             # Draw ring as a cyan circle outline (pygame.draw.circle with width=3)
             center = ring["center"]
             radius = ring["radius"]
-            pygame.draw.circle(surface, (0, 200, 255),  # Cyan color
+            pygame.draw.circle(surface, FROST_RING_COLOR,
                              (int(center.x - camera_offset.x), int(center.y - camera_offset.y)),
-                             int(radius), 3)  # Width = 3
+                             int(radius), FROST_RING_DRAW_WIDTH)

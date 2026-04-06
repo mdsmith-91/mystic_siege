@@ -1,33 +1,39 @@
 import pygame
-from src.weapons.base_weapon import BaseWeapon
-from pygame.math import Vector2
 import math
 import random
-from src.utils.audio_manager import AudioManager
-from settings import CRIT_MULTIPLIER
+from pygame.math import Vector2
 
-class FlameWhip(BaseWeapon):
-    name = "Flame Whip"
-    description = "Lashes a cone of fire toward the nearest enemy."
-    base_damage = 30.0
-    base_cooldown = 1.5
-    cone_range = 120
-    cone_angle = 90  # degrees total arc
-    burn_damage = 5.0  # per second
-    burn_duration = 2.0  # seconds
+from settings import (
+    CRIT_MULTIPLIER,
+    FLAME_BLAST_BASE_COOLDOWN,
+    FLAME_BLAST_BASE_DAMAGE,
+    FLAME_BLAST_BURN_DAMAGE,
+    FLAME_BLAST_BURN_DURATION,
+    FLAME_BLAST_CONE_ANGLE,
+    FLAME_BLAST_CONE_RANGE,
+    FLAME_BLAST_EFFECT_COLOR,
+    FLAME_BLAST_HIT_SPARK_COLOR,
+    FLAME_BLAST_SWING_DURATION,
+    FLAME_BLAST_SWING_POINT_COUNT,
+    FLAME_BLAST_UPGRADE_LEVELS,
+)
+from src.utils.audio_manager import AudioManager
+from src.weapons.base_weapon import BaseWeapon
+
+class FlameBlast(BaseWeapon):
+    name = "Flame Blast"
+    description = "Blasts a cone of fire toward the nearest enemy."
+    base_damage = FLAME_BLAST_BASE_DAMAGE
+    base_cooldown = FLAME_BLAST_BASE_COOLDOWN
+    cone_range = FLAME_BLAST_CONE_RANGE
+    cone_angle = FLAME_BLAST_CONE_ANGLE
+    burn_damage = FLAME_BLAST_BURN_DAMAGE
+    burn_duration = FLAME_BLAST_BURN_DURATION
     IS_SPELL = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
-
-        # Define upgrade levels
-        self.upgrade_levels = [
-            {},  # Level 1 (no upgrade)
-            {"base_damage": 15},  # L2: +15 damage
-            {"cone_range": 40},   # L3: +40 range
-            {"burn_duration": 1.5},  # L4: +1.5 burn duration
-            {"cone_angle": 30, "base_damage": 20}  # L5: wider cone, more damage
-        ]
+        self.upgrade_levels = [dict(upgrade) for upgrade in FLAME_BLAST_UPGRADE_LEVELS]
 
         # Track burning enemies by live enemy reference to avoid repeated id lookups.
         self.burning_enemies: dict[object, float] = {}
@@ -55,7 +61,7 @@ class FlameWhip(BaseWeapon):
         if not nearest_enemy:
             return
 
-        AudioManager.instance().play_sfx(AudioManager.WEAPON_WHIP)
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_FLAME_BLAST)
 
         # Aim the cone center at the nearest enemy
         self.fire_direction = (nearest_enemy.pos - self.owner.pos).normalize()
@@ -79,13 +85,13 @@ class FlameWhip(BaseWeapon):
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
                     DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
-                    HitSpark(enemy.pos, (255, 100, 0), [self.effect_group])
+                    HitSpark(enemy.pos, FLAME_BLAST_HIT_SPARK_COLOR, [self.effect_group])
 
         # Show swing visual for 0.2s
-        self.swing_timer = 0.2
+        self.swing_timer = FLAME_BLAST_SWING_DURATION
 
     def update(self, dt):
-        """Update the flame whip effect."""
+        """Update the flame blast effect."""
         super().update(dt)
 
         self.swing_timer = max(0, self.swing_timer - dt)
@@ -112,14 +118,14 @@ class FlameWhip(BaseWeapon):
         end_angle = base_angle + self.cone_angle / 2
 
         points = [center]
-        num_points = 10
+        num_points = FLAME_BLAST_SWING_POINT_COUNT
         for i in range(num_points + 1):
             angle = start_angle + (end_angle - start_angle) * i / num_points
             point = center + Vector2(math.cos(math.radians(angle)), -math.sin(math.radians(angle))) * self.cone_range
             points.append(point)
 
         if len(points) >= 3:
-            alpha = int(100 * (self.swing_timer / 0.2))  # fade out as timer decreases
-            color = (255, 100, 0, alpha)
+            alpha = int(100 * (self.swing_timer / FLAME_BLAST_SWING_DURATION))  # fade out as timer decreases
+            color = (*FLAME_BLAST_EFFECT_COLOR, alpha)
             pygame.draw.polygon(surface, color,
                                 [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points])
