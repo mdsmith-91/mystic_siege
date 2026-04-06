@@ -4,7 +4,7 @@ import pygame
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_MED_COLOR, HP_LOW_COLOR, XP_COLOR,
     MAX_WEAPON_SLOTS, WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
-    WEAPON_SLOT_PIP_Y_OFFSET, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
+    WEAPON_SLOT_PIP_Y_OFFSET, HUD_EMPTY_SLOT_BG_COLOR, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
@@ -192,7 +192,7 @@ class HUD:
         rect: pygame.Rect,
         ratio: float,
         fill_color: tuple[int, int, int],
-        background_color: tuple[int, int, int] = (30, 30, 30),
+        background_color: tuple[int, int, int] = HUD_EMPTY_SLOT_BG_COLOR,
     ) -> None:
         pygame.draw.rect(screen, background_color, rect, border_radius=4)
         ratio = max(0.0, min(1.0, ratio))
@@ -234,7 +234,7 @@ class HUD:
         for i in range(MAX_WEAPON_SLOTS):
             slot_x = left + i * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
             slot_rect = pygame.Rect(slot_x, top, slot_width, slot_size)
-            pygame.draw.rect(screen, (40, 40, 40), slot_rect, border_radius=4)
+            pygame.draw.rect(screen, HUD_EMPTY_SLOT_BG_COLOR, slot_rect, border_radius=4)
 
             if i >= len(player.weapons):
                 pygame.draw.rect(screen, (80, 80, 80), slot_rect, 1, border_radius=4)

@@ -95,6 +95,7 @@ Not yet broadly verified in runtime:
 - `src/weapons/__init__.py` re-exports the registry and constructor helper as the package-level weapon API.
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
+- HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 
 ## Getting Started
 

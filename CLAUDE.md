@@ -196,6 +196,10 @@ Current weapon architecture rules:
 - Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`,
   `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
   reference them by string.
+- HUD chrome that is visually tied to weapon slots should also stay settings-driven.
+  The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
+  bar background reuses that same constant so 1P and multiplayer HUD panels keep a
+  consistent baseline treatment without duplicating color literals in `src/ui/hud.py`.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -506,6 +510,8 @@ the coding rules above.
 6. **Keep `settings.py` the source of truth.** When adding new tunable values for a
    feature, add them to `settings.py` first, then reference them. Never hardcode
    "temporary" values directly in game code.
+   This includes HUD presentation values such as shared weapon-slot / bar background
+   colors when the UI is intentionally reusing the same visual treatment.
 
 7. **Commit working states.** Make a git commit whenever the game reaches a clean,
    runnable state. Never let a multi-day stretch pass without a checkpoint.

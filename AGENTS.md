@@ -24,6 +24,10 @@ incremental verification phase and must continue to preserve the solo experience
 6. Keep scene transition kwargs lightweight. No live sprites, surfaces, or file handles.
 7. Be explicit about what was verified versus not verified.
 
+HUD/UI note: shared HUD chrome should stay settings-driven. If HP/XP bars intentionally
+match empty weapon slots, reuse the same `settings.py` constant instead of duplicating
+the color in `src/ui/hud.py`.
+
 ## Multiplayer Rules
 
 1. No new hard-coded P1/P2 architecture.
