@@ -30,6 +30,7 @@ class LichFamiliar(Enemy):
         self.orbit_radius = LICH_FAMILIAR_ENEMY_DATA["orbit_radius"]
         self.fire_timer = 0.0
         self.fire_interval = LICH_FAMILIAR_ENEMY_DATA["fire_interval"]
+        self.projectile_damage = LICH_FAMILIAR_ENEMY_DATA["projectile_damage"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         sheet = Spritesheet("assets/sprites/enemies/lich.png", 32, 32)
@@ -88,7 +89,7 @@ class LichFamiliar(Enemy):
                     pos=self.pos,
                     direction=direction_to_player,
                     speed=LICH_FAMILIAR_ENEMY_DATA["projectile_speed"],
-                    damage=LICH_FAMILIAR_ENEMY_DATA["projectile_damage"],
+                    damage=self.projectile_damage,
                     groups=proj_groups,
                     enemy_group_ref=None,
                     pierce=0,

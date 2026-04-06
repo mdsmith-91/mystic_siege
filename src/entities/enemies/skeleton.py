@@ -48,24 +48,22 @@ class Skeleton(Enemy):
             return self._frames[_DIR_RIGHT] if self.vel.x > 0 else self._frames[_DIR_LEFT]
         return self._frames[_DIR_DOWN] if self.vel.y > 0 else self._frames[_DIR_UP]
 
+    def _compute_velocity(self, target: pygame.sprite.Sprite | None) -> Vector2:
+        """Apply the slight wandering offset on top of chase movement."""
+        if target is None:
+            return Vector2(0, 0)
+        direction = target.pos - self.pos
+        if direction.length_squared() <= 0:
+            return Vector2(0, 0)
+        direction = direction.normalize().rotate(self.angle_offset)
+        return direction * self.speed
+
     def update(self, dt):
         # Add small random angle offset (±5 degrees, change every 0.5s) so they spread out
         self.angle_change_timer += dt
         if self.angle_change_timer >= self.angle_change_interval:
             self.angle_offset = (pygame.time.get_ticks() % 1000) / 1000.0 * (self.angle_variance * 2) - self.angle_variance
             self.angle_change_timer = 0.0
-
-        # Apply the angle offset to movement
-        target = self.target
-        if target is None:
-            self.vel = Vector2(0, 0)
-        else:
-            direction = target.pos - self.pos
-            if direction.length() > 0:
-                direction = direction.normalize().rotate(self.angle_offset)
-                self.vel = direction * self.speed
-            else:
-                self.vel = Vector2(0, 0)
 
         super().update(dt)
 

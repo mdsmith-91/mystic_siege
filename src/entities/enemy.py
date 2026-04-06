@@ -25,7 +25,10 @@ class Enemy(BaseEntity):
         self.name = enemy_data["name"]
         self.max_hp = enemy_data["hp"]
         self.hp = self.max_hp
-        self.speed = enemy_data["speed"]
+        self.base_speed = enemy_data["speed"]
+        self.speed_multiplier = 1.0
+        self.freeze_timer = 0.0
+        self.speed = self.base_speed
         self.damage = enemy_data["damage"]
         self.xp_value = enemy_data["xp_value"]
         self.behavior = enemy_data["behavior"]
@@ -85,10 +88,42 @@ class Enemy(BaseEntity):
         self._target = self._pick_target()
         self._retarget_timer = ENEMY_RETARGET_INTERVAL
 
+    def _refresh_speed(self) -> None:
+        """Rebuild effective move speed from persistent enemy state."""
+        self.speed = 0.0 if self.freeze_timer > 0.0 else self.base_speed * self.speed_multiplier
+
+    def _tick_status_timers(self, dt: float) -> None:
+        """Update transient enemy status timers before movement is evaluated."""
+        if self.freeze_timer > 0.0:
+            self.freeze_timer = max(0.0, self.freeze_timer - dt)
+        self._refresh_speed()
+
+    def _compute_velocity(self, target: pygame.sprite.Sprite | None) -> Vector2:
+        """Return the desired movement velocity for this frame."""
+        if target is None:
+            return Vector2(0, 0)
+        if self.behavior == "chase":
+            direction = target.pos - self.pos
+            distance_sq = direction.length_squared()
+            if distance_sq > 0:
+                return direction * (self.speed / (distance_sq ** 0.5))
+            return Vector2(0, 0)
+        if self.behavior == "ranged":
+            direction = target.pos - self.pos
+            distance_sq = direction.length_squared()
+            if distance_sq > 0:
+                distance = distance_sq ** 0.5
+                direction *= 1.0 / distance
+                if distance > 200:
+                    return direction * self.speed
+            return Vector2(0, 0)
+        return self.vel
+
     def update(self, dt):
         # Apply knockback: pos += knockback_vel * dt, knockback_vel *= (1 - 8*dt) clamped to 0
         self.pos += self.knockback_vel * dt
         self.knockback_vel *= max(0, 1 - 8 * dt)
+        self._tick_status_timers(dt)
         if self._target is None or not self._target.is_alive:
             self._refresh_target()
         else:
@@ -97,30 +132,7 @@ class Enemy(BaseEntity):
                 self._refresh_target()
         target = self.target
 
-        # If behavior == "chase": direction toward target, move
-        # If behavior == "ranged": stop at 200px from target, face target
-        if target is None:
-            self.vel = Vector2(0, 0)
-        elif self.behavior == "chase":
-            direction = target.pos - self.pos
-            distance_sq = direction.length_squared()
-            if distance_sq > 0:
-                self.vel = direction * (self.speed / (distance_sq ** 0.5))
-            else:
-                self.vel = Vector2(0, 0)
-        elif self.behavior == "ranged":
-            direction = target.pos - self.pos
-            distance_sq = direction.length_squared()
-            if distance_sq > 0:
-                distance = distance_sq ** 0.5
-                direction *= 1.0 / distance
-                # Stop at 200px from target
-                if distance > 200:
-                    self.vel = direction * self.speed
-                else:
-                    self.vel = Vector2(0, 0)
-            else:
-                self.vel = Vector2(0, 0)
+        self.vel = self._compute_velocity(target)
 
         # Update position
         super().update(dt)

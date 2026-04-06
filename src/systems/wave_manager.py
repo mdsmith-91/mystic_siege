@@ -5,6 +5,7 @@ from settings import (
     ENEMY_ELITE_DAMAGE_MULTIPLIER,
     ENEMY_ELITE_HP_MULTIPLIER,
     ENEMY_SPAWN_OFFSCREEN_MARGIN,
+    ENEMY_SPAWN_POSITION_ATTEMPTS,
     ENEMY_WARNING_DURATION,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -194,6 +195,8 @@ class WaveManager:
                 enemy.max_hp = int(enemy.max_hp * ENEMY_ELITE_HP_MULTIPLIER)
                 enemy.hp = enemy.max_hp
                 enemy.damage = int(enemy.damage * ENEMY_ELITE_DAMAGE_MULTIPLIER)
+                if hasattr(enemy, "projectile_damage"):
+                    enemy.projectile_damage = int(enemy.projectile_damage * ENEMY_ELITE_DAMAGE_MULTIPLIER)
 
     def _get_enemy_id(self, enemy_data: dict) -> str:
         """Resolve the registry id for the provided settings-backed enemy data."""
@@ -204,6 +207,21 @@ class WaveManager:
 
     def _alive_players(self):
         return [player for player in self.players if player.is_alive]
+
+    def _spawn_visibility_score(self, pos: Vector2, alive_players: list) -> float:
+        """Higher scores are farther outside every alive player's local screen rect."""
+        if not alive_players:
+            return 0.0
+
+        half_w = SCREEN_WIDTH / 2
+        half_h = SCREEN_HEIGHT / 2
+        score = float("inf")
+        for player in alive_players:
+            dx = abs(pos.x - player.pos.x)
+            dy = abs(pos.y - player.pos.y)
+            offscreen_margin = max(dx - half_w, dy - half_h)
+            score = min(score, offscreen_margin)
+        return score
 
     def _get_spawn_pos(self) -> Vector2:
         """Get a random point just outside the visible screen, relative to alive players."""
@@ -219,24 +237,36 @@ class WaveManager:
             anchor = Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
         px, py = anchor
 
-        edge = random.randint(0, 3)
-        if edge == 0:  # Top
-            x = px + random.randint(-half_w, half_w)
-            y = py - half_h
-        elif edge == 1:  # Right
-            x = px + half_w
-            y = py + random.randint(-half_h, half_h)
-        elif edge == 2:  # Bottom
-            x = px + random.randint(-half_w, half_w)
-            y = py + half_h
-        else:  # Left
-            x = px - half_w
-            y = py + random.randint(-half_h, half_h)
+        best_candidate = Vector2(px, py)
+        best_score = float("-inf")
 
-        # Clamp to world bounds so enemies don't spawn outside the map
-        x = max(0, min(WORLD_WIDTH, x))
-        y = max(0, min(WORLD_HEIGHT, y))
-        return Vector2(x, y)
+        for _ in range(ENEMY_SPAWN_POSITION_ATTEMPTS):
+            edge = random.randint(0, 3)
+            if edge == 0:  # Top
+                x = px + random.randint(-half_w, half_w)
+                y = py - half_h
+            elif edge == 1:  # Right
+                x = px + half_w
+                y = py + random.randint(-half_h, half_h)
+            elif edge == 2:  # Bottom
+                x = px + random.randint(-half_w, half_w)
+                y = py + half_h
+            else:  # Left
+                x = px - half_w
+                y = py + random.randint(-half_h, half_h)
+
+            candidate = Vector2(
+                max(0, min(WORLD_WIDTH, x)),
+                max(0, min(WORLD_HEIGHT, y)),
+            )
+            score = self._spawn_visibility_score(candidate, alive_players)
+            if score > best_score:
+                best_candidate = candidate
+                best_score = score
+            if score > 0:
+                return candidate
+
+        return best_candidate
 
     def get_elapsed_str(self) -> str:
         """Return elapsed time formatted as MM:SS."""

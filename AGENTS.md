@@ -39,7 +39,11 @@ wave/spawn balance values in clearly grouped `settings.py` enemy sections first.
 Concrete enemy classes should read those values instead of redefining local stat
 dicts, and shared enemy spawning should go through the enemy registry/helper in
 `src/entities/enemies/__init__.py` instead of growing new constructor chains in
-`wave_manager.py`.
+`wave_manager.py`. Shared enemy runtime state such as targeting cadence, freeze /
+stun timers, effective speed rebuilding, elite projectile scaling, and spawn retry
+behavior near map edges should stay centralized in the base enemy / wave systems.
+Subclass-specific movement should plug into the base enemy movement hook instead of
+recomputing `self.vel` in a way that the parent class then overwrites.
 
 ## Multiplayer Rules
 

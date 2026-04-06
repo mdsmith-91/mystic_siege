@@ -56,14 +56,14 @@ class Wraith(Enemy):
                 # Start lunge
                 self.lunge_active = True
                 self.lunge_duration = WRAITH_ENEMY_DATA["lunge_duration"]
-                self.speed *= WRAITH_ENEMY_DATA["lunge_speed_multiplier"]
+                self.speed_multiplier = WRAITH_ENEMY_DATA["lunge_speed_multiplier"]
         else:
             # During lunge
             self.lunge_duration -= dt
             if self.lunge_duration <= 0:
                 # End lunge — restore speed and reset timer for next lunge
                 self.lunge_active = False
-                self.speed /= WRAITH_ENEMY_DATA["lunge_speed_multiplier"]
+                self.speed_multiplier = 1.0
                 self.lunge_timer = WRAITH_ENEMY_DATA["lunge_cooldown"]
 
         super().update(dt)

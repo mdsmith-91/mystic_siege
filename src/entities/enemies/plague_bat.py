@@ -58,31 +58,22 @@ class PlagueBat(Enemy):
             return self._frames[_DIR_RIGHT] if self.vel.x > 0 else self._frames[_DIR_LEFT]
         return self._frames[_DIR_DOWN] if self.vel.y > 0 else self._frames[_DIR_UP]
 
+    def _compute_velocity(self, target: pygame.sprite.Sprite | None) -> Vector2:
+        """Chase with a sinusoidal side-to-side swoop."""
+        if target is None:
+            return Vector2(0, 0)
+        direction = target.pos - self.pos
+        if direction.length_squared() <= 0:
+            return Vector2(0, 0)
+        direction = direction.normalize()
+        perpendicular = Vector2(-direction.y, direction.x)
+        wave_offset = math.sin(self._t * self.wave_frequency)
+        effective_dir = direction + perpendicular * (wave_offset * self.wave_amplitude)
+        return effective_dir * self.speed
+
     def update(self, dt):
         # Track elapsed time
         self._t += dt
-
-        # Movement: arc pattern — add sine wave offset perpendicular to direction
-        target = self.target
-        if target:
-            direction = target.pos - self.pos
-            if direction.length() > 0:
-                direction = direction.normalize()
-
-                # Perpendicular direction (rotated 90 degrees)
-                perpendicular = Vector2(-direction.y, direction.x)
-
-                # Sine wave offset perpendicular to travel direction
-                wave_offset = math.sin(self._t * self.wave_frequency)  # -1 to 1
-
-                # Effective direction with wave offset
-                effective_dir = direction + perpendicular * (wave_offset * self.wave_amplitude)
-
-                self.vel = effective_dir * self.speed
-            else:
-                self.vel = Vector2(0, 0)
-        else:
-            self.vel = Vector2(0, 0)
 
         super().update(dt)
 

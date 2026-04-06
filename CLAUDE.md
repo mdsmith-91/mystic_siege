@@ -239,6 +239,15 @@ Current enemy architecture rules:
 - Keep constructor signatures aligned across concrete enemy classes so the registry
   can instantiate them through one shared call path; only consume optional runtime
   dependencies such as `projectile_group` in the enemies that actually need them.
+- Shared enemy runtime state should stay centralized in `src/entities/enemy.py`
+  and `src/systems/wave_manager.py`: nearest-player retarget cadence, freeze /
+  stun timers, effective speed rebuilding, elite projectile scaling, and spawn
+  retry behavior near world edges belong there rather than being reimplemented in
+  individual subclasses or weapons.
+- Subclass-specific movement should plug into the base enemy movement hook instead
+  of setting `self.vel` before calling `super().update(dt)` and assuming the parent
+  will preserve it. This is how Skeleton wander and PlagueBat swoop behavior now
+  avoid being overwritten by the base chase logic.
 - Keep `MiniBat` as a local plague-bat follow-on unless a gameplay change makes it
   a true top-level spawnable enemy.
 

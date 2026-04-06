@@ -111,6 +111,8 @@ Not yet broadly verified in runtime:
 - `src/systems/wave_manager.py` resolves enemy ids through that shared helper and should not grow new enemy-specific constructor chains.
 - Enemy ids remain string-based (`Skeleton`, `Goblin`, `Wraith`, `Bat`, `Knight`, `Lich`, `Golem`) because wave pools and settings lookups reference them directly.
 - Concrete enemy constructors now follow one shared call shape so the registry can instantiate them uniformly; optional dependencies such as `projectile_group` should only be consumed by enemies that need them.
+- Shared enemy runtime state now lives in the base enemy / wave systems as well: retarget cadence, freeze / stun timers, effective speed rebuilding, elite projectile scaling, and spawn retry behavior near map edges are centralized instead of being ad hoc per subclass or per weapon.
+- Enemy-specific movement should be expressed through the base enemy movement hook so subclass behaviors such as Skeleton wander and PlagueBat swoop remain active when the parent class updates targeting and movement each frame.
 - `MiniBat` remains a plague-bat local follow-on spawned on death, not a top-level wave enemy.
 
 ## Getting Started

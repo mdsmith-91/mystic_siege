@@ -235,6 +235,11 @@ Current implementation note:
   resolve through the same shared path
 - concrete enemy constructors now share one registry-friendly call shape; optional
   dependencies such as `projectile_group` are only consumed by enemies that need them
+- shared enemy runtime state such as retarget cadence, freeze / stun timers,
+  effective speed rebuilding, elite projectile scaling, and spawn retry behavior
+  near world edges is centralized in the base enemy / wave systems
+- subclass-specific movement goes through the base enemy movement hook so custom
+  behaviors like Skeleton wander and Plague Bat swoop movement remain active
 
 ---
 

@@ -204,6 +204,7 @@ ENEMY_MIN_SEPARATION = 30       # pixels — enemies push apart if closer than t
 ENEMY_KNOCKBACK_FORCE = 180     # pixels/second — impulse applied to enemies on weapon hit
 ENEMY_RETARGET_INTERVAL = 0.25  # seconds between nearest-player retarget scans
 ENEMY_SPAWN_OFFSCREEN_MARGIN = 150
+ENEMY_SPAWN_POSITION_ATTEMPTS = 8
 ENEMY_WARNING_DURATION = 3.0
 ENEMY_ELITE_HP_MULTIPLIER = 1.5
 ENEMY_ELITE_DAMAGE_MULTIPLIER = 1.5

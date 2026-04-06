@@ -132,11 +132,9 @@ class LightningChain(BaseWeapon):
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
             if random.random() < self.stun_chance:
-                # Only save max_speed if not already frozen (speed > 0)
-                if enemy.speed > 0:
-                    enemy.max_speed = enemy.speed
-                enemy.speed = 0
-                enemy.freeze_timer = self.stun_duration
+                enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), self.stun_duration)
+                if hasattr(enemy, "_refresh_speed"):
+                    enemy._refresh_speed()
                 self.stunned_enemies[enemy] = self.stun_duration
 
         # Store arc positions for drawing — first arc runs from player to initial target
@@ -173,15 +171,13 @@ class LightningChain(BaseWeapon):
         for enemy in list(self.stunned_enemies.keys()):
             remaining = self.stunned_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
-                if enemy.alive():
-                    enemy.freeze_timer = 0
-                    if hasattr(enemy, 'max_speed'):
-                        enemy.speed = enemy.max_speed
+                if enemy.alive() and hasattr(enemy, "_refresh_speed"):
+                    enemy._refresh_speed()
                 del self.stunned_enemies[enemy]
                 continue
 
             self.stunned_enemies[enemy] = remaining
-            enemy.freeze_timer = remaining
+            enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), remaining)
 
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs."""

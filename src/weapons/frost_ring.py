@@ -58,8 +58,8 @@ class FrostRing(BaseWeapon):
         for enemy in list(self.frozen_enemies.keys()):
             remaining = self.frozen_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
-                if enemy.alive() and hasattr(enemy, 'max_speed'):
-                    enemy.speed = enemy.max_speed
+                if enemy.alive() and hasattr(enemy, "_refresh_speed"):
+                    enemy._refresh_speed()
                 del self.frozen_enemies[enemy]
                 continue
 
@@ -98,11 +98,12 @@ class FrostRing(BaseWeapon):
                             DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                             HitSpark(enemy.pos, FROST_RING_HIT_SPARK_COLOR, [self.effect_group])
 
-                        # Freeze enemy — only save max_speed if not already frozen
+                        # Freeze enemy through the shared enemy status timer so
+                        # lunge/boss movement modifiers can coexist safely.
                         self.frozen_enemies[enemy] = self.freeze_duration
-                        if enemy.speed > 0:
-                            enemy.max_speed = enemy.speed
-                        enemy.speed = 0
+                        enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), self.freeze_duration)
+                        if hasattr(enemy, "_refresh_speed"):
+                            enemy._refresh_speed()
 
                         # Add to done set
                         ring["damage_done"].add(enemy.sprite_id)
