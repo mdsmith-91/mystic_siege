@@ -2,6 +2,11 @@
 **A Medieval Fantasy Survivor (Vampire Survivors / Brotato-style)**
 *Built with Python + Pygame | Team of 2 | Vibe-coded with Ollama + Claude*
 
+> Current-state note (2026-04-05): this document is primarily the original game
+> design reference. It is not the authoritative source for current implementation
+> status. For live project state, multiplayer status, and verification guidance,
+> use `README.md`, `AGENTS.md`, `CLAUDE.md`, and the multiplayer review docs.
+
 ---
 
 ## 1. VISION STATEMENT
@@ -18,7 +23,7 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 - 1 map (castle courtyard)
 - 3 hero classes
 - 6 weapons/spells
-- 8 enemy types
+- 7 enemy types in the current shipped roster
 - Basic upgrade system (level-up choices)
 - Simple audio (placeholder/CC0)
 
@@ -84,7 +89,7 @@ mystic_siege/
 ├── src/
 │   ├── __init__.py
 │   ├── game.py              # Main game loop & state manager
-│   ├── scene_manager.py     # Scene switching (menu, game, gameover)
+│   ├── scene_manager.py     # Scene switching (menu, lobby, class select, game, gameover)
 │   │
 │   ├── entities/
 │   │   ├── __init__.py
@@ -122,11 +127,14 @@ mystic_siege/
 │   │   ├── camera.py        # Camera / scrolling
 │   │   └── save_system.py   # JSON meta-progression
 │   │
+│   ├── core/
+│   │   └── player_slot.py   # Slot/session metadata for current local co-op flow
 │   ├── ui/
 │   │   ├── __init__.py
 │   │   ├── hud.py           # In-game HUD (HP, XP bar, timer, weapon icons)
 │   │   ├── upgrade_menu.py  # Level-up selection screen
 │   │   ├── main_menu.py
+│   │   ├── lobby_scene.py   # Local co-op join/leave lobby
 │   │   ├── class_select.py  # Hero selection screen
 │   │   ├── game_over.py
 │   │   ├── settings_menu.py # Volume sliders, show FPS toggle, reset
@@ -197,22 +205,30 @@ Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 
 ## 8. GAME LOOP
 
-```
+```text
 [Main Menu]
     ↓
-[Class Select]
+[Lobby]
+    ↓
+[Queued Class Select]
     ↓
 [Game starts — 0:00]
     ↓ (loop)
 [Player moves + auto-attacks]
 [Enemies spawn from waves]
 [Collect XP orbs from kills]
-[Reach XP threshold → LEVEL UP]
+[Reach XP threshold -> LEVEL UP]
 [Choose 1 of 3 upgrades]
 [Repeat — scaling difficulty every 60s]
     ↓
-[Die OR Survive 30 minutes → Game Over / Victory Screen]
+[Die OR Survive 30 minutes -> Game Over / Victory Screen]
 ```
+
+Current implementation note:
+
+- single-player is the stable baseline
+- local multiplayer is partially implemented and still in verification
+- practical current co-op cap is 3 because duplicate heroes are blocked and the roster has 3 heroes
 
 ---
 

@@ -5,13 +5,14 @@
 **Scope:** Local co-op 1–4 players, preserving the current single-player loop  
 **Reference document:** MULTIPLAYER_IMPLEMENTATION_V2.md  
 
-> Update note (2026-04-04): this document is now partially historical. The repo has
-> since landed parts of the multiplayer migration, including `PlayerSlot`,
+> Update note (2026-04-05): this document is now partially historical. The repo has
+> since landed much of the slot-based multiplayer migration, including `PlayerSlot`,
 > `LobbyScene`, queued `ClassSelect`, multiplayer `GameScene` plumbing, owned menu
-> input work, revive/downed scaffolding, and multi-player HUD/camera support. Read
-> the findings below as original migration guidance plus an inventory of risks that
-> still need runtime verification and cleanup, not as a statement of the current
-> implementation percentage.
+> input work, revive/downed runtime support, reconnect/reclaim handling, and
+> multi-player HUD/camera support. Read the findings below as original migration
+> guidance plus a risk inventory, not as a statement of today's implementation
+> percentage. For current status and remaining unverified behavior, defer to
+> `README.md`, `CLAUDE.md`, and `MULTIPLAYER_READINESS_GATE_REVIEW.md`.
 
 ---
 

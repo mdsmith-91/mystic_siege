@@ -2,6 +2,10 @@
 
 WSL 2 development and Linux build/test setup guide for **Mystic Siege**.
 
+> Current project-state note (2026-04-05): `python run_check.py` validates the
+> Linux environment and imports, but it does not verify gameplay correctness. The
+> current multiplayer implementation is partial and still requires manual runtime testing.
+
 Use this guide if you want to:
 
 - test the project in a real Linux userspace from your Windows machine
@@ -312,6 +316,9 @@ python run_check.py
 ### Why this matters
 Confirms imports and the basic environment are working before full testing.
 
+### Important limitation
+Passing `run_check.py` does not prove the solo or multiplayer gameplay paths are working.
+
 ---
 
 ### 14) Generate placeholder assets
@@ -337,6 +344,9 @@ python main.py
 
 ### Why this matters
 This is the simplest Linux-side validation step.
+
+### Current verification recommendation
+If graphics/display support is available, use the current flow `Main Menu -> Lobby -> Class Select -> Game` for a basic manual smoke test.
 
 ### Important note
 Graphical behavior in WSL depends on your Windows version, WSLg support, and graphics/audio setup. If the game does not display correctly, that does not necessarily mean the Python environment is wrong.

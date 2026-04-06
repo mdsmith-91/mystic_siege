@@ -4,6 +4,10 @@ Windows development setup guide for **Mystic Siege** using **Python**, **PyGame*
 
 This guide is intended to keep the development environment as contained and reproducible as possible.
 
+> Current project-state note (2026-04-05): `python run_check.py` validates the
+> environment and imports, but it does not verify gameplay correctness. The current
+> multiplayer implementation is partial and still requires manual runtime testing.
+
 ---
 
 ## Goal
@@ -343,6 +347,9 @@ Runs the project’s built-in setup validation.
 #### Why this matters
 This is the fastest way to confirm Python, imports, and key dependencies are working before trying to run the game.
 
+#### Important limitation
+Passing `run_check.py` does not prove the solo or multiplayer gameplay paths are working. Treat it as an environment check only.
+
 ---
 
 ### 14) Generate placeholder assets
@@ -374,6 +381,9 @@ Starts Mystic Siege.
 
 #### Why this matters
 This confirms the environment is fully working end-to-end.
+
+#### Current verification recommendation
+After the game launches, use the current flow `Main Menu -> Lobby -> Class Select -> Game` for a basic manual smoke test.
 
 ---
 
