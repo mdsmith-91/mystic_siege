@@ -185,14 +185,16 @@ Current weapon architecture rules:
 - Weapon classes should read class attributes and upgrade tables from `settings.py`
   instead of hardcoding gameplay values in the class body.
 - Weapon creation by string id is centralized in `src/weapons/factory.py` through
-  `WEAPON_CLASS_REGISTRY` and `create_weapon()`. `GameScene` starting weapons and
-  `UpgradeSystem` new-weapon rewards both go through that path.
+  `WEAPON_CLASS_REGISTRY` and `create_weapon()`. `GameScene` resolves each
+  hero's `starting_weapon` id through that path, and `UpgradeSystem` resolves
+  new-weapon rewards through the same shared constructor.
 - `src/weapons/__init__.py` re-exports `WEAPON_CLASS_REGISTRY` and `create_weapon`
   so callers can import the package-level API if needed.
 - Upgrade-card presentation metadata is kept in `src/systems/upgrade_system.py`
   via `WEAPON_META`, while the list of unlockable weapon ids stays in `WEAPON_CLASSES`.
 - Do not add new `if/elif` weapon factory chains in `GameScene`, `UpgradeSystem`,
-  or other callers.
+  or other callers. Register the weapon once in `WEAPON_CLASS_REGISTRY` and keep
+  hero data / upgrade rewards on string ids.
 - Keep weapon ids stable (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
   `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices
   reference them by string.
@@ -468,9 +470,11 @@ python src/utils/placeholder_assets.py
 3. Follow the existing settings-driven weapon pattern: class attributes and
    `upgrade_levels` should be sourced from `settings.py`, not hardcoded in the weapon class
 4. Register the weapon id and class in `src/weapons/factory.py` (`WEAPON_CLASS_REGISTRY`)
-5. Export it from `src/weapons/__init__.py` if package-level imports should expose it
-6. Add the weapon id to `WEAPON_CLASSES` and add card metadata to `WEAPON_META` in `upgrade_system.py`
-7. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
+5. Reference that weapon id from hero `starting_weapon` fields or upgrade rewards instead of
+   instantiating the class directly in scene/system code
+6. Export it from `src/weapons/__init__.py` if package-level imports should expose it
+7. Add the weapon id to `WEAPON_CLASSES` and add card metadata to `WEAPON_META` in `upgrade_system.py`
+8. If the weapon pool now exceeds `MAX_WEAPON_SLOTS`, keep `UpgradeSystem`
    from offering unusable `new_weapon` cards to players with full inventories
 
 **Add a new hero class:**

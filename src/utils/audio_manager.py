@@ -1,6 +1,7 @@
 import pygame
 import os
 from src.utils.resource_loader import ResourceLoader, _get_base_path
+from src.systems.save_system import SaveSystem
 
 class AudioManager:
     _instance = None
@@ -29,9 +30,18 @@ class AudioManager:
         if not self._initialized:
             self._initialized = True
             self._sfx_cache = {}
-            self._sfx_volume = 1.0
-            self._music_volume = 1.0
+            self._sfx_volume = self._load_saved_volume("sfx_volume")
+            self._music_volume = self._load_saved_volume("music_volume")
             self._music_playing = False
+
+    @staticmethod
+    def _load_saved_volume(setting_name: str) -> float:
+        """Initialize audio state from persisted settings before any playback starts."""
+        try:
+            value = SaveSystem().get_setting(setting_name)
+        except Exception:
+            value = 1.0
+        return max(0.0, min(1.0, float(value)))
 
     @classmethod
     def instance(cls):

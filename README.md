@@ -91,9 +91,12 @@ Not yet broadly verified in runtime:
 
 - `settings.py` is the source of truth for weapon tunables, including base stats, relevant visual tunables, and per-level upgrade deltas.
 - Weapon classes in `src/weapons/` reference those constants instead of hardcoding gameplay values locally.
-- Shared weapon construction now goes through `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` and `create_weapon()`, which are used by both `GameScene` and `UpgradeSystem`.
+- Shared weapon construction now goes through `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` and `create_weapon()`.
+- Hero `starting_weapon` values in `settings.HERO_CLASSES` are string ids, and `GameScene` resolves those ids through `create_weapon()` when building each player's starting loadout.
+- Upgrade unlocks stay string-based as well: `UpgradeSystem` offers and applies weapon rewards by id, then resolves those ids through the same shared factory path.
 - `src/weapons/__init__.py` re-exports the registry and constructor helper as the package-level weapon API.
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
+- `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
 - Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
 - Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.

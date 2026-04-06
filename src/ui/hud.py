@@ -10,7 +10,7 @@ from settings import (
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
     HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE, HUD_PANEL_WEAPON_SLOT_WIDTH,
-    HUD_PANEL_WEAPON_SLOT_GAP, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
+    HUD_PANEL_WEAPON_SLOT_GAP, HUD_PANEL_CORNER_RADIUS, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_PANEL_TUPLES,
 )
 from src.utils.resource_loader import ResourceLoader
@@ -60,7 +60,12 @@ class HUD:
         cached = self._panel_surface_cache.get(size)
         if cached is None:
             cached = pygame.Surface(size, pygame.SRCALPHA)
-            cached.fill(UI_BG)
+            pygame.draw.rect(
+                cached,
+                UI_BG,
+                cached.get_rect(),
+                border_radius=HUD_PANEL_CORNER_RADIUS,
+            )
             self._panel_surface_cache[size] = cached
         return cached
 
@@ -415,7 +420,7 @@ class HUD:
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera, show_stat_bonuses: bool) -> None:
         panel_surface = self._get_panel_surface(rect.size)
         screen.blit(panel_surface, rect.topleft)
-        pygame.draw.rect(screen, slot.color, rect, 2, border_radius=6)
+        pygame.draw.rect(screen, slot.color, rect, 2, border_radius=HUD_PANEL_CORNER_RADIUS)
 
         inner_x = rect.x + HUD_PANEL_PADDING
         inner_y = rect.y + HUD_PANEL_PADDING
