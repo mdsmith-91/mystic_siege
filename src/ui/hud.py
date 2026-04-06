@@ -3,8 +3,7 @@ import math
 import pygame
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, HP_COLOR, HP_MED_COLOR, HP_LOW_COLOR, XP_COLOR,
-    MAX_WEAPON_SLOTS, WEAPON_SLOT_PIP_COUNT, WEAPON_SLOT_PIP_RADIUS, WEAPON_SLOT_PIP_SPACING,
-    WEAPON_SLOT_PIP_Y_OFFSET, HUD_EMPTY_SLOT_BG_COLOR, WEAPON_SLOT_PIP_FILLED_COLOR, WEAPON_SLOT_PIP_EMPTY_COLOR,
+    MAX_WEAPON_SLOTS, HUD_EMPTY_SLOT_BG_COLOR,
     WEAPON_SLOT_LEVEL_BORDER_SEGMENTS, WEAPON_SLOT_LEVEL_BORDER_WIDTH, WEAPON_SLOT_LEVEL_BORDER_GAP,
     WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR, WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR,
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
@@ -231,7 +230,6 @@ class HUD:
         left: int,
         top: int,
         slot_size: int,
-        show_upgrade_pips: bool = True,
     ) -> None:
         slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
         for i in range(MAX_WEAPON_SLOTS):
@@ -252,20 +250,6 @@ class HUD:
                 letter_font = self.font_16 if slot_size >= 36 else self.font_14
                 text = self._render_text(letter_font, letter, WHITE)
                 screen.blit(text, text.get_rect(center=slot_rect.center))
-
-            if show_upgrade_pips:
-                pygame.draw.rect(screen, WEAPON_SLOT_LEVEL_BORDER_FILLED_COLOR, slot_rect, 2, border_radius=4)
-                pip_radius = min(WEAPON_SLOT_PIP_RADIUS, max(2, slot_size // 10))
-                pip_spacing = max((pip_radius * 2) + 1, min(WEAPON_SLOT_PIP_SPACING, slot_rect.width // 6))
-                pip_y_offset = max(4, min(WEAPON_SLOT_PIP_Y_OFFSET, slot_size // 5))
-                total_pip_width = (WEAPON_SLOT_PIP_COUNT - 1) * pip_spacing
-                pip_start_x = slot_rect.centerx - total_pip_width // 2
-                pip_y = slot_rect.bottom - pip_y_offset - pip_radius
-                for p in range(WEAPON_SLOT_PIP_COUNT):
-                    pip_x = pip_start_x + p * pip_spacing
-                    color = WEAPON_SLOT_PIP_FILLED_COLOR if p < weapon.level else WEAPON_SLOT_PIP_EMPTY_COLOR
-                    pygame.draw.circle(screen, color, (pip_x, pip_y), pip_radius)
-                continue
 
             self._draw_weapon_level_border(screen, slot_rect, weapon.level)
 
@@ -399,47 +383,6 @@ class HUD:
         start_x = rect.right if align_right else rect.left
         self._draw_stat_lines(screen, stat_lines, start_x, start_y, align_right)
 
-    def _draw_single_player(self, screen, player, xp_system, wave_manager, show_stat_bonuses=False, show_fps=False, fps=0):
-        """Preserve the familiar 1P HUD layout."""
-
-        hp_bar_rect = pygame.Rect(20, 20, 200, 20)
-        hp_ratio = max(0.0, player.hp / player.max_hp)
-        if hp_ratio > 0.5:
-            fill_color = HP_COLOR
-        elif hp_ratio > 0.25:
-            fill_color = HP_MED_COLOR
-        else:
-            fill_color = HP_LOW_COLOR
-        self._draw_bar(screen, hp_bar_rect, hp_ratio, fill_color)
-
-        hp_display = max(0, int(player.hp))
-        text = self._render_text(self.font_16, f"HP  {hp_display} / {int(player.max_hp)}", WHITE)
-        screen.blit(text, (230, 20))
-
-        if show_stat_bonuses:
-            self._draw_stat_lines(screen, self._stat_lines(player), 20, 48)
-
-        xp_bar_rect = pygame.Rect(0, SCREEN_HEIGHT - 20, SCREEN_WIDTH, 20)
-        xp_progress = xp_system.xp_progress()
-        self._draw_bar(screen, xp_bar_rect, xp_progress, XP_COLOR)
-
-        lvl_text = self._render_text(self.font_16, f"LVL {xp_system.current_level}", WHITE)
-        lvl_rect = lvl_text.get_rect(midleft=(10, xp_bar_rect.centery))
-        screen.blit(lvl_text, lvl_rect)
-
-        kill_text = self._render_text(self.font_16, f"KILLS  {player.kill_count}", WHITE)
-        screen.blit(kill_text, (SCREEN_WIDTH - kill_text.get_width() - 10, 20))
-        class_text = self._render_text(self.font_14, player.hero_class.upper(), (180, 160, 120))
-        screen.blit(class_text, (SCREEN_WIDTH - class_text.get_width() - 10, 40))
-
-        weapon_slot_width = max(40, HUD_PANEL_WEAPON_SLOT_WIDTH)
-        total_weapon_width = (MAX_WEAPON_SLOTS * weapon_slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
-        weapon_slots_x = SCREEN_WIDTH - total_weapon_width - 5
-        weapon_slots_y = SCREEN_HEIGHT - 65
-        self._draw_weapon_slots(screen, player, weapon_slots_x, weapon_slots_y, 40, show_upgrade_pips=True)
-
-        self._draw_shared_info(screen, wave_manager, show_fps, fps)
-
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera, show_stat_bonuses: bool) -> None:
         panel_surface = self._get_panel_surface(rect.size)
         screen.blit(panel_surface, rect.topleft)
@@ -492,7 +435,7 @@ class HUD:
         total_slots_width = (MAX_WEAPON_SLOTS * slot_width) + ((MAX_WEAPON_SLOTS - 1) * HUD_PANEL_WEAPON_SLOT_GAP)
         weapon_left = rect.centerx - total_slots_width // 2
         weapon_top = status_y + self.font_14.get_height() + 4
-        self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size, show_upgrade_pips=False)
+        self._draw_weapon_slots(screen, player, weapon_left, weapon_top, slot_size)
         self._draw_revive_indicator(screen, player, slot.color, camera)
         if show_stat_bonuses:
             self._draw_panel_stat_lines(screen, player, rect)
@@ -500,10 +443,6 @@ class HUD:
     def draw(self, screen, players, xp_systems, wave_manager, show_stat_bonuses=False, show_fps=False, fps=0, camera=None):
         """Draw all in-game overlay UI in screen space (no camera offset)."""
         if not players or not xp_systems:
-            return
-
-        if len(players) == 1:
-            self._draw_single_player(screen, players[0], xp_systems[0], wave_manager, show_stat_bonuses, show_fps, fps)
             return
 
         layout = HUD_PANEL_TUPLES[len(players)]

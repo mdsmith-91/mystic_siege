@@ -26,9 +26,9 @@ incremental verification phase and must continue to preserve the solo experience
 
 HUD/UI note: shared HUD chrome should stay settings-driven. If HP/XP bars intentionally
 match empty weapon slots, reuse the same `settings.py` constant instead of duplicating
-the color in `src/ui/hud.py`. In the current HUD, single-player weapon levels still use
-the legacy pip row, while multiplayer weapon panels now use a 4-segment border tracker
-that fills clockwise from the top and uses the empty-slot gray for unearned sections.
+the color in `src/ui/hud.py`. In the current HUD, solo and multiplayer use the same
+slot-panel HUD treatment, including the 4-segment border tracker that fills clockwise
+from the top and uses the empty-slot gray for unearned sections.
 
 ## Multiplayer Rules
 

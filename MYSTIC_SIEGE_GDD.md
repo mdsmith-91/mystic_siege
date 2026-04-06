@@ -205,7 +205,10 @@ Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 Current implementation note:
 
 - weapon tunables and upgrade deltas are defined in `settings.py` first
-- shared weapon construction is centralized in `src/weapons/factory.py`
+- shared weapon construction is centralized in `src/weapons/factory.py` via
+  `WEAPON_CLASS_REGISTRY` and `create_weapon()`
+- weapon ids stay string-based so hero starting weapons and upgrade rewards can
+  both resolve through the same factory path
 
 ---
 
@@ -248,7 +251,8 @@ Current implementation note:
 
 - single-player is the stable baseline
 - local multiplayer is partially implemented and still in verification
-- practical current co-op cap is 3 because duplicate heroes are blocked and the roster has 3 heroes
+- practical current co-op cap is 4 because duplicate heroes are blocked and the
+  roster has 4 heroes
 
 ---
 

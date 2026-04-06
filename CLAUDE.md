@@ -83,7 +83,7 @@ mystic_siege/
 │   │   ├── camera.py              # Single-target follow + multi-target zoomed camera
 │   │   └── save_system.py         # JSON meta-progression + controller binding persistence in saves/progress.json
 │   ├── ui/
-│   │   ├── hud.py                 # 1P HUD + multiplayer player panels, revive indicators, threat arrows
+│   │   ├── hud.py                 # Shared in-run HUD panels, revive indicators, threat arrows
 │   │   ├── upgrade_menu.py        # 3-card level-up overlay, owned-player input routing
 │   │   ├── main_menu.py           # Title screen with falling ember particles
 │   │   ├── lobby_scene.py         # Slot-based join/leave lobby with keyboard/controller claims
@@ -200,10 +200,10 @@ Current weapon architecture rules:
   The empty weapon-slot background now uses `HUD_EMPTY_SLOT_BG_COLOR`, and the HP/XP
   bar background reuses that same constant so 1P and multiplayer HUD panels keep a
   consistent baseline treatment without duplicating color literals in `src/ui/hud.py`.
-- Weapon level HUD treatment is now intentionally split by mode: 1P keeps the
-  familiar pip row, while multiplayer weapon panels use a settings-driven 4-segment
-  border tracker that fills clockwise from the top as levels 2–5 are earned; any
-  unearned segments use the same gray baseline as empty weapon slots.
+- Weapon level HUD treatment is now shared across solo and multiplayer: player
+  panels use a settings-driven 4-segment border tracker that fills clockwise from
+  the top as levels 2–5 are earned; any unearned segments use the same gray
+  baseline as empty weapon slots.
 
 ### Enemy Spawn Timeline (`wave_manager.py`)
 
@@ -232,7 +232,8 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 ```
 
 - The solo baseline is preserved inside `GameScene`; a single joined slot still uses
-  the legacy single-player runtime path for movement, death, and HUD behavior.
+  the single-player runtime path for movement and death behavior, but the in-run HUD
+  now shares the same slot-panel renderer and weapon-slot treatment as multiplayer.
 - The practical current party cap is 4 unique players because there are 4 heroes and
   duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the

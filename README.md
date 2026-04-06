@@ -96,7 +96,7 @@ Not yet broadly verified in runtime:
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameWhip`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
-- The weapon-level HUD is intentionally mode-specific: solo play keeps the existing pip row, while multiplayer player panels now use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
+- The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
 
 ## Getting Started
 
