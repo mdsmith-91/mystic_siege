@@ -238,7 +238,7 @@ WRAITH_ENEMY_DATA = {
     "xp_value": 5,
     "behavior": "chase",
     "lunge_cooldown": 3.0,
-    "lunge_duration": 0.4,
+    "lunge_duration": 0.6,
     "lunge_speed_multiplier": 3.0,
 }
 
