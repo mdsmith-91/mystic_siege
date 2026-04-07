@@ -27,10 +27,12 @@ from settings import (
     WAVE_GOBLIN_PACK_MIN,
     WAVE_GOBLIN_SPAWN_RATE,
     WAVE_GOBLIN_UNLOCK_TIME,
-    WAVE_GOLEM_COUNT,
     WAVE_GOLEM_EVENT_TIME,
+    WAVE_GOLEM_PACK_MAX,
+    WAVE_GOLEM_PACK_MIN,
     WAVE_GOLEM_WARNING_TEXT,
     WAVE_INITIAL_ACTIVE_POOL,
+    WAVE_INITIAL_BOSS_SPAWN_RATE,
     WAVE_INITIAL_SPAWN_RATE,
     WAVE_KNIGHT_LICH_SPAWN_RATE,
     WAVE_KNIGHT_LICH_UNLOCK_TIME,
@@ -49,7 +51,8 @@ from settings import (
     WORLD_WIDTH,
     WRAITH_ENEMY_DATA,
     LICH_FAMILIAR_ENEMY_DATA,
-    CURSED_KNIGHT_ENEMY_DATA
+    CURSED_KNIGHT_ENEMY_DATA,
+    WAVE_INITIAL_BOSS_ACTIVE_POOL
 )
 from src.entities.enemies import create_enemy
 import random
@@ -74,6 +77,15 @@ class WaveManager:
 
         # active_pool: list = ["Skeleton"]  — names of currently spawnable enemies
         self.active_pool = list(WAVE_INITIAL_ACTIVE_POOL)
+
+        # boss_spawn_timer: float = 120.0
+        self.boss_spawn_timer = 120.0
+
+        # boss_spawn_rate: float = INITIAL_BOSS_SPAWN_RATE
+        self.boss_spawn_rate = WAVE_INITIAL_BOSS_SPAWN_RATE
+
+        # active_boss_pool: list = ["Golem"]  — names of currently spawnable boss enemies
+        self.active_boss_pool = list(WAVE_INITIAL_BOSS_ACTIVE_POOL)
 
         # elite_mode: bool = False
         self.elite_mode = False
@@ -103,6 +115,12 @@ class WaveManager:
         if self.spawn_timer <= 0:
             self._spawn_wave()
             self.spawn_timer = self.spawn_rate
+
+        # boss_spawn_timer -= dt; if <= 0: _spawn_wave(); reset spawn_timer
+        self.boss_spawn_timer -= dt
+        if self.boss_spawn_timer <= 0:
+            self.boss_spawn_wave()
+            self.boss_spawn_timer = self.boss_spawn_rate
 
         # Tick warning_timer
         if self.warning_timer > 0:
@@ -138,7 +156,6 @@ class WaveManager:
 
         # 480s:  spawn 1 Golem (one-time event), show warning "GOLEM APPROACHES!"
         if WAVE_GOLEM_EVENT_TIME not in self.triggered_events and self.elapsed >= WAVE_GOLEM_EVENT_TIME:
-            self._spawn_enemy(STONE_GOLEM_ENEMY_DATA, count=WAVE_GOLEM_COUNT * len(self.players)) #spawn more golems based on player count
             self.warning_text = WAVE_GOLEM_WARNING_TEXT
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_GOLEM_EVENT_TIME)
@@ -214,6 +231,17 @@ class WaveManager:
         else:
             for _ in range(len(self.players)+1): #spawn more enemies based on player count
                 self._spawn_enemy(self._get_enemy_data(enemy_type))
+
+    def boss_spawn_wave(self):
+        """Spawn a wave of boss enemies."""
+        # pick random enemy boss type from active_pool
+        enemy_type = random.choice(self.active_boss_pool)
+
+        # Special: Golem spawns in groups of 1-3
+        if enemy_type == "Golem":
+            count = random.randint(WAVE_GOLEM_PACK_MIN, WAVE_GOLEM_PACK_MAX) * len(self.players) #increases golem pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(STONE_GOLEM_ENEMY_DATA)
 
     def _get_enemy_data(self, enemy_name):
         """Get enemy data by name."""
