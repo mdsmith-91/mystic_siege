@@ -294,7 +294,7 @@ LICH_FAMILIAR_ENEMY_DATA = {
     "projectile_speed": 120,
     "projectile_damage": 12,
     "projectile_lifetime": 4.0,
-    "projectile_color": (200, 60, 255),
+    "projectile_color": (187, 0, 0),
     "fire_range": 450,
 }
 
