@@ -7,9 +7,13 @@ from settings import (
     ENEMY_SPAWN_OFFSCREEN_MARGIN,
     ENEMY_SPAWN_POSITION_ATTEMPTS,
     ENEMY_WARNING_DURATION,
+    PLAGUE_BAT_ENEMY_DATA,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SKELETON_ENEMY_DATA,
     STONE_GOLEM_ENEMY_DATA,
+    WAVE_BAT_PACK_MAX,
+    WAVE_BAT_PACK_MIN,
     WAVE_BAT_SPAWN_RATE,
     WAVE_BAT_UNLOCK_TIME,
     WAVE_BAT_WARNING_TEXT,
@@ -30,11 +34,22 @@ from settings import (
     WAVE_INITIAL_SPAWN_RATE,
     WAVE_KNIGHT_LICH_SPAWN_RATE,
     WAVE_KNIGHT_LICH_UNLOCK_TIME,
+    WAVE_LICH_PACK_MIN,
+    WAVE_LICH_PACK_MAX,
+    WAVE_KNIGHT_PACK_MIN,
+    WAVE_KNIGHT_PACK_MAX,
+    WAVE_SKELETON_PACK_MAX,
+    WAVE_SKELETON_PACK_MIN,
     WAVE_VICTORY_TIME,
+    WAVE_WRAITH_PACK_MAX,
+    WAVE_WRAITH_PACK_MIN,
     WAVE_WRAITH_SPAWN_RATE,
     WAVE_WRAITH_UNLOCK_TIME,
     WORLD_HEIGHT,
     WORLD_WIDTH,
+    WRAITH_ENEMY_DATA,
+    LICH_FAMILIAR_ENEMY_DATA,
+    CURSED_KNIGHT_ENEMY_DATA
 )
 from src.entities.enemies import create_enemy
 import random
@@ -123,7 +138,7 @@ class WaveManager:
 
         # 480s:  spawn 1 Golem (one-time event), show warning "GOLEM APPROACHES!"
         if WAVE_GOLEM_EVENT_TIME not in self.triggered_events and self.elapsed >= WAVE_GOLEM_EVENT_TIME:
-            self._spawn_enemy(STONE_GOLEM_ENEMY_DATA, count=WAVE_GOLEM_COUNT)
+            self._spawn_enemy(STONE_GOLEM_ENEMY_DATA, count=WAVE_GOLEM_COUNT * len(self.players)) #spawn more golems based on player count
             self.warning_text = WAVE_GOLEM_WARNING_TEXT
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_GOLEM_EVENT_TIME)
@@ -160,13 +175,45 @@ class WaveManager:
         # pick random enemy type from active_pool
         enemy_type = random.choice(self.active_pool)
 
+        # Special: Skeleton spawns in groups of 1-3
+        if enemy_type == "Skeleton":
+            count = random.randint(WAVE_SKELETON_PACK_MIN, WAVE_SKELETON_PACK_MAX) * len(self.players) #increases skeleton pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(SKELETON_ENEMY_DATA)
+
         # Special: Goblin spawns in groups of 3-5
-        if enemy_type == "Goblin":
-            count = random.randint(WAVE_GOBLIN_PACK_MIN, WAVE_GOBLIN_PACK_MAX)
+        elif enemy_type == "Goblin":
+            count = random.randint(WAVE_GOBLIN_PACK_MIN, WAVE_GOBLIN_PACK_MAX) * len(self.players) #increases goblin pack size based on player count
             for _ in range(count):
                 self._spawn_enemy(DARK_GOBLIN_ENEMY_DATA)
+
+        # Special: Wraith spawns in groups of 1-3
+        elif enemy_type == "Wraith":
+            count = random.randint(WAVE_WRAITH_PACK_MIN, WAVE_WRAITH_PACK_MAX) * len(self.players) #increases wraith pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(WRAITH_ENEMY_DATA)
+
+        # Special: Lich spawns in groups of 1-3
+        elif enemy_type == "Lich":
+            count = random.randint(WAVE_LICH_PACK_MIN, WAVE_LICH_PACK_MAX) * len(self.players) #increases lich pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(LICH_FAMILIAR_ENEMY_DATA)
+
+        # Special: Bat spawns in groups of 3-6
+        elif enemy_type == "Bat":
+            count = random.randint(WAVE_BAT_PACK_MIN, WAVE_BAT_PACK_MAX) * len(self.players) #increases bat pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(PLAGUE_BAT_ENEMY_DATA)
+
+        # Special: Knight spawns in groups of 1-2
+        elif enemy_type == "Knight":
+            count = random.randint(WAVE_KNIGHT_PACK_MIN, WAVE_KNIGHT_PACK_MAX) * len(self.players) #increases knight pack size based on player count
+            for _ in range(count):
+                self._spawn_enemy(CURSED_KNIGHT_ENEMY_DATA)
+        
         else:
-            self._spawn_enemy(self._get_enemy_data(enemy_type))
+            for _ in range(len(self.players)+1): #spawn more enemies based on player count
+                self._spawn_enemy(self._get_enemy_data(enemy_type))
 
     def _get_enemy_data(self, enemy_name):
         """Get enemy data by name."""
