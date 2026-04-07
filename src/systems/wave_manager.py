@@ -79,13 +79,13 @@ class WaveManager:
         self.active_pool = list(WAVE_INITIAL_ACTIVE_POOL)
 
         # boss_spawn_timer: float = 120.0
-        self.boss_spawn_timer = 120.0
+        self.boss_spawn_timer = WAVE_GOLEM_EVENT_TIME
 
         # boss_spawn_rate: float = INITIAL_BOSS_SPAWN_RATE
         self.boss_spawn_rate = WAVE_INITIAL_BOSS_SPAWN_RATE
 
         # active_boss_pool: list = ["Golem"]  — names of currently spawnable boss enemies
-        self.active_boss_pool = list(WAVE_INITIAL_BOSS_ACTIVE_POOL)
+        self.boss_active_pool = list(WAVE_INITIAL_BOSS_ACTIVE_POOL)
 
         # elite_mode: bool = False
         self.elite_mode = False
@@ -156,6 +156,8 @@ class WaveManager:
 
         # 480s:  spawn 1 Golem (one-time event), show warning "GOLEM APPROACHES!"
         if WAVE_GOLEM_EVENT_TIME not in self.triggered_events and self.elapsed >= WAVE_GOLEM_EVENT_TIME:
+            self.boss_active_pool.append("Golem")
+            self.boss_spawn_rate = WAVE_INITIAL_BOSS_SPAWN_RATE
             self.warning_text = WAVE_GOLEM_WARNING_TEXT
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_GOLEM_EVENT_TIME)
@@ -235,7 +237,7 @@ class WaveManager:
     def boss_spawn_wave(self):
         """Spawn a wave of boss enemies."""
         # pick random enemy boss type from active_pool
-        enemy_type = random.choice(self.active_boss_pool)
+        enemy_type = random.choice(self.boss_active_pool)
 
         # Special: Golem spawns in groups of 1-3
         if enemy_type == "Golem":
