@@ -215,7 +215,7 @@ SKELETON_ENEMY_DATA = {
     "hp": 30,
     "speed": 80,
     "damage": 10,
-    "xp_value": 5,
+    "xp_value": 3,
     "behavior": "chase",
     "wander_angle_max": 5.0,
     "wander_angle_change_interval": 0.5,
@@ -226,7 +226,7 @@ DARK_GOBLIN_ENEMY_DATA = {
     "hp": 20,
     "speed": 160,
     "damage": 8,
-    "xp_value": 4,
+    "xp_value": 3,
     "behavior": "chase",
 }
 
@@ -235,7 +235,7 @@ WRAITH_ENEMY_DATA = {
     "hp": 40,
     "speed": 120,
     "damage": 15,
-    "xp_value": 10,
+    "xp_value": 5,
     "behavior": "chase",
     "lunge_cooldown": 3.0,
     "lunge_duration": 0.4,
@@ -247,7 +247,7 @@ PLAGUE_BAT_ENEMY_DATA = {
     "hp": 15,
     "speed": 220,
     "damage": 8,
-    "xp_value": 6,
+    "xp_value": 3,
     "behavior": "chase",
     "split_chance": 0.4,
     "split_count": 2,
@@ -261,7 +261,7 @@ MINI_BAT_ENEMY_DATA = {
     "hp": 7,
     "speed": 280,
     "damage": 4,
-    "xp_value": 3,
+    "xp_value": 1,
     "behavior": "chase",
     "split_chance": 0.0,
     "split_count": 0,
@@ -275,7 +275,7 @@ CURSED_KNIGHT_ENEMY_DATA = {
     "hp": 80,
     "speed": 110,
     "damage": 20,
-    "xp_value": 15,
+    "xp_value": 10,
     "behavior": "chase",
     "shield_block_angle": 60.0,
     "shield_damage_multiplier": 0.2,
@@ -286,7 +286,7 @@ LICH_FAMILIAR_ENEMY_DATA = {
     "hp": 35,
     "speed": 90,
     "damage": 12,
-    "xp_value": 12,
+    "xp_value": 10,
     "behavior": "orbit",
     "orbit_radius": 200,
     "orbit_angular_speed": 45.0,
@@ -325,15 +325,15 @@ WAVE_INITIAL_BOSS_ACTIVE_POOL = ["Golem"]
 WAVE_INITIAL_BOSS_SPAWN_RATE = 120
 WAVE_SKELETON_PACK_MIN = 1
 WAVE_SKELETON_PACK_MAX = 3
-WAVE_GOBLIN_UNLOCK_TIME = 30
+WAVE_GOBLIN_UNLOCK_TIME = 60
 WAVE_GOBLIN_SPAWN_RATE = 2.5
 WAVE_GOBLIN_PACK_MIN = 3
 WAVE_GOBLIN_PACK_MAX = 5
-WAVE_WRAITH_UNLOCK_TIME = 60
+WAVE_WRAITH_UNLOCK_TIME = 90
 WAVE_WRAITH_SPAWN_RATE = 2.0
 WAVE_WRAITH_PACK_MIN = 1
 WAVE_WRAITH_PACK_MAX = 3
-WAVE_BAT_UNLOCK_TIME = 90
+WAVE_BAT_UNLOCK_TIME = 150
 WAVE_BAT_SPAWN_RATE = 1.5
 WAVE_BAT_PACK_MIN = 3
 WAVE_BAT_PACK_MAX = 6
@@ -342,7 +342,7 @@ WAVE_GOLEM_EVENT_TIME = 120
 WAVE_GOLEM_PACK_MIN = 1
 WAVE_GOLEM_PACK_MAX = 3
 WAVE_GOLEM_WARNING_TEXT = "GOLEM APPROACHES!"
-WAVE_KNIGHT_LICH_UNLOCK_TIME = 240
+WAVE_KNIGHT_LICH_UNLOCK_TIME = 210
 WAVE_KNIGHT_LICH_SPAWN_RATE = 1.0
 WAVE_LICH_PACK_MIN = 1
 WAVE_LICH_PACK_MAX = 3
