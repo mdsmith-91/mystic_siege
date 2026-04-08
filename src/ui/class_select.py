@@ -1,5 +1,3 @@
-import textwrap
-
 import pygame
 
 from settings import (
@@ -175,9 +173,29 @@ class ClassSelect:
             )
         return rects
 
-    def _wrap_width(self) -> int:
-        usable_width = CLASS_SELECT_CARD_WIDTH - CLASS_SELECT_CARD_PADDING_X * 2
-        return max(16, usable_width // 8)
+    def _wrap_text_to_pixel_width(
+        self,
+        text: str,
+        font: pygame.font.Font,
+        max_width: int,
+    ) -> list[str]:
+        words = text.split()
+        if not words:
+            return [""]
+
+        lines: list[str] = []
+        current_line = words[0]
+        for word in words[1:]:
+            candidate = f"{current_line} {word}"
+            if font.size(candidate)[0] <= max_width:
+                current_line = candidate
+                continue
+
+            lines.append(current_line)
+            current_line = word
+
+        lines.append(current_line)
+        return lines
 
     def _index_to_row_col(self, index: int) -> tuple[int, int]:
         columns, _unused_rows = self._grid_dimensions()
@@ -511,7 +529,6 @@ class ClassSelect:
         mouse_pos = pygame.mouse.get_pos()
         locked_hero_slots = self._locked_hero_slots()
         card_rects = self._card_rects()
-        wrap_width = self._wrap_width()
         self.hovered_card = None
 
         for i, (hero, card_rect) in enumerate(zip(HERO_CLASSES, card_rects)):
@@ -551,7 +568,13 @@ class ClassSelect:
             content_right = card_rect.right - CLASS_SELECT_CARD_PADDING_X
             center_x = card_rect.centerx
 
-            name_lines = textwrap.wrap(hero["name"], width=max(10, wrap_width - 2))
+            content_width = content_right - content_left
+
+            name_lines = self._wrap_text_to_pixel_width(
+                hero["name"],
+                self.font_medium,
+                content_width,
+            )
             for j, line in enumerate(name_lines):
                 line_surface = self.font_medium.render(line, True, (255, 255, 255))
                 screen.blit(
@@ -573,18 +596,30 @@ class ClassSelect:
             passive_label_y = card_rect.y + 126
             screen.blit(passive_label, (content_left, passive_label_y))
 
-            passive_lines = textwrap.wrap(hero["passive_desc"], width=wrap_width)
+            weapon_name = self._weapon_display_name(hero["starting_weapon"])
+            weapon_lines = self._wrap_text_to_pixel_width(
+                weapon_name,
+                self.font_small,
+                content_width,
+            )
+            weapon_label = self.font_small.render("Starting Weapon", True, (255, 215, 0))
+            weapon_label_y = card_rect.bottom - CLASS_SELECT_CARD_PADDING_X - (
+                18 + len(weapon_lines) * 16
+            )
+
+            passive_lines = self._wrap_text_to_pixel_width(
+                hero["passive_desc"],
+                self.font_small,
+                content_width,
+            )
             passive_top = passive_label_y + 18
-            for j, line in enumerate(passive_lines[:4]):
+            passive_line_limit = max(0, (weapon_label_y - passive_top) // 17)
+            for j, line in enumerate(passive_lines[:passive_line_limit]):
                 line_surface = self.font_small.render(line, True, (210, 210, 210))
                 screen.blit(line_surface, (content_left, passive_top + j * 17))
 
-            weapon_label = self.font_small.render("Starting Weapon", True, (255, 215, 0))
-            weapon_label_y = card_rect.bottom - 48
             screen.blit(weapon_label, (content_left, weapon_label_y))
 
-            weapon_name = self._weapon_display_name(hero["starting_weapon"])
-            weapon_lines = textwrap.wrap(weapon_name, width=wrap_width)
             for j, line in enumerate(weapon_lines[:2]):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (content_left, weapon_label_y + 18 + j * 16))
