@@ -1,10 +1,29 @@
-import pygame
 import textwrap
+
+import pygame
+
 from settings import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, HERO_CLASSES, TITLE_FONT_SIZE,
-    STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_LOBBY, PLAYER_COLORS,
-    CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
-    CLASS_SELECT_TITLE_Y, CLASS_SELECT_PROMPT_MARGIN_TOP,
+    CLASS_SELECT_CARD_GAP_X,
+    CLASS_SELECT_CARD_GAP_Y,
+    CLASS_SELECT_CARD_HEIGHT,
+    CLASS_SELECT_CARD_PADDING_X,
+    CLASS_SELECT_CARD_WIDTH,
+    CLASS_SELECT_COLOR_BAND_HEIGHT,
+    CLASS_SELECT_GRID_TOP_Y,
+    CLASS_SELECT_MAX_COLUMNS,
+    CLASS_SELECT_PROMPT_MARGIN_TOP,
+    CLASS_SELECT_TITLE_Y,
+    CONTROLLER_AXIS_REPEAT_DELAY,
+    CONTROLLER_AXIS_REPEAT_RATE,
+    HERO_CLASSES,
+    PLAYER_COLORS,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    STATE_CLASS_SELECT,
+    STATE_LOBBY,
+    STATE_MENU,
+    STATE_PLAYING,
+    TITLE_FONT_SIZE,
 )
 from src.core.player_slot import PlayerSlot
 from src.utils.input_manager import InputManager
@@ -20,6 +39,7 @@ _WEAPON_DISPLAY_NAMES = {
     "ThrowingAxes": "Throwing Axes",
 }
 
+
 class ClassSelect:
     def __init__(
         self,
@@ -34,9 +54,9 @@ class ClassSelect:
         self.slot_queue_active = self.current_slot is not None
         self.selected_class = None
         self.hovered_card = None
-        self.nav_index = 0  # keyboard nav index for hero cards
+        self.nav_index = 0
         self.keyboard_active = False
-        self._controller_nav_dir = 0
+        self._controller_nav_vector = (0, 0)
         self._controller_nav_timer = 0.0
 
         self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
@@ -45,9 +65,8 @@ class ClassSelect:
         self.font_small = pygame.font.SysFont("serif", 16)
 
         initial_index = self._first_available_index()
-        if self.slot_queue_active and initial_index is not None:
-            self.nav_index = initial_index
-            self.selected_class = HERO_CLASSES[initial_index]
+        if initial_index is not None:
+            self._set_selection(initial_index)
 
     def _controller_cfg(self) -> dict | None:
         if not self.slot_queue_active:
@@ -103,16 +122,14 @@ class ClassSelect:
             return False
 
         self.current_slot.input_config = input_manager.build_controller_input_config(event.instance_id)
-        self._controller_nav_dir = 0
+        self._controller_nav_vector = (0, 0)
         self._controller_nav_timer = 0.0
         return True
 
     def _mouse_input_enabled(self) -> bool:
-        """Mouse hero selection is available in both solo and multiplayer."""
         return True
 
     def _mouse_button_input_enabled(self) -> bool:
-        """Mouse confirm/back buttons remain available in both solo and multiplayer."""
         return True
 
     def _locked_hero_slots(self) -> dict[str, PlayerSlot]:
@@ -131,19 +148,108 @@ class ClassSelect:
                 return i
         return None
 
-    def _move_selection(self, step: int) -> None:
+    def _grid_dimensions(self) -> tuple[int, int]:
+        hero_count = max(1, len(HERO_CLASSES))
+        columns = min(CLASS_SELECT_MAX_COLUMNS, hero_count)
+        rows = (hero_count + columns - 1) // columns
+        return columns, rows
+
+    def _card_rects(self) -> list[pygame.Rect]:
+        columns, rows = self._grid_dimensions()
+        total_width = columns * CLASS_SELECT_CARD_WIDTH + (columns - 1) * CLASS_SELECT_CARD_GAP_X
+        total_height = rows * CLASS_SELECT_CARD_HEIGHT + (rows - 1) * CLASS_SELECT_CARD_GAP_Y
+        start_x = (SCREEN_WIDTH - total_width) // 2
+        start_y = CLASS_SELECT_GRID_TOP_Y
+        start_y = min(start_y, SCREEN_HEIGHT - total_height - 110)
+
+        rects: list[pygame.Rect] = []
+        for index in range(len(HERO_CLASSES)):
+            row = index // columns
+            col = index % columns
+            rects.append(
+                pygame.Rect(
+                    start_x + col * (CLASS_SELECT_CARD_WIDTH + CLASS_SELECT_CARD_GAP_X),
+                    start_y + row * (CLASS_SELECT_CARD_HEIGHT + CLASS_SELECT_CARD_GAP_Y),
+                    CLASS_SELECT_CARD_WIDTH,
+                    CLASS_SELECT_CARD_HEIGHT,
+                )
+            )
+        return rects
+
+    def _wrap_width(self) -> int:
+        usable_width = CLASS_SELECT_CARD_WIDTH - CLASS_SELECT_CARD_PADDING_X * 2
+        return max(16, usable_width // 8)
+
+    def _index_to_row_col(self, index: int) -> tuple[int, int]:
+        columns, _unused_rows = self._grid_dimensions()
+        return index // columns, index % columns
+
+    def _row_col_to_index(self, row: int, col: int) -> int | None:
+        columns, rows = self._grid_dimensions()
+        if row < 0 or row >= rows or col < 0 or col >= columns:
+            return None
+        index = row * columns + col
+        if index >= len(HERO_CLASSES):
+            return None
+        return index
+
+    def _set_selection(self, index: int) -> None:
+        self.nav_index = index
+        self.selected_class = HERO_CLASSES[index]
+
+    def _move_selection_horizontal(self, step: int) -> None:
         if self.selected_class is None:
             return
 
         for offset in range(1, len(HERO_CLASSES) + 1):
             next_index = (self.nav_index + step * offset) % len(HERO_CLASSES)
             if not self._is_hero_locked(HERO_CLASSES[next_index]):
-                self.nav_index = next_index
-                self.selected_class = HERO_CLASSES[next_index]
+                self._set_selection(next_index)
                 return
 
+    def _nearest_unlocked_in_row(self, row: int, preferred_col: int) -> int | None:
+        columns, _unused_rows = self._grid_dimensions()
+        candidate_indices: list[int] = []
+        for col in range(columns):
+            index = self._row_col_to_index(row, col)
+            if index is None:
+                continue
+            if self._is_hero_locked(HERO_CLASSES[index]):
+                continue
+            candidate_indices.append(index)
+
+        if not candidate_indices:
+            return None
+
+        return min(
+            candidate_indices,
+            key=lambda index: (
+                abs(self._index_to_row_col(index)[1] - preferred_col),
+                index,
+            ),
+        )
+
+    def _move_selection_vertical(self, step: int) -> None:
+        if self.selected_class is None:
+            return
+
+        row, col = self._index_to_row_col(self.nav_index)
+        _columns, rows = self._grid_dimensions()
+        next_row = row + step
+        while 0 <= next_row < rows:
+            candidate = self._nearest_unlocked_in_row(next_row, col)
+            if candidate is not None:
+                self._set_selection(candidate)
+                return
+            next_row += step
+
+    def _move_selection(self, horizontal: int = 0, vertical: int = 0) -> None:
+        if horizontal != 0:
+            self._move_selection_horizontal(horizontal)
+        elif vertical != 0:
+            self._move_selection_vertical(vertical)
+
     def _can_confirm_selected_class(self) -> bool:
-        """Return whether the current selection is still valid for confirmation."""
         return self.selected_class is not None and not self._is_hero_locked(self.selected_class)
 
     def _route_to_game_or_next_slot(self) -> None:
@@ -176,7 +282,7 @@ class ClassSelect:
 
     def _keyboard_hint_text(self) -> str:
         if not self.slot_queue_active:
-            return "Left/Right or A/D to choose  -  Enter or click confirms  -  ESC or Back click backs"
+            return "Arrow keys or WASD to choose  -  Enter or click confirms  -  ESC or Back click backs"
 
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "keyboard":
@@ -185,11 +291,11 @@ class ClassSelect:
         total_slots = len(self.slots) + len(self.confirmed_slots)
         if cfg.get("scheme") == "wasd":
             if total_slots == 1:
-                return "A/D to choose  -  Enter or click confirms  -  ESC, Left Shift, or Back click backs"
-            return "A/D or click to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
+                return "WASD to move  -  Enter or click confirms  -  ESC, Left Shift, or Back click backs"
+            return "WASD or click to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
 
         if cfg.get("scheme") == "arrows":
-            return "Left/Right or click to choose  -  Enter or click confirms  -  ESC, Right Shift, or Back click backs"
+            return "Arrow keys or click to choose  -  Enter or click confirms  -  ESC, Right Shift, or Back click backs"
 
         return "Use your assigned keyboard controls or click to choose  -  Click Confirm/Back or press ESC"
 
@@ -215,8 +321,6 @@ class ClassSelect:
         if not self.slot_queue_active:
             return True
 
-        # Owned multiplayer menus must not trust synthetic controller KEYDOWNs;
-        # they lose ownership semantics and can bleed into keyboard-owned slots.
         if getattr(event, "synthetic_controller_event", False):
             return False
 
@@ -227,6 +331,8 @@ class ClassSelect:
         return event.key in {
             keys["left"],
             keys["right"],
+            keys["up"],
+            keys["down"],
             keys["confirm"],
             keys["back"],
             pygame.K_ESCAPE,
@@ -239,12 +345,16 @@ class ClassSelect:
         if not self.slot_queue_active:
             if event.key in (pygame.K_LEFT, pygame.K_a):
                 self.keyboard_active = True
-                self.nav_index = max(0, self.nav_index - 1)
-                self.selected_class = HERO_CLASSES[self.nav_index]
+                self._move_selection(horizontal=-1)
             elif event.key in (pygame.K_RIGHT, pygame.K_d):
                 self.keyboard_active = True
-                self.nav_index = min(len(HERO_CLASSES) - 1, self.nav_index + 1)
-                self.selected_class = HERO_CLASSES[self.nav_index]
+                self._move_selection(horizontal=1)
+            elif event.key in (pygame.K_UP, pygame.K_w):
+                self.keyboard_active = True
+                self._move_selection(vertical=-1)
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                self.keyboard_active = True
+                self._move_selection(vertical=1)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 self._route_to_game_or_next_slot()
             elif event.key == pygame.K_ESCAPE:
@@ -256,30 +366,30 @@ class ClassSelect:
         confirm_keys = {keys["confirm"]} | self._solo_owned_keyboard_confirm_keys()
         if event.key == keys["left"]:
             self.keyboard_active = True
-            self._move_selection(-1)
+            self._move_selection(horizontal=-1)
         elif event.key == keys["right"]:
             self.keyboard_active = True
-            self._move_selection(1)
+            self._move_selection(horizontal=1)
+        elif event.key == keys["up"]:
+            self.keyboard_active = True
+            self._move_selection(vertical=-1)
+        elif event.key == keys["down"]:
+            self.keyboard_active = True
+            self._move_selection(vertical=1)
         elif event.key in confirm_keys:
             self._route_to_game_or_next_slot()
         elif event.key in {keys["back"], pygame.K_ESCAPE}:
             self._handle_back()
 
     def _handle_mouse_click(self, mouse_pos: tuple[int, int]) -> None:
-        card_width = 260
-        card_height = 380
-        spacing = 40
-        total_width = len(HERO_CLASSES) * card_width + (len(HERO_CLASSES) - 1) * spacing
-        start_x = (SCREEN_WIDTH - total_width) // 2
+        card_rects = self._card_rects()
 
         if self._mouse_input_enabled():
-            for i, hero in enumerate(HERO_CLASSES):
-                card_rect = pygame.Rect(start_x + i * (card_width + spacing), 150, card_width, card_height)
+            for i, (hero, card_rect) in enumerate(zip(HERO_CLASSES, card_rects)):
                 if card_rect.collidepoint(mouse_pos):
                     if self._is_hero_locked(hero):
                         return
-                    self.selected_class = hero
-                    self.nav_index = i
+                    self._set_selection(i)
                     return
 
         if self._mouse_button_input_enabled() and self.selected_class is not None:
@@ -316,6 +426,13 @@ class ClassSelect:
         elif input_manager.button_matches("back", event.button, joystick_id=event.instance_id):
             self._handle_back()
 
+    def _controller_nav_step(self, horizontal_dir: int, vertical_dir: int) -> tuple[int, int]:
+        if horizontal_dir != 0:
+            return horizontal_dir, 0
+        if vertical_dir != 0:
+            return 0, vertical_dir
+        return 0, 0
+
     def _poll_active_controller_navigation(self, dt: float) -> None:
         if not self.slot_queue_active:
             return
@@ -326,38 +443,38 @@ class ClassSelect:
 
         joystick_id = self._resolved_controller_id()
         if joystick_id is None:
-            self._controller_nav_dir = 0
+            self._controller_nav_vector = (0, 0)
             self._controller_nav_timer = 0.0
             return
 
-        new_dir, _unused_y = InputManager.instance().get_menu_navigation_for_joystick(
+        horizontal_dir, vertical_dir = InputManager.instance().get_menu_navigation_for_joystick(
             joystick_id
         )
+        new_vector = self._controller_nav_step(horizontal_dir, vertical_dir)
 
-        if new_dir != self._controller_nav_dir:
-            self._controller_nav_dir = new_dir
-            if new_dir != 0:
+        if new_vector != self._controller_nav_vector:
+            self._controller_nav_vector = new_vector
+            if new_vector != (0, 0):
                 self._controller_nav_timer = CONTROLLER_AXIS_REPEAT_DELAY
-                self._move_selection(new_dir)
+                self._move_selection(horizontal=new_vector[0], vertical=new_vector[1])
             else:
                 self._controller_nav_timer = 0.0
             return
 
-        if new_dir == 0:
+        if new_vector == (0, 0):
             return
 
         self._controller_nav_timer -= dt
         if self._controller_nav_timer <= 0.0:
             self._controller_nav_timer += CONTROLLER_AXIS_REPEAT_RATE
-            self._move_selection(new_dir)
+            self._move_selection(horizontal=new_vector[0], vertical=new_vector[1])
 
     def handle_events(self, events):
-        """Handle user input events."""
         mouse_pos = pygame.mouse.get_pos()
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and self._mouse_button_input_enabled():  # Left mouse button
+                if event.button == 1 and self._mouse_button_input_enabled():
                     self._handle_mouse_click(mouse_pos)
                     if self.next_scene is not None:
                         return
@@ -377,21 +494,14 @@ class ClassSelect:
                     return
 
             elif event.type == pygame.QUIT:
-                # Do NOT call pygame.quit() here — see game_scene.py for explanation.
-                # game.py handles QUIT by setting running=False; main.py's finally
-                # block owns the single pygame.quit() call.
                 return
 
     def update(self, dt):
-        """Update the class selection state."""
         self._poll_active_controller_navigation(dt)
 
     def draw(self, screen):
-        """Draw the class selection screen."""
-        # 1. Dark background (same as main menu)
         screen.fill((15, 10, 25))
 
-        # 2. Title at top, centered
         title = "CHOOSE YOUR HERO"
         if self.slot_queue_active:
             title = f"PLAYER {self.current_slot.index + 1} - CHOOSE YOUR HERO"
@@ -399,89 +509,91 @@ class ClassSelect:
         title_y = CLASS_SELECT_TITLE_Y
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, title_y))
 
-        # 3. Draw one card per hero class.
-        card_width = 260
-        card_height = 380
-        spacing = 40
-        total_width = len(HERO_CLASSES) * card_width + (len(HERO_CLASSES) - 1) * spacing
-        start_x = (SCREEN_WIDTH - total_width) // 2
-
         mouse_pos = pygame.mouse.get_pos()
         locked_hero_slots = self._locked_hero_slots()
+        card_rects = self._card_rects()
+        wrap_width = self._wrap_width()
+        self.hovered_card = None
 
-        for i, hero in enumerate(HERO_CLASSES):
-            # Calculate card position
-            x = start_x + i * (card_width + spacing)
-            y = 150
-
-            # Card rectangle
-            card_rect = pygame.Rect(x, y, card_width, card_height)
-
-            # Check hover state
-            hovered = (not self.slot_queue_active) and card_rect.collidepoint(mouse_pos)
+        for i, (hero, card_rect) in enumerate(zip(HERO_CLASSES, card_rects)):
+            hovered = card_rect.collidepoint(mouse_pos)
             if hovered:
                 self.hovered_card = i
 
             is_locked = hero["name"] in locked_hero_slots
+            is_selected = self.selected_class == hero
+            is_keyboard_focus = self.keyboard_active and i == self.nav_index
 
-            # Draw card background
-            if self.selected_class == hero:
-                # Brighter gold if selected
-                pygame.draw.rect(screen, (100, 80, 40), card_rect)
-            else:
-                # Dark stone background
-                pygame.draw.rect(screen, (40, 30, 20), card_rect)
+            bg_color = (100, 80, 40) if is_selected else (40, 30, 20)
+            pygame.draw.rect(screen, bg_color, card_rect, border_radius=8)
 
-            # Draw gold border if hovered, keyboard-navigated, or selected
-            if hovered or self.selected_class == hero or (self.keyboard_active and i == self.nav_index):
-                pygame.draw.rect(screen, (255, 215, 0), card_rect, 3)
+            if hovered or is_selected or is_keyboard_focus:
+                pygame.draw.rect(screen, (255, 215, 0), card_rect, 3, border_radius=8)
             elif is_locked:
-                pygame.draw.rect(screen, (110, 110, 110), card_rect, 3)
+                pygame.draw.rect(screen, (110, 110, 110), card_rect, 3, border_radius=8)
+            else:
+                pygame.draw.rect(screen, (85, 70, 45), card_rect, 1, border_radius=8)
 
-            # Top band filled with hero["color"] (40px tall)
-            color_band = pygame.Rect(x, y, card_width, 40)
-            pygame.draw.rect(screen, hero["color"], color_band)
+            color_band = pygame.Rect(
+                card_rect.x,
+                card_rect.y,
+                card_rect.width,
+                CLASS_SELECT_COLOR_BAND_HEIGHT,
+            )
+            pygame.draw.rect(
+                screen,
+                hero["color"],
+                color_band,
+                border_top_left_radius=8,
+                border_top_right_radius=8,
+            )
 
-            # Hero name wrapped to fit card width
-            name = hero["name"]
-            name_lines = textwrap.wrap(name, width=20)
+            content_left = card_rect.x + CLASS_SELECT_CARD_PADDING_X
+            content_right = card_rect.right - CLASS_SELECT_CARD_PADDING_X
+            center_x = card_rect.centerx
+
+            name_lines = textwrap.wrap(hero["name"], width=max(10, wrap_width - 2))
             for j, line in enumerate(name_lines):
                 line_surface = self.font_medium.render(line, True, (255, 255, 255))
-                screen.blit(line_surface, (x + card_width // 2 - line_surface.get_width() // 2, y + 50 + j * 24))
+                screen.blit(
+                    line_surface,
+                    (center_x - line_surface.get_width() // 2, card_rect.y + 42 + j * 20),
+                )
 
-            # Stats grid: HP / SPD / ARM values
-            stats_y = y + 120
-            stats = [
-                f"HP: {hero['hp']}",
-                f"SPD: {hero['speed']}",
-                f"ARM: {hero['armor']}"
-            ]
+            stats_top = card_rect.y + 84
+            column_width = (card_rect.width - CLASS_SELECT_CARD_PADDING_X * 2) // 3
+            stats = [("HP", hero["hp"]), ("SPD", hero["speed"]), ("ARM", hero["armor"])]
+            for j, (label, value) in enumerate(stats):
+                cell_center_x = content_left + j * column_width + column_width // 2
+                label_surface = self.font_small.render(label, True, (200, 180, 140))
+                value_surface = self.font_medium.render(str(value), True, (255, 255, 255))
+                screen.blit(label_surface, (cell_center_x - label_surface.get_width() // 2, stats_top))
+                screen.blit(value_surface, (cell_center_x - value_surface.get_width() // 2, stats_top + 18))
 
-            for j, stat in enumerate(stats):
-                stat_surface = self.font_medium.render(stat, True, (255, 255, 255))
-                screen.blit(stat_surface, (x + 20, stats_y + j * 30))
+            passive_label = self.font_small.render("Passive", True, (255, 215, 0))
+            passive_label_y = card_rect.y + 126
+            screen.blit(passive_label, (content_left, passive_label_y))
 
-            # Passive ability text (wrapped to card width, 20px right padding)
-            passive_y = y + 230
-            passive_text = hero["passive_desc"]
-            wrapped_text = textwrap.wrap(passive_text, width=26)
+            passive_lines = textwrap.wrap(hero["passive_desc"], width=wrap_width)
+            passive_top = passive_label_y + 18
+            for j, line in enumerate(passive_lines[:4]):
+                line_surface = self.font_small.render(line, True, (210, 210, 210))
+                screen.blit(line_surface, (content_left, passive_top + j * 17))
 
-            for j, line in enumerate(wrapped_text):
-                line_surface = self.font_small.render(line, True, (200, 200, 200))
-                screen.blit(line_surface, (x + 20, passive_y + j * 20))
+            weapon_label = self.font_small.render("Starting Weapon", True, (255, 215, 0))
+            weapon_label_y = card_rect.bottom - 48
+            screen.blit(weapon_label, (content_left, weapon_label_y))
 
-            # Starting weapon name wrapped to fit card width
-            weapon_y = y + 305
             weapon_name = self._weapon_display_name(hero["starting_weapon"])
-            weapon_lines = textwrap.wrap(f"Starts with: {weapon_name}", width=26)
-            for j, line in enumerate(weapon_lines):
+            weapon_lines = textwrap.wrap(weapon_name, width=wrap_width)
+            for j, line in enumerate(weapon_lines[:2]):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
-                screen.blit(weapon_surface, (x + 20, weapon_y + j * 20))
+                screen.blit(weapon_surface, (content_left, weapon_label_y + 18 + j * 16))
 
             if is_locked:
-                overlay = pygame.Surface((card_width, card_height), pygame.SRCALPHA)
+                overlay = pygame.Surface((card_rect.width, card_rect.height), pygame.SRCALPHA)
                 overlay.fill((40, 40, 40, 190))
-                screen.blit(overlay, (x, y))
+                screen.blit(overlay, card_rect.topleft)
 
                 owner_slot = locked_hero_slots[hero["name"]]
                 locked_text = self.font_medium.render("LOCKED", True, (220, 220, 220))
@@ -492,19 +604,18 @@ class ClassSelect:
                 )
                 screen.blit(
                     locked_text,
-                    (x + card_width // 2 - locked_text.get_width() // 2, y + 160),
+                    (center_x - locked_text.get_width() // 2, card_rect.centery - 20),
                 )
                 screen.blit(
                     owner_text,
-                    (x + card_width // 2 - owner_text.get_width() // 2, y + 192),
+                    (center_x - owner_text.get_width() // 2, card_rect.centery + 8),
                 )
 
-        # 4. "CONFIRM" button (only shown if a card is selected) at bottom center
         if self._can_confirm_selected_class():
             confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
             confirm_color = (80, 60, 30) if confirm_rect.collidepoint(mouse_pos) else (40, 30, 20)
-            pygame.draw.rect(screen, confirm_color, confirm_rect)
-            pygame.draw.rect(screen, (255, 215, 0), confirm_rect, 2)  # Gold border
+            pygame.draw.rect(screen, confirm_color, confirm_rect, border_radius=6)
+            pygame.draw.rect(screen, (255, 215, 0), confirm_rect, 2, border_radius=6)
 
             confirm_text = self.font_medium.render("CONFIRM", True, (255, 255, 255))
             screen.blit(
@@ -515,11 +626,10 @@ class ClassSelect:
                 ),
             )
 
-        # 5. "BACK" button bottom-left
         back_rect = pygame.Rect(20, SCREEN_HEIGHT - 60, 100, 40)
         back_color = (80, 60, 30) if back_rect.collidepoint(mouse_pos) else (40, 30, 20)
-        pygame.draw.rect(screen, back_color, back_rect)
-        pygame.draw.rect(screen, (255, 215, 0), back_rect, 2)  # Gold border
+        pygame.draw.rect(screen, back_color, back_rect, border_radius=6)
+        pygame.draw.rect(screen, (255, 215, 0), back_rect, 2, border_radius=6)
 
         back_text = self.font_small.render("BACK", True, (255, 255, 255))
         screen.blit(
@@ -544,6 +654,13 @@ class ClassSelect:
                 prompt_surface,
                 (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, prompt_y),
             )
+
+            slot_badge = self.font_small.render(
+                f"Slot color",
+                True,
+                PLAYER_COLORS[self.current_slot.index],
+            )
+            screen.blit(slot_badge, (SCREEN_WIDTH - slot_badge.get_width() - 20, 26))
 
             if self.selected_class is None:
                 warning_surface = self.font_small.render(

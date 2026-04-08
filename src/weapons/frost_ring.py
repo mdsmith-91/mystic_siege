@@ -113,7 +113,7 @@ class FrostRing(BaseWeapon):
                 if inner_radius_sq <= distance_sq <= outer_radius_sq:
                     if enemy.sprite_id not in ring["damage_done"]:
                         is_crit = random.random() < self.owner.crit_chance
-                        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
+                        damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)

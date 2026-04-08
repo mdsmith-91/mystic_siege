@@ -41,7 +41,7 @@ class ArcaneBolt(BaseWeapon):
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
         """Spawn a single arcane bolt projectile in the given direction."""
-        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0)
+        damage = self._scaled_damage(self.base_damage)
         ArcaneBoltProjectile(
             pos=self.owner.pos,
             direction=direction,

@@ -69,6 +69,9 @@ class Player(BaseEntity):
         self.spell_damage_multiplier = 1.0
         self.base_spell_damage_multiplier = 1.0
         self.spell_damage_bonus_pct = 0.0
+        self.physical_damage_multiplier = 1.0
+        self.base_physical_damage_multiplier = 1.0
+        self.physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
         self.speed_bonus_pct = 0.0
         self.damage_taken_multiplier = 1.0
@@ -181,16 +184,22 @@ class Player(BaseEntity):
         self.pickup_radius = self.base_pickup_radius * (1.0 + self.pickup_radius_bonus_pct)
         self.xp_multiplier = self.base_xp_multiplier * (1.0 + self.xp_multiplier_bonus_pct)
         self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
+        self.physical_damage_multiplier = self.base_physical_damage_multiplier * (1.0 + self.physical_damage_bonus_pct)
 
     def _apply_hero_passives(self) -> None:
         """Apply declarative passive bonuses from the hero config."""
         passives = self.hero_data.get("passives", {})
         self.crit_chance += passives.get("crit_chance_bonus", 0.0)
         self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
+        self.physical_damage_bonus_pct += passives.get("physical_damage_bonus_pct", 0.0)
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
+        max_hp_bonus = passives.get("max_hp_bonus", 0.0)
+        if max_hp_bonus:
+            self.max_hp += max_hp_bonus
+            self.hp += max_hp_bonus
 
     def add_flat_percent_bonus(self, stat: str, value: float) -> None:
         """Apply a percent bonus additively from the stat's base value."""
@@ -202,6 +211,8 @@ class Player(BaseEntity):
             self.xp_multiplier_bonus_pct += value
         elif stat == "spell_damage_multiplier_pct":
             self.spell_damage_bonus_pct += value
+        elif stat == "physical_damage_multiplier_pct":
+            self.physical_damage_bonus_pct += value
         else:
             return
         self._recalculate_pct_stats()

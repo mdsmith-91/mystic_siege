@@ -39,7 +39,7 @@ class ThrowingAxes(BaseWeapon):
             pos=self.owner.pos,
             direction=direction,
             speed=THROWING_AXES_PROJECTILE_SPEED,
-            damage=self.base_damage * self.owner.damage_multiplier,
+            damage=self._scaled_damage(self.base_damage),
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
             pierce=self.pierce + getattr(self.owner, "projectile_pierce_bonus", 0),

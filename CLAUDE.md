@@ -148,11 +148,13 @@ mystic_siege/
 | Wizard | 80 | 240 | 0 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
 | Ranger | 95 | 225 | 3 | Longbow |
+| Barbarian | 120 | 205 | 8 | ThrowingAxes |
 
 Knight passive: 15% damage reduction, knockback immune  
 Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
+Barbarian passive: +20% physical damage, +10 max HP
 
 Current hero architecture rules:
 
@@ -162,8 +164,8 @@ Current hero architecture rules:
   should all be authored in the hero record first.
 - Hero passive behavior is now declarative via each hero dict's `passives` mapping.
   Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
-  `crit_chance_bonus`, `spell_damage_bonus_pct`, `projectile_pierce_bonus`, and
-  `heal_per_xp`.
+  `crit_chance_bonus`, `spell_damage_bonus_pct`, `physical_damage_bonus_pct`,
+  `projectile_pierce_bonus`, `heal_per_xp`, and `max_hp_bonus`.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.
@@ -247,8 +249,8 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 - Solo and local co-op use the same scene flow. A single joined slot preserves the
   solo runtime path for movement and death behavior, but the in-run HUD uses the
   same slot-panel renderer and weapon-slot treatment as local co-op.
-- The practical current party cap is 4 unique players because there are 4 heroes and
-  duplicate hero picks are still blocked.
+- The runtime party cap remains 4 local players. The hero roster now has 5 heroes,
+  and duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
   shared `saves/progress.json`, not per-person profiles.
 - XP orb collection is a shared pool. If two players are equally close, the lower

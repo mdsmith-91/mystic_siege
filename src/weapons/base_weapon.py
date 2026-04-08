@@ -24,6 +24,13 @@ class BaseWeapon(ABC):
         """Calculate the effective cooldown based on owner's cooldown reduction."""
         return self.base_cooldown * (1.0 - self.owner.cooldown_reduction)
 
+    def _scaled_damage(self, base_damage: float) -> float:
+        """Apply shared owner scaling for spell and physical weapons."""
+        damage = base_damage * self.owner.damage_multiplier
+        if getattr(self, "IS_SPELL", False):
+            return damage * getattr(self.owner, "spell_damage_multiplier", 1.0)
+        return damage * getattr(self.owner, "physical_damage_multiplier", 1.0)
+
     def upgrade(self):
         """Upgrade the weapon to the next level."""
         if self.level >= 5:

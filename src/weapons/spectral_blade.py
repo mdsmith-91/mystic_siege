@@ -79,7 +79,7 @@ class SpectralBlade(BaseWeapon):
 
                 if hit:
                     is_crit = random.random() < self.owner.crit_chance
-                    damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
+                    damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                     diff = self.owner.pos - enemy.pos
                     hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                     enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)

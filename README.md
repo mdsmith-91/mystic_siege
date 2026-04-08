@@ -13,7 +13,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 Mystic Siege is a playable survivor-style action game with:
 
-- 4 hero classes with unique passives and starting weapons
+- 5 hero classes with unique passives and starting weapons
 - 8 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - 30-minute wave progression with victory at 30:00
@@ -70,7 +70,7 @@ Not yet verified:
 
 ## Current Limitations
 
-- The design target remains 1-4 local players, and the current hero roster now supports 4 practical local players because there are 4 heroes and duplicate picks are blocked.
+- The design target remains 1-4 local players. The runtime player cap is still 4, the current hero roster has 5 heroes, and the class-select layout now scales cleanly toward 8 total hero cards while duplicate picks remain blocked.
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
@@ -84,12 +84,13 @@ Not yet verified:
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
+| Barbarian | 120 | 205 | 8 | +20% physical damage, +10 max HP | Throwing Axes |
 
 ## Hero Architecture
 
 - `settings.py` is also the source of truth for hero definitions through `HERO_CLASSES`.
 - Each hero record now includes declarative passive config in a `passives` dict, in addition to display text in `passive_desc`.
-- Current runtime systems read those passive values instead of hardcoding hero-name checks for Knight, Wizard, Friar, and Ranger behavior.
+- Current runtime systems read those passive values instead of hardcoding hero-name checks for Knight, Wizard, Friar, Ranger, and Barbarian behavior.
 - Hero records remain plain dicts so lobby, class select, and gameplay can keep using the current lightweight data flow.
 
 ## Weapon Architecture

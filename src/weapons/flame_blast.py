@@ -88,7 +88,7 @@ class FlameBlast(BaseWeapon):
 
             if abs(angle_to_enemy) <= self.cone_angle / 2:
                 is_crit = random.random() < self.owner.crit_chance
-                damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
+                damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy, attacker=self.owner)
                 self.burning_enemies[enemy] = self.burn_duration
                 if self.effect_group is not None:

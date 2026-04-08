@@ -64,7 +64,7 @@ class HolyNova(BaseWeapon):
         ring = {
             "radius": 0,
             "max_radius": self.base_radius,
-            "damage": self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0),
+            "damage": self._scaled_damage(self.base_damage),
             "enemies_hit": set(),
             "particles": self._spawn_particles(),
             "flare_offset": random.uniform(0, flare_segment),
