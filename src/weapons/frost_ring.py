@@ -135,6 +135,10 @@ class FrostRing(BaseWeapon):
             else:
                 i += 1
 
+    def on_owner_inactive(self):
+        self.frozen_enemies.clear()
+        self.rings.clear()
+
     def draw(self, surface, camera_offset):
         """Draw the frost rings with layered glow, crystal shards, and ice motes."""
         if not self.rings:

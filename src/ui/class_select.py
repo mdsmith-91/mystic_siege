@@ -17,6 +17,7 @@ _WEAPON_DISPLAY_NAMES = {
     "FrostRing": "Frost Ring",
     "LightningChain": "Lightning Chain",
     "Longbow": "Longbow",
+    "ThrowingAxes": "Throwing Axes",
 }
 
 class ClassSelect:

@@ -187,6 +187,10 @@ class LightningChain(BaseWeapon):
             self.stunned_enemies[enemy] = remaining
             enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), remaining)
 
+    def on_owner_inactive(self):
+        self.lightning_arcs.clear()
+        self.stunned_enemies.clear()
+
     def draw(self, surface, camera_offset):
         """Draw jagged lightning arcs with layered glow and per-node impact flashes."""
         if not self.lightning_arcs:

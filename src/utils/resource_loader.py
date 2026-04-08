@@ -48,7 +48,7 @@ class ResourceLoader:
             self.cache[cache_key] = image
             return image
 
-        except pygame.error:
+        except (pygame.error, FileNotFoundError):
             placeholder = pygame.Surface((32, 32), pygame.SRCALPHA)
             placeholder.fill((255, 0, 255))  # Magenta placeholder
             self.cache[cache_key] = placeholder
@@ -59,7 +59,7 @@ class ResourceLoader:
         full_path = os.path.join(_get_base_path(), path)
         try:
             return pygame.mixer.Sound(full_path)
-        except pygame.error:
+        except (pygame.error, FileNotFoundError):
             return None
 
     def load_font(self, name, size) -> pygame.font.Font:
@@ -67,5 +67,5 @@ class ResourceLoader:
         try:
             font_path = os.path.join(_get_base_path(), name) if name else None
             return pygame.font.Font(font_path, size)
-        except pygame.error:
+        except (pygame.error, FileNotFoundError):
             return pygame.font.SysFont(None, size)

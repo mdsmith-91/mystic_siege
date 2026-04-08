@@ -116,6 +116,9 @@ class ArcaneBolt(BaseWeapon):
             else:
                 i += 1
 
+    def on_owner_inactive(self):
+        self.pending_bolts.clear()
+
     def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
         """Draw fading arcane trails behind each active bolt, below the sprite layer."""
         bolts = [s for s in self.projectile_group

@@ -97,6 +97,9 @@ class SpectralBlade(BaseWeapon):
             if self.enemy_cooldowns[enemy_id] <= 0:
                 del self.enemy_cooldowns[enemy_id]
 
+    def on_owner_inactive(self):
+        self.enemy_cooldowns.clear()
+
     def draw(self, surface, camera_offset):
         """Draw each orbiting blade: glow, grip, pommel, crossguard, blade, highlight."""
         hw = SPECTRAL_BLADE_BLADE_WIDTH / 2
