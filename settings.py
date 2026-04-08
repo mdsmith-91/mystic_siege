@@ -136,10 +136,15 @@ FLAME_BLAST_CONE_RANGE = 150
 FLAME_BLAST_CONE_ANGLE = 90
 FLAME_BLAST_BURN_DAMAGE = 5.0
 FLAME_BLAST_BURN_DURATION = 2.0
-FLAME_BLAST_SWING_DURATION = 0.2
-FLAME_BLAST_SWING_POINT_COUNT = 10
 FLAME_BLAST_EFFECT_COLOR = (255, 100, 0)
 FLAME_BLAST_HIT_SPARK_COLOR = (255, 100, 0)
+FLAME_BLAST_INNER_COLOR = (255, 180, 20)        # mid-range particle color (orange-yellow)
+FLAME_BLAST_CORE_COLOR = (255, 240, 130)         # near-origin particle color (hot yellow)
+FLAME_BLAST_PARTICLE_COUNT = 45                  # particles spawned per cast
+FLAME_BLAST_PARTICLE_LIFETIME = 0.55             # max particle lifetime in seconds
+FLAME_BLAST_PARTICLE_SPEED_MIN = 80              # slowest particle initial speed (px/s)
+FLAME_BLAST_PARTICLE_SPEED_MAX = 430             # fastest particle initial speed (px/s)
+FLAME_BLAST_PARTICLE_RADIUS_MAX = 6              # max particle circle radius (px)
 FLAME_BLAST_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
