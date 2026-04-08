@@ -238,6 +238,36 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (18, 7), (18, 25), 1)
         pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
         pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
+    elif weapon_key == "axe":
+        # Throwing hatchet at ~45°: handle runs lower-left → upper-right.
+        # Head is a parallelogram whose long axis is PERPENDICULAR to the handle
+        # (i.e., rotated ~45° so it runs upper-left → lower-right).
+        # Cutting edge = upper-left short side; poll = lower-right short side.
+        handle_color = (110, 72, 28)    # warm wood brown
+        steel_dark = (50, 52, 62)       # head outline
+        steel_mid = (198, 200, 212)     # head fill
+        steel_bevel = (235, 237, 247)   # cutting-edge highlight
+        # Diagonal handle from lower-left corner up to the socket
+        pygame.draw.line(surface, handle_color, (4, 29), (18, 15), 5)
+        # Head: parallelogram perpendicular to handle.
+        # Long axis goes upper-left (blade) → lower-right (poll).
+        # Short axis is aligned with the handle direction.
+        # Outer outline
+        pygame.draw.polygon(surface, steel_dark, [
+            (13, 2),   # blade-top    (cutting edge, upper corner)
+            (28, 12),  # poll-top     (forward corner, lower-right side)
+            (24, 19),  # poll-bottom  (back corner, lower-right side)
+            (9,  9),   # blade-bottom (cutting edge, lower corner)
+        ])
+        # Inner fill (2px inset)
+        pygame.draw.polygon(surface, steel_mid, [
+            (14, 4),
+            (26, 13),
+            (23, 18),
+            (11, 10),
+        ])
+        # Bevel highlight along the cutting edge (upper-left side of parallelogram)
+        pygame.draw.line(surface, steel_bevel, (13, 4), (10, 9), 2)
 
 
 def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
@@ -385,6 +415,7 @@ def generate_weapon_icon_assets():
         ("lightning.png", (255, 240, 60)),
         ("blade.png", (100, 150, 255)),  # Spectral blade color
         ("longbow.png", (170, 120, 60)),
+        ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
     for filename, color in weapons:
@@ -474,6 +505,7 @@ def generate_audio_placeholders():
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
+    maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
 
 
 def main():

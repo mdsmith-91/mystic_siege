@@ -276,6 +276,8 @@ THROWING_AXES_PROJECTILE_SIZE = (18, 18)            # square so all spin angles 
 THROWING_AXES_HANDLE_COLOR = (90, 60, 30)           # dark wood brown
 THROWING_AXES_GUARD_COLOR = (75, 75, 85)             # dark iron bolster where handle meets blade
 THROWING_AXES_OUTLINE_COLOR = (45, 45, 55)           # dark border around blade for silhouette contrast
+THROWING_AXES_OUTLINE_WIDTH = 1                      # blade outline inset (px at 18×18 reference; scales with PROJECTILE_SIZE)
+THROWING_AXES_EDGE_HIGHLIGHT_WIDTH = 2               # cutting-edge bevel stripe width (px at 18×18 reference; scales with PROJECTILE_SIZE)
 THROWING_AXES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 12.0},
