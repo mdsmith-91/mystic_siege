@@ -81,6 +81,24 @@ ARCANE_BOLT_UPGRADE_LEVELS = [
     {"pierce": 1},
     {"bolt_count": 1, "base_damage": 15},
 ]
+# Arcane Bolt visual tunables
+ARCANE_BOLT_PROJECTILE_SIZE       = (22, 22)        # sprite surface bounding box (visual only)
+ARCANE_BOLT_HITBOX_SIZE           = (10, 10)        # collision rect — matches original projectile size
+ARCANE_BOLT_OUTER_GLOW_RADIUS     = 10              # outer soft bloom radius (px)
+ARCANE_BOLT_OUTER_GLOW_COLOR      = (100, 30, 180)  # deep violet outer bloom
+ARCANE_BOLT_OUTER_GLOW_ALPHA      = 80
+ARCANE_BOLT_MID_GLOW_RADIUS       = 7               # saturated purple mid glow
+ARCANE_BOLT_MID_GLOW_COLOR        = (160, 80, 255)
+ARCANE_BOLT_MID_GLOW_ALPHA        = 190
+ARCANE_BOLT_CORE_RADIUS           = 4               # bright inner core
+ARCANE_BOLT_CORE_COLOR            = (210, 140, 255) # soft lavender core
+ARCANE_BOLT_CENTER_RADIUS         = 2               # near-white center sparkle
+ARCANE_BOLT_CENTER_COLOR          = (240, 210, 255)
+ARCANE_BOLT_TRAIL_LENGTH          = 7               # trail positions stored per projectile
+ARCANE_BOLT_TRAIL_RECORD_INTERVAL = 0.02            # seconds between position samples
+ARCANE_BOLT_TRAIL_COLOR           = (140, 60, 220)  # trail circle base color
+ARCANE_BOLT_TRAIL_MAX_ALPHA       = 130             # alpha of newest trail segment
+ARCANE_BOLT_TRAIL_MAX_RADIUS      = 4               # radius of newest trail circle
 
 # Holy Nova
 HOLY_NOVA_BASE_DAMAGE = 20.0
@@ -97,15 +115,36 @@ HOLY_NOVA_UPGRADE_LEVELS = [
     {"base_cooldown": -0.4},
     {"base_damage": 20, "ring_width": -4},
 ]
+HOLY_NOVA_INNER_GLOW_COLOR       = (255, 245, 180)  # soft white-gold flash at cast origin
+HOLY_NOVA_OUTER_BLOOM_COLOR      = (255, 215,  80)  # faint gold ring just outside primary ring
+HOLY_NOVA_FLARE_COLOR            = (255, 255, 220)  # bright near-white for cardinal flare spikes
+HOLY_NOVA_SPARK_COLOR            = (255, 240, 140)  # warm gold for radiant sparks
+HOLY_NOVA_SPARK_COUNT            = 16               # spark particles spawned per ring cast
+HOLY_NOVA_FLARE_COUNT            = 8                # flare spike points on ring edge
+HOLY_NOVA_FLARE_LENGTH           = 14               # pixel length of each flare spike
+HOLY_NOVA_PARTICLE_SPEED_VARIANCE = 40              # ±px/s variance on particle radial speed
 
 # Spectral Blade
 SPECTRAL_BLADE_BASE_DAMAGE = 18.0
 SPECTRAL_BLADE_BASE_COOLDOWN = 0.0
 SPECTRAL_BLADE_BASE_BLADE_COUNT = 2
-SPECTRAL_BLADE_ORBIT_RADIUS = 45
+SPECTRAL_BLADE_ORBIT_RADIUS = 20      # hilt offset: distance from player center to sword base
 SPECTRAL_BLADE_ORBIT_SPEED = 180
-SPECTRAL_BLADE_BLADE_SIZE = (4, 50)
+SPECTRAL_BLADE_BLADE_LENGTH = 78      # sword length from hilt to tip
+SPECTRAL_BLADE_BLADE_WIDTH = 5        # great sword blade width
 SPECTRAL_BLADE_BLADE_COLOR = (100, 150, 255)
+SPECTRAL_BLADE_OUTLINE_COLOR = (60, 90, 180)
+SPECTRAL_BLADE_GRIP_LENGTH = 16       # two-handed grip length
+SPECTRAL_BLADE_GRIP_WIDTH = 5         # two-handed grip thickness
+SPECTRAL_BLADE_GUARD_HALF_WIDTH = 17  # long straight crossguard for great sword
+SPECTRAL_BLADE_GUARD_THICKNESS = 4    # crossguard depth along blade axis
+SPECTRAL_BLADE_TAPER_START = 0.72    # fraction of blade length where taper begins (rest is parallel body)
+SPECTRAL_BLADE_GRIP_COLOR = (50, 70, 130)         # dark grip/handle color
+SPECTRAL_BLADE_HIGHLIGHT_COLOR = (190, 215, 255)  # blade center highlight strip
+SPECTRAL_BLADE_GUARD_COLOR = (160, 190, 255)      # crossguard outline + pommel fill accent
+SPECTRAL_BLADE_POMMEL_RADIUS = 5                  # wheel pommel radius in pixels
+SPECTRAL_BLADE_GLOW_COLOR = (140, 175, 255)       # outer glow triangle, lighter than blade
+SPECTRAL_BLADE_GLOW_EXTRA_WIDTH = 3               # extra pixels added each side of blade for glow
 SPECTRAL_BLADE_HIT_SPARK_COLOR = (100, 150, 255)
 SPECTRAL_BLADE_HIT_COOLDOWN = 0.3
 SPECTRAL_BLADE_UPGRADE_LEVELS = [
@@ -123,10 +162,15 @@ FLAME_BLAST_CONE_RANGE = 150
 FLAME_BLAST_CONE_ANGLE = 90
 FLAME_BLAST_BURN_DAMAGE = 5.0
 FLAME_BLAST_BURN_DURATION = 2.0
-FLAME_BLAST_SWING_DURATION = 0.2
-FLAME_BLAST_SWING_POINT_COUNT = 10
 FLAME_BLAST_EFFECT_COLOR = (255, 100, 0)
 FLAME_BLAST_HIT_SPARK_COLOR = (255, 100, 0)
+FLAME_BLAST_INNER_COLOR = (255, 180, 20)        # mid-range particle color (orange-yellow)
+FLAME_BLAST_CORE_COLOR = (255, 240, 130)         # near-origin particle color (hot yellow)
+FLAME_BLAST_PARTICLE_COUNT = 45                  # particles spawned per cast
+FLAME_BLAST_PARTICLE_LIFETIME = 0.55             # max particle lifetime in seconds
+FLAME_BLAST_PARTICLE_SPEED_MIN = 80              # slowest particle initial speed (px/s)
+FLAME_BLAST_PARTICLE_SPEED_MAX = 430             # fastest particle initial speed (px/s)
+FLAME_BLAST_PARTICLE_RADIUS_MAX = 6              # max particle circle radius (px)
 FLAME_BLAST_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
@@ -145,6 +189,14 @@ FROST_RING_HALF_WIDTH = 5
 FROST_RING_DRAW_WIDTH = 3
 FROST_RING_COLOR = (0, 200, 255)
 FROST_RING_HIT_SPARK_COLOR = (0, 200, 255)
+FROST_RING_INNER_GLOW_COLOR    = (200, 240, 255)  # pale ice-blue flash at cast origin
+FROST_RING_OUTER_BLOOM_COLOR   = ( 80, 160, 220)  # deeper cold-blue halo just outside ring
+FROST_RING_SHARD_COLOR         = (220, 245, 255)  # near-white frost crystal shards
+FROST_RING_MOTE_COLOR          = (160, 220, 255)  # light ice-blue mote particles
+FROST_RING_SHARD_COUNT         = 6                # ice crystal spike points on ring edge
+FROST_RING_SHARD_LENGTH        = 12               # pixel length of each crystal shard
+FROST_RING_MOTE_COUNT          = 12               # ice mote particles spawned per ring cast
+FROST_RING_MOTE_SPEED_VARIANCE = 30               # ±px/s variance on mote radial speed
 FROST_RING_UPGRADE_LEVELS = [
     {},
     {"freeze_duration": 0.5},
@@ -169,6 +221,17 @@ LIGHTNING_CHAIN_ARC_JITTER = 15
 LIGHTNING_CHAIN_ARC_COLOR = (255, 255, 200)
 LIGHTNING_CHAIN_ARC_WIDTH = 2
 LIGHTNING_CHAIN_HIT_SPARK_COLOR = (255, 255, 100)
+# Multi-layer arc rendering (outer glow → mid → core)
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_COLOR = (80, 160, 255)   # electric blue bloom
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_WIDTH = 5                 # px
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_ALPHA = 70                # max alpha (fades with arc timer)
+LIGHTNING_CHAIN_ARC_MID_COLOR = (180, 225, 255)          # pale blue-white
+LIGHTNING_CHAIN_ARC_MID_WIDTH = 3                        # px
+LIGHTNING_CHAIN_ARC_MID_ALPHA = 160                      # max alpha (fades with arc timer)
+# Impact flash at each chain node end-point
+LIGHTNING_CHAIN_IMPACT_RADIUS = 6                        # px
+LIGHTNING_CHAIN_IMPACT_COLOR = (180, 220, 255)           # cold electric blue-white
+LIGHTNING_CHAIN_IMPACT_ALPHA = 200                       # max alpha (fades with arc timer)
 LIGHTNING_CHAIN_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
@@ -188,7 +251,7 @@ LONGBOW_BASE_PROJECTILE_COUNT = 1
 LONGBOW_SPREAD = 5
 LONGBOW_BASE_CRIT_BONUS = 0.05
 LONGBOW_PROJECTILE_COLOR = (170, 120, 60)
-LONGBOW_PROJECTILE_SIZE = (24, 6)
+LONGBOW_PROJECTILE_SIZE = (20, 5)
 LONGBOW_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},

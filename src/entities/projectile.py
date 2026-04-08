@@ -51,22 +51,34 @@ class Projectile(pygame.sprite.Sprite):
         surface = pygame.Surface((width, height), pygame.SRCALPHA)
 
         if self.draw_shape == "arrow":
-            shaft_width = max(2, height // 3)
-            shaft_rect = pygame.Rect(0, 0, max(1, width - height), shaft_width)
-            shaft_rect.centery = height // 2
-            pygame.draw.rect(surface, self.color, shaft_rect)
-            head_points = [
-                (width - 1, height // 2),
-                (max(0, width - height), 0),
-                (max(0, width - height), height - 1),
-            ]
-            pygame.draw.polygon(surface, self.color, head_points)
+            # All dimensions scale with height so tuning LONGBOW_PROJECTILE_SIZE
+            # in settings.py automatically re-proportions every zone.
+            mid = height // 2
+            nock_x = height // 2          # V-tip of fletching (where wings converge)
+            head_x = width - height       # x where arrowhead base begins
+            # Shaft: thin 2px centred stick from nock to arrowhead base
+            pygame.draw.rect(surface, self.color,
+                pygame.Rect(nock_x, mid - 1, head_x - nock_x, 2))
+            # Arrowhead: right-pointing filled triangle
+            pygame.draw.polygon(surface, self.color, [
+                (width - 1, mid),       # tip
+                (head_x, 1),            # shoulder top
+                (head_x, height - 2),   # shoulder bottom
+            ])
+            # Fletching: 2px-wide V-wings spreading from the nock to the tail corners
+            pygame.draw.line(surface, self.color,
+                (nock_x - 1, mid), (0, 1), 2)
+            pygame.draw.line(surface, self.color,
+                (nock_x - 1, mid), (0, height - 2), 2)
         else:
             radius = min(width, height) // 2
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
 
         if self.rotate_to_direction:
-            angle = Vector2(1, 0).angle_to(self.direction)
+            # Negate angle: Vector2.angle_to() uses Cartesian Y-up convention,
+            # but pygame.transform.rotate() uses screen Y-down convention.
+            # Without negation, non-horizontal arrows rotate in the wrong direction.
+            angle = -Vector2(1, 0).angle_to(self.direction)
             surface = pygame.transform.rotate(surface, angle)
 
         return surface

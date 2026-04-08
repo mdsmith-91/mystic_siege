@@ -11,10 +11,15 @@ from settings import (
     FLAME_BLAST_BURN_DURATION,
     FLAME_BLAST_CONE_ANGLE,
     FLAME_BLAST_CONE_RANGE,
+    FLAME_BLAST_CORE_COLOR,
     FLAME_BLAST_EFFECT_COLOR,
     FLAME_BLAST_HIT_SPARK_COLOR,
-    FLAME_BLAST_SWING_DURATION,
-    FLAME_BLAST_SWING_POINT_COUNT,
+    FLAME_BLAST_INNER_COLOR,
+    FLAME_BLAST_PARTICLE_COUNT,
+    FLAME_BLAST_PARTICLE_LIFETIME,
+    FLAME_BLAST_PARTICLE_RADIUS_MAX,
+    FLAME_BLAST_PARTICLE_SPEED_MAX,
+    FLAME_BLAST_PARTICLE_SPEED_MIN,
     FLAME_BLAST_UPGRADE_LEVELS,
 )
 from src.utils.audio_manager import AudioManager
@@ -38,11 +43,11 @@ class FlameBlast(BaseWeapon):
         # Track burning enemies by live enemy reference to avoid repeated id lookups.
         self.burning_enemies: dict[object, float] = {}
 
-        # Swing timer counts down after firing — cone is visible while > 0
-        self.swing_timer = 0.0
-
         # Direction the cone was last fired toward (for draw_effect)
         self.fire_direction: Vector2 = Vector2(1, 0)
+
+        # Live explosion particles — each dict holds pos, vel, life, max_life, radius, color
+        self.effect_particles: list[dict] = []
 
     def fire(self):
         """Lash a cone of fire toward the nearest enemy."""
@@ -61,10 +66,14 @@ class FlameBlast(BaseWeapon):
         if not nearest_enemy:
             return
 
+        raw = nearest_enemy.pos - self.owner.pos
+        if raw.length_squared() == 0:
+            return
+
         AudioManager.instance().play_sfx(AudioManager.WEAPON_FLAME_BLAST)
 
         # Aim the cone center at the nearest enemy
-        self.fire_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+        self.fire_direction = raw.normalize()
         cone_range_sq = self.cone_range * self.cone_range
 
         # Hit every enemy within cone_range that falls inside the cone arc
@@ -87,14 +96,46 @@ class FlameBlast(BaseWeapon):
                     DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                     HitSpark(enemy.pos, FLAME_BLAST_HIT_SPARK_COLOR, [self.effect_group])
 
-        # Show swing visual for 0.2s
-        self.swing_timer = FLAME_BLAST_SWING_DURATION
+        # Spawn explosion particles spreading within the cone
+        base_angle = math.degrees(math.atan2(-self.fire_direction.y, self.fire_direction.x))
+        half_cone = self.cone_angle / 2
+        speed_range = FLAME_BLAST_PARTICLE_SPEED_MAX - FLAME_BLAST_PARTICLE_SPEED_MIN
+        self.effect_particles = []
+        for _ in range(FLAME_BLAST_PARTICLE_COUNT):
+            angle = base_angle + random.uniform(-half_cone, half_cone)
+            speed = random.uniform(FLAME_BLAST_PARTICLE_SPEED_MIN, FLAME_BLAST_PARTICLE_SPEED_MAX)
+            direction = Vector2(math.cos(math.radians(angle)), -math.sin(math.radians(angle)))
+            # slight lateral jitter for turbulence
+            perp = Vector2(-direction.y, direction.x)
+            vel = direction * speed + perp * random.uniform(-speed * 0.15, speed * 0.15)
+            # color by speed: slow particles stay near origin (hot yellow), fast ones streak out (orange)
+            speed_frac = (speed - FLAME_BLAST_PARTICLE_SPEED_MIN) / speed_range
+            if speed_frac < 0.33:
+                color = FLAME_BLAST_CORE_COLOR
+            elif speed_frac < 0.67:
+                color = FLAME_BLAST_INNER_COLOR
+            else:
+                color = FLAME_BLAST_EFFECT_COLOR
+            lifetime = random.uniform(FLAME_BLAST_PARTICLE_LIFETIME * 0.6, FLAME_BLAST_PARTICLE_LIFETIME)
+            self.effect_particles.append({
+                'pos': Vector2(self.owner.pos),
+                'vel': vel,
+                'life': lifetime,
+                'max_life': lifetime,
+                'radius': min(random.randint(1, FLAME_BLAST_PARTICLE_RADIUS_MAX),
+                          random.randint(1, FLAME_BLAST_PARTICLE_RADIUS_MAX)),
+                'color': color,
+            })
 
     def update(self, dt):
         """Update the flame blast effect."""
         super().update(dt)
 
-        self.swing_timer = max(0, self.swing_timer - dt)
+        # Advance explosion particles and cull expired ones
+        for p in self.effect_particles:
+            p['pos'] += p['vel'] * dt
+            p['life'] -= dt
+        self.effect_particles = [p for p in self.effect_particles if p['life'] > 0]
 
         # Tick burn timers and apply burn damage each frame
         for enemy in list(self.burning_enemies.keys()):
@@ -106,26 +147,32 @@ class FlameBlast(BaseWeapon):
             enemy.take_damage(self.burn_damage * dt, attacker=self.owner)
 
     def draw_effect(self, surface, camera_offset):
-        """Draw a transparent orange fan shape for the duration of the swing."""
-        if self.swing_timer <= 0:
+        """Draw the particle explosion blast.
+
+        Particles hold full opacity for the first 60% of their lifetime then
+        fade out, so they read clearly before disappearing.  Rendered onto a
+        single temporary SRCALPHA surface per frame — the world surface is
+        .convert() and drops alpha on direct draws.
+        """
+        if not self.effect_particles:
             return
 
-        center = self.owner.pos
+        center_sx = self.owner.pos.x - camera_offset.x
+        center_sy = self.owner.pos.y - camera_offset.y
+        size = int(self.cone_range * 2 + 20)
+        half = size // 2
+        origin_x = int(center_sx - half)
+        origin_y = int(center_sy - half)
 
-        # Build the cone arc using the stored fire_direction
-        base_angle = math.degrees(math.atan2(-self.fire_direction.y, self.fire_direction.x))
-        start_angle = base_angle - self.cone_angle / 2
-        end_angle = base_angle + self.cone_angle / 2
+        temp = pygame.Surface((size, size), pygame.SRCALPHA)
 
-        points = [center]
-        num_points = FLAME_BLAST_SWING_POINT_COUNT
-        for i in range(num_points + 1):
-            angle = start_angle + (end_angle - start_angle) * i / num_points
-            point = center + Vector2(math.cos(math.radians(angle)), -math.sin(math.radians(angle))) * self.cone_range
-            points.append(point)
+        for p in self.effect_particles:
+            # Hold full alpha for first 60% of lifetime; fade in the last 40%
+            t = p['life'] / p['max_life']
+            alpha = int(255 * min(1.0, t / 0.4))
+            px = int(p['pos'].x - camera_offset.x) - origin_x
+            py = int(p['pos'].y - camera_offset.y) - origin_y
+            if 0 <= px < size and 0 <= py < size:
+                pygame.draw.circle(temp, (*p['color'], alpha), (px, py), p['radius'])
 
-        if len(points) >= 3:
-            alpha = int(100 * (self.swing_timer / FLAME_BLAST_SWING_DURATION))  # fade out as timer decreases
-            color = (*FLAME_BLAST_EFFECT_COLOR, alpha)
-            pygame.draw.polygon(surface, color,
-                                [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points])
+        surface.blit(temp, (origin_x, origin_y))
