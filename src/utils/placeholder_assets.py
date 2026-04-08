@@ -209,6 +209,42 @@ def _weapon_bg(surface: pygame.Surface, color: tuple[int, int, int]) -> None:
     pygame.draw.rect(surface, border, (1, 1, 30, 30), 2, border_radius=6)
 
 
+def _draw_throwing_hatchet_icon(surface: pygame.Surface) -> None:
+    """Draw a compact competition-style throwing hatchet readable at 32x32."""
+    handle_shadow = (64, 38, 12)
+    handle_color = (176, 132, 74)
+    handle_highlight = (214, 172, 110)
+    steel_outline = (42, 46, 54)
+    steel_fill = (190, 192, 196)
+    steel_shadow = (132, 136, 144)
+    steel_highlight = (232, 234, 238)
+
+    # Straight haft with slight taper so the silhouette reads as wood instead of a line.
+    pygame.draw.polygon(surface, handle_shadow, [(9, 26), (12, 27), (20, 12), (17, 11)])
+    pygame.draw.polygon(surface, handle_color, [(10, 25), (12, 26), (19, 12), (17, 12)])
+    pygame.draw.line(surface, handle_highlight, (11, 24), (18, 13), 1)
+
+    # Small eye/socket where the steel wraps the haft. This creates clear wood/metal separation.
+    pygame.draw.polygon(surface, steel_outline, [(14, 11), (18, 9), (21, 11), (19, 15), (16, 14), (14, 13)])
+    pygame.draw.polygon(surface, steel_shadow, [(15, 11), (18, 10), (20, 11), (18, 14), (16, 13), (15, 12)])
+
+    # Competition-style hatchet head: mostly trapezoidal with the narrow mounted side at the shaft.
+    head_outline = [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)]
+    head_fill = [(7, 9), (17, 7), (20, 9), (18, 14), (16, 15), (8, 14), (5, 12)]
+    pygame.draw.polygon(surface, steel_outline, head_outline)
+    pygame.draw.polygon(surface, steel_fill, head_fill)
+
+    # Subtle darker underside keeps the rectangular head readable at icon size.
+    pygame.draw.polygon(surface, steel_shadow, [(9, 14), (16, 15), (18, 14), (16, 13), (10, 13)])
+
+    # Keep the bevel subtle and inside the blade face.
+    pygame.draw.lines(surface, steel_highlight, False, [(7, 9), (5, 12), (8, 14)], 1)
+    pygame.draw.line(surface, steel_highlight, (9, 9), (17, 7), 1)
+
+    # Re-assert the silhouette edges after the highlight so the dark border stays crisp.
+    pygame.draw.lines(surface, steel_outline, False, [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)], 1)
+
+
 def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
     detail = _shade(color, 55)
     shadow = _shade(color, -70)
@@ -239,35 +275,7 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
         pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
     elif weapon_key == "axe":
-        # Throwing hatchet at ~45°: handle runs lower-left → upper-right.
-        # Head is a parallelogram whose long axis is PERPENDICULAR to the handle
-        # (i.e., rotated ~45° so it runs upper-left → lower-right).
-        # Cutting edge = upper-left short side; poll = lower-right short side.
-        handle_color = (110, 72, 28)    # warm wood brown
-        steel_dark = (50, 52, 62)       # head outline
-        steel_mid = (198, 200, 212)     # head fill
-        steel_bevel = (235, 237, 247)   # cutting-edge highlight
-        # Diagonal handle from lower-left corner up to the socket
-        pygame.draw.line(surface, handle_color, (4, 29), (18, 15), 5)
-        # Head: parallelogram perpendicular to handle.
-        # Long axis goes upper-left (blade) → lower-right (poll).
-        # Short axis is aligned with the handle direction.
-        # Outer outline
-        pygame.draw.polygon(surface, steel_dark, [
-            (13, 2),   # blade-top    (cutting edge, upper corner)
-            (28, 12),  # poll-top     (forward corner, lower-right side)
-            (24, 19),  # poll-bottom  (back corner, lower-right side)
-            (9,  9),   # blade-bottom (cutting edge, lower corner)
-        ])
-        # Inner fill (2px inset)
-        pygame.draw.polygon(surface, steel_mid, [
-            (14, 4),
-            (26, 13),
-            (23, 18),
-            (11, 10),
-        ])
-        # Bevel highlight along the cutting edge (upper-left side of parallelogram)
-        pygame.draw.line(surface, steel_bevel, (13, 4), (10, 9), 2)
+        _draw_throwing_hatchet_icon(surface)
 
 
 def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
