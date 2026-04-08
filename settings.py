@@ -81,6 +81,24 @@ ARCANE_BOLT_UPGRADE_LEVELS = [
     {"pierce": 1},
     {"bolt_count": 1, "base_damage": 15},
 ]
+# Arcane Bolt visual tunables
+ARCANE_BOLT_PROJECTILE_SIZE       = (22, 22)        # sprite surface bounding box (visual only)
+ARCANE_BOLT_HITBOX_SIZE           = (10, 10)        # collision rect — matches original projectile size
+ARCANE_BOLT_OUTER_GLOW_RADIUS     = 10              # outer soft bloom radius (px)
+ARCANE_BOLT_OUTER_GLOW_COLOR      = (100, 30, 180)  # deep violet outer bloom
+ARCANE_BOLT_OUTER_GLOW_ALPHA      = 80
+ARCANE_BOLT_MID_GLOW_RADIUS       = 7               # saturated purple mid glow
+ARCANE_BOLT_MID_GLOW_COLOR        = (160, 80, 255)
+ARCANE_BOLT_MID_GLOW_ALPHA        = 190
+ARCANE_BOLT_CORE_RADIUS           = 4               # bright inner core
+ARCANE_BOLT_CORE_COLOR            = (210, 140, 255) # soft lavender core
+ARCANE_BOLT_CENTER_RADIUS         = 2               # near-white center sparkle
+ARCANE_BOLT_CENTER_COLOR          = (240, 210, 255)
+ARCANE_BOLT_TRAIL_LENGTH          = 7               # trail positions stored per projectile
+ARCANE_BOLT_TRAIL_RECORD_INTERVAL = 0.02            # seconds between position samples
+ARCANE_BOLT_TRAIL_COLOR           = (140, 60, 220)  # trail circle base color
+ARCANE_BOLT_TRAIL_MAX_ALPHA       = 130             # alpha of newest trail segment
+ARCANE_BOLT_TRAIL_MAX_RADIUS      = 4               # radius of newest trail circle
 
 # Holy Nova
 HOLY_NOVA_BASE_DAMAGE = 20.0

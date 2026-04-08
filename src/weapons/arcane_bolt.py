@@ -1,3 +1,4 @@
+import pygame
 from pygame.math import Vector2
 from settings import (
     ARCANE_BOLT_BASE_BOLT_COUNT,
@@ -10,8 +11,12 @@ from settings import (
     ARCANE_BOLT_STAGGER,
     ARCANE_BOLT_TARGETING_RANGE,
     ARCANE_BOLT_UPGRADE_LEVELS,
+    ARCANE_BOLT_TRAIL_COLOR,
+    ARCANE_BOLT_TRAIL_MAX_ALPHA,
+    ARCANE_BOLT_TRAIL_MAX_RADIUS,
+    ARCANE_BOLT_TRAIL_LENGTH,
 )
-from src.entities.projectile import Projectile
+from src.entities.arcane_bolt_projectile import ArcaneBoltProjectile
 from src.utils.audio_manager import AudioManager
 from src.weapons.base_weapon import BaseWeapon
 
@@ -35,9 +40,9 @@ class ArcaneBolt(BaseWeapon):
         self.upgrade_levels = [dict(upgrade) for upgrade in ARCANE_BOLT_UPGRADE_LEVELS]
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
-        """Spawn a single projectile in the given direction."""
+        """Spawn a single arcane bolt projectile in the given direction."""
         damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0)
-        Projectile(
+        ArcaneBoltProjectile(
             pos=self.owner.pos,
             direction=direction,
             speed=ARCANE_BOLT_PROJECTILE_SPEED,
@@ -110,3 +115,28 @@ class ArcaneBolt(BaseWeapon):
                 self.pending_bolts.pop(i)
             else:
                 i += 1
+
+    def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+        """Draw fading arcane trails behind each active bolt, below the sprite layer."""
+        bolts = [s for s in self.projectile_group
+                 if isinstance(s, ArcaneBoltProjectile) and s.owner is self.owner]
+        if not bolts:
+            return
+
+        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        trail_len = ARCANE_BOLT_TRAIL_LENGTH
+
+        for bolt in bolts:
+            trail = list(bolt._trail)
+            if not trail:
+                continue
+            for i, pos in enumerate(trail):
+                # Oldest segment = index 0, newest = index count-1
+                frac = (i + 1) / trail_len
+                alpha = int(ARCANE_BOLT_TRAIL_MAX_ALPHA * frac)
+                radius = max(1, int(ARCANE_BOLT_TRAIL_MAX_RADIUS * frac))
+                sx = int(pos.x - camera_offset.x)
+                sy = int(pos.y - camera_offset.y)
+                pygame.draw.circle(tmp, (*ARCANE_BOLT_TRAIL_COLOR, alpha), (sx, sy), radius)
+
+        surface.blit(tmp, (0, 0))

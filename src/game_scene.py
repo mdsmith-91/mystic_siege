@@ -853,7 +853,15 @@ class GameScene:
         world_surface.blit(self.background, (0, 0), visible_rect)
         local_offset = Vector2(visible_rect.x, visible_rect.y)
 
-        # 2. For each sprite in all_sprites + projectile_group (sorted by rect.bottom for depth):
+        # 2a. Draw weapon under-layers (trails, ground effects) that must sit below sprites
+        for player in self.players:
+            if player.is_downed:
+                continue
+            for weapon in player.weapons:
+                if hasattr(weapon, 'draw_under'):
+                    weapon.draw_under(world_surface, local_offset)
+
+        # 2b. For each sprite in all_sprites + projectile_group (sorted by rect.bottom for depth):
         #    screen.blit(sprite.image, camera.apply(sprite))
         #    sprite.draw_health_bar(screen, camera.offset) if enemy
         # Sort sprites by y-position for proper drawing order (projectiles are not in all_sprites)
