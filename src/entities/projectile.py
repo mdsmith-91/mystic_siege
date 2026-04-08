@@ -11,7 +11,8 @@ class Projectile(pygame.sprite.Sprite):
                  owner=None, lifetime: float = 4.0,
                  size: tuple[int, int] | None = None,
                  draw_shape: str = "circle",
-                 rotate_to_direction: bool = False):
+                 rotate_to_direction: bool = False,
+                 spin_speed: float = 0.0):
         super().__init__(groups)
 
         # direction normalized on init
@@ -20,7 +21,10 @@ class Projectile(pygame.sprite.Sprite):
         self.projectile_size = size or (10, 10)
         self.rotate_to_direction = rotate_to_direction
         self.color = color
-        self.image = self._build_image()
+        self.spin_speed = spin_speed
+        self._spin_angle = 0.0
+        self._base_image = self._build_image()
+        self.image = self._base_image
         self.rect = self.image.get_rect(center=pos)
 
         # enemies_hit: set() — tracks enemy ids already hit (for pierce)
@@ -70,6 +74,29 @@ class Projectile(pygame.sprite.Sprite):
                 (nock_x - 1, mid), (0, 1), 2)
             pygame.draw.line(surface, self.color,
                 (nock_x - 1, mid), (0, height - 2), 2)
+        elif self.draw_shape == "axe":
+            # Throwing axe drawn pointing RIGHT. rotate_to_direction orients it toward
+            # the target; spin_speed then tumbles it continuously in flight.
+            # Handle: thin dark-brown rectangle along the left half, vertically centred
+            handle_color = (100, 70, 40)
+            handle_w = width // 2
+            handle_h = max(2, height // 5)
+            handle_y = height // 2 - handle_h // 2
+            pygame.draw.rect(surface, handle_color,
+                pygame.Rect(0, handle_y, handle_w, handle_h))
+            # Blade: D-shaped wedge on the right half (primary color = steel tint)
+            blade_x = handle_w - 2   # slight overlap with handle for visual continuity
+            pygame.draw.polygon(surface, self.color, [
+                (blade_x, 1),           # back-top of blade
+                (width - 1, height // 4),    # front-top shoulder
+                (width - 1, height - height // 4),  # front-bottom shoulder
+                (blade_x, height - 2),  # back-bottom of blade
+            ])
+            # Edge highlight: 1px brighter line along the front cutting edge
+            highlight = tuple(min(255, c + 60) for c in self.color)
+            pygame.draw.line(surface, highlight,
+                (width - 1, height // 4),
+                (width - 1, height - height // 4), 1)
         else:
             radius = min(width, height) // 2
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
@@ -115,6 +142,12 @@ class Projectile(pygame.sprite.Sprite):
         if (self.pos.x < 0 or self.pos.x > WORLD_WIDTH or
             self.pos.y < 0 or self.pos.y > WORLD_HEIGHT):
             self.kill()
+
+        # Continuously spin the image when spin_speed is set (e.g. throwing axe tumble)
+        if self.spin_speed != 0.0:
+            self._spin_angle = (self._spin_angle + self.spin_speed * dt) % 360
+            self.image = pygame.transform.rotate(self._base_image, self._spin_angle)
+            self.rect = self.image.get_rect(center=self.rect.center)
 
     def on_hit(self, enemy, effect_group=None):
         """Handle projectile hitting an enemy."""
