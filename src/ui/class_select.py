@@ -197,6 +197,11 @@ class ClassSelect:
         lines.append(current_line)
         return lines
 
+    def _line_limit_for_height(self, max_height: int, line_height: int) -> int:
+        if max_height <= 0 or line_height <= 0:
+            return 0
+        return max_height // line_height
+
     def _index_to_row_col(self, index: int) -> tuple[int, int]:
         columns, _unused_rows = self._grid_dimensions()
         return index // columns, index % columns
@@ -570,19 +575,23 @@ class ClassSelect:
 
             content_width = content_right - content_left
 
-            name_lines = self._wrap_text_to_pixel_width(
-                hero["name"],
-                self.font_medium,
-                content_width,
-            )
+            name_font = self.font_medium
+            name_lines = self._wrap_text_to_pixel_width(hero["name"], name_font, content_width)
+            if len(name_lines) > 1:
+                name_font = self.font_small
+                name_lines = self._wrap_text_to_pixel_width(hero["name"], name_font, content_width)
+
+            name_line_height = name_font.get_linesize()
+            name_block_height = len(name_lines) * name_line_height
+            name_top = color_band.y + (color_band.height - name_block_height) // 2
             for j, line in enumerate(name_lines):
-                line_surface = self.font_medium.render(line, True, (255, 255, 255))
+                line_surface = name_font.render(line, True, (255, 255, 255))
                 screen.blit(
                     line_surface,
-                    (center_x - line_surface.get_width() // 2, card_rect.y + 42 + j * 20),
+                    (center_x - line_surface.get_width() // 2, name_top + j * name_line_height),
                 )
 
-            stats_top = card_rect.y + 84
+            stats_top = color_band.bottom + 10
             column_width = (card_rect.width - CLASS_SELECT_CARD_PADDING_X * 2) // 3
             stats = [("HP", hero["hp"]), ("SPD", hero["speed"]), ("ARM", hero["armor"])]
             for j, (label, value) in enumerate(stats):
@@ -592,8 +601,9 @@ class ClassSelect:
                 screen.blit(label_surface, (cell_center_x - label_surface.get_width() // 2, stats_top))
                 screen.blit(value_surface, (cell_center_x - value_surface.get_width() // 2, stats_top + 18))
 
+            stats_bottom = stats_top + 18 + self.font_medium.get_linesize()
             passive_label = self.font_small.render("Passive", True, (255, 215, 0))
-            passive_label_y = card_rect.y + 126
+            passive_label_y = stats_bottom + 10
             screen.blit(passive_label, (content_left, passive_label_y))
 
             weapon_name = self._weapon_display_name(hero["starting_weapon"])
@@ -603,8 +613,14 @@ class ClassSelect:
                 content_width,
             )
             weapon_label = self.font_small.render("Starting Weapon", True, (255, 215, 0))
+            text_line_height = self.font_small.get_linesize()
+            weapon_line_limit = self._line_limit_for_height(
+                card_rect.bottom - CLASS_SELECT_CARD_PADDING_X - (passive_label_y + 18 + text_line_height),
+                text_line_height,
+            )
+            weapon_lines = weapon_lines[: max(1, weapon_line_limit)]
             weapon_label_y = card_rect.bottom - CLASS_SELECT_CARD_PADDING_X - (
-                18 + len(weapon_lines) * 16
+                18 + len(weapon_lines) * text_line_height
             )
 
             passive_lines = self._wrap_text_to_pixel_width(
@@ -613,16 +629,19 @@ class ClassSelect:
                 content_width,
             )
             passive_top = passive_label_y + 18
-            passive_line_limit = max(0, (weapon_label_y - passive_top) // 17)
+            passive_line_limit = self._line_limit_for_height(
+                weapon_label_y - passive_top,
+                text_line_height,
+            )
             for j, line in enumerate(passive_lines[:passive_line_limit]):
                 line_surface = self.font_small.render(line, True, (210, 210, 210))
-                screen.blit(line_surface, (content_left, passive_top + j * 17))
+                screen.blit(line_surface, (content_left, passive_top + j * text_line_height))
 
             screen.blit(weapon_label, (content_left, weapon_label_y))
 
-            for j, line in enumerate(weapon_lines[:2]):
+            for j, line in enumerate(weapon_lines):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
-                screen.blit(weapon_surface, (content_left, weapon_label_y + 18 + j * 16))
+                screen.blit(weapon_surface, (content_left, weapon_label_y + 18 + j * text_line_height))
 
             if is_locked:
                 overlay = pygame.Surface((card_rect.width, card_rect.height), pygame.SRCALPHA)
