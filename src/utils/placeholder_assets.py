@@ -209,6 +209,42 @@ def _weapon_bg(surface: pygame.Surface, color: tuple[int, int, int]) -> None:
     pygame.draw.rect(surface, border, (1, 1, 30, 30), 2, border_radius=6)
 
 
+def _draw_throwing_hatchet_icon(surface: pygame.Surface) -> None:
+    """Draw a compact competition-style throwing hatchet readable at 32x32."""
+    handle_shadow = (64, 38, 12)
+    handle_color = (176, 132, 74)
+    handle_highlight = (214, 172, 110)
+    steel_outline = (42, 46, 54)
+    steel_fill = (190, 192, 196)
+    steel_shadow = (132, 136, 144)
+    steel_highlight = (232, 234, 238)
+
+    # Straight haft with slight taper so the silhouette reads as wood instead of a line.
+    pygame.draw.polygon(surface, handle_shadow, [(9, 26), (12, 27), (20, 12), (17, 11)])
+    pygame.draw.polygon(surface, handle_color, [(10, 25), (12, 26), (19, 12), (17, 12)])
+    pygame.draw.line(surface, handle_highlight, (11, 24), (18, 13), 1)
+
+    # Small eye/socket where the steel wraps the haft. This creates clear wood/metal separation.
+    pygame.draw.polygon(surface, steel_outline, [(14, 11), (18, 9), (21, 11), (19, 15), (16, 14), (14, 13)])
+    pygame.draw.polygon(surface, steel_shadow, [(15, 11), (18, 10), (20, 11), (18, 14), (16, 13), (15, 12)])
+
+    # Competition-style hatchet head: mostly trapezoidal with the narrow mounted side at the shaft.
+    head_outline = [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)]
+    head_fill = [(7, 9), (17, 7), (20, 9), (18, 14), (16, 15), (8, 14), (5, 12)]
+    pygame.draw.polygon(surface, steel_outline, head_outline)
+    pygame.draw.polygon(surface, steel_fill, head_fill)
+
+    # Subtle darker underside keeps the rectangular head readable at icon size.
+    pygame.draw.polygon(surface, steel_shadow, [(9, 14), (16, 15), (18, 14), (16, 13), (10, 13)])
+
+    # Keep the bevel subtle and inside the blade face.
+    pygame.draw.lines(surface, steel_highlight, False, [(7, 9), (5, 12), (8, 14)], 1)
+    pygame.draw.line(surface, steel_highlight, (9, 9), (17, 7), 1)
+
+    # Re-assert the silhouette edges after the highlight so the dark border stays crisp.
+    pygame.draw.lines(surface, steel_outline, False, [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)], 1)
+
+
 def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
     detail = _shade(color, 55)
     shadow = _shade(color, -70)
@@ -238,6 +274,8 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (18, 7), (18, 25), 1)
         pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
         pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
+    elif weapon_key == "axe":
+        _draw_throwing_hatchet_icon(surface)
 
 
 def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
@@ -385,6 +423,7 @@ def generate_weapon_icon_assets():
         ("lightning.png", (255, 240, 60)),
         ("blade.png", (100, 150, 255)),  # Spectral blade color
         ("longbow.png", (170, 120, 60)),
+        ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
     for filename, color in weapons:
@@ -474,6 +513,7 @@ def generate_audio_placeholders():
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
+    maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
 
 
 def main():

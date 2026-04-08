@@ -27,6 +27,7 @@ _WEAPON_ICON_NAMES = {
     "FrostRing": "frost",
     "LightningChain": "lightning",
     "Longbow": "longbow",
+    "ThrowingAxes": "axe",
 }
 
 

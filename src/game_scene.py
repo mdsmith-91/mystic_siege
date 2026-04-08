@@ -96,6 +96,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_CHAIN,  "assets/audio/sfx/lightning_chain.wav")
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
         _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
+        _am.load_sfx(AudioManager.WEAPON_THROWING_AXES, "assets/audio/sfx/throwing_axes.wav")
 
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()

@@ -260,6 +260,32 @@ LONGBOW_UPGRADE_LEVELS = [
     {"projectile_count": 2, "crit_bonus": 0.10},
 ]
 
+# Throwing Axes
+THROWING_AXES_BASE_DAMAGE = 28.0
+THROWING_AXES_BASE_COOLDOWN = 1.2
+THROWING_AXES_TARGETING_RANGE = 380
+THROWING_AXES_PROJECTILE_SPEED = 480
+THROWING_AXES_PROJECTILE_LIFETIME = 1.0
+THROWING_AXES_BASE_PIERCE = 0
+THROWING_AXES_BASE_PROJECTILE_COUNT = 1
+THROWING_AXES_SPREAD = 12               # degrees offset per additional axe (wider arc than Longbow)
+THROWING_AXES_BASE_CRIT_BONUS = 0.05
+THROWING_AXES_SPIN_SPEED = 360.0        # degrees per second — one full tumble per second
+THROWING_AXES_PROJECTILE_COLOR = (160, 160, 170)   # steel-gray blade tint
+THROWING_AXES_PROJECTILE_SIZE = (18, 18)            # square so all spin angles stay readable
+THROWING_AXES_HANDLE_COLOR = (90, 60, 30)           # dark wood brown
+THROWING_AXES_GUARD_COLOR = (75, 75, 85)             # dark iron bolster where handle meets blade
+THROWING_AXES_OUTLINE_COLOR = (45, 45, 55)           # dark border around blade for silhouette contrast
+THROWING_AXES_OUTLINE_WIDTH = 1                      # blade outline inset (px at 18×18 reference; scales with PROJECTILE_SIZE)
+THROWING_AXES_EDGE_HIGHLIGHT_WIDTH = 2               # cutting-edge bevel stripe width (px at 18×18 reference; scales with PROJECTILE_SIZE)
+THROWING_AXES_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 12.0},
+    {"base_cooldown": -0.20},
+    {"pierce": 1},
+    {"projectile_count": 2, "crit_bonus": 0.10},
+]
+
 # ENEMIES
 # Shared enemy runtime tunables
 ENEMY_BASE_ATTACK_COOLDOWN = 1.0
@@ -622,7 +648,7 @@ HERO_CLASSES = [
         "speed": 225,
         "armor": 3,
         "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
-        "starting_weapon": "Longbow",
+        "starting_weapon": "ThrowingAxes",
         "color": (90, 170, 110),
         "sprite": "assets/sprites/heroes/ranger.png",
         "passives": {

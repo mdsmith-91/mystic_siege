@@ -1,7 +1,11 @@
 import pygame
 from pygame.math import Vector2
 import random
-from settings import WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER
+from settings import (
+    WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER,
+    THROWING_AXES_HANDLE_COLOR, THROWING_AXES_GUARD_COLOR, THROWING_AXES_OUTLINE_COLOR,
+    THROWING_AXES_OUTLINE_WIDTH, THROWING_AXES_EDGE_HIGHLIGHT_WIDTH,
+)
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
@@ -11,7 +15,8 @@ class Projectile(pygame.sprite.Sprite):
                  owner=None, lifetime: float = 4.0,
                  size: tuple[int, int] | None = None,
                  draw_shape: str = "circle",
-                 rotate_to_direction: bool = False):
+                 rotate_to_direction: bool = False,
+                 spin_speed: float = 0.0):
         super().__init__(groups)
 
         # direction normalized on init
@@ -20,7 +25,10 @@ class Projectile(pygame.sprite.Sprite):
         self.projectile_size = size or (10, 10)
         self.rotate_to_direction = rotate_to_direction
         self.color = color
-        self.image = self._build_image()
+        self.spin_speed = spin_speed
+        self._spin_angle = 0.0
+        self._base_image = self._build_image()
+        self.image = self._base_image
         self.rect = self.image.get_rect(center=pos)
 
         # enemies_hit: set() — tracks enemy ids already hit (for pierce)
@@ -70,6 +78,67 @@ class Projectile(pygame.sprite.Sprite):
                 (nock_x - 1, mid), (0, 1), 2)
             pygame.draw.line(surface, self.color,
                 (nock_x - 1, mid), (0, height - 2), 2)
+        elif self.draw_shape == "axe":
+            # Hand axe pointing RIGHT — rotate_to_direction orients it toward the target;
+            # spin_speed tumbles it continuously in flight.
+            # Layers: handle → guard/bolster → outlined blade (6-point) → edge highlight
+            #
+            # All small offsets are derived from px (1 at the 18×18 reference canvas,
+            # 2 at 36×36, etc.) so changing THROWING_AXES_PROJECTILE_SIZE in settings.py
+            # uniformly rescales every detail.  THROWING_AXES_OUTLINE_WIDTH and
+            # THROWING_AXES_EDGE_HIGHLIGHT_WIDTH tune border/bevel proportions independently.
+            mid = height // 2
+            px = max(1, min(width, height) // 18)   # scale factor relative to 18×18 reference
+            ow = THROWING_AXES_OUTLINE_WIDTH * px    # blade outline inset thickness
+            ehw = THROWING_AXES_EDGE_HIGHLIGHT_WIDTH * px  # edge bevel stripe width
+
+            # Shaft runs along the lower portion of the canvas so the head sweeps upward,
+            # matching a real hatchet/throwing-axe profile.
+            shaft_y = mid + height // 5        # handle y-center, offset toward bottom
+            handle_end = (width * 5) // 9      # longer grip (~55% of width)
+            hb = handle_end + px               # head-back x-coordinate
+
+            # 1. Handle (longer dark-wood shaft, offset below center)
+            handle_h = max(2 * px, height // 6)
+            pygame.draw.rect(surface, THROWING_AXES_HANDLE_COLOR,
+                pygame.Rect(0, shaft_y - handle_h // 2, handle_end + 2 * px, handle_h))
+
+            # 2. Guard/bolster at handle-to-blade joint (dark iron accent)
+            guard_h = max(4 * px, height // 3)
+            guard_w = 3 * px
+            pygame.draw.rect(surface, THROWING_AXES_GUARD_COLOR,
+                pygame.Rect(handle_end - px, shaft_y - guard_h // 2, guard_w, guard_h))
+
+            # 3. Blade: 6-point polygon — compact hatchet head extending mostly above
+            #    the shaft, with a small lower beard.  Blade height ≈ 10px on an 18px
+            #    canvas so it reads as a stubby hand-axe, not an elongated cleaver.
+            #    socket-top → top-spike → cutting-top → cutting-bot → beard → socket-bot
+            q = height // 4    # quarter-height unit used for blade sizing
+            blade_pts = [
+                (hb,          shaft_y - q),           # socket top
+                (hb + px,     q),                      # top spike/corner
+                (width - px,  q),                      # cutting-edge top (flat top rail)
+                (width - px,  height - q),             # cutting-edge bottom
+                (hb + px,     height - q - px),        # beard
+                (hb,          shaft_y + height // 6),  # socket bottom (small lower extension)
+            ]
+            # Inset fill produces ow-px dark border around all blade edges
+            fill_pts = [
+                (hb + ow,       shaft_y - q + ow),
+                (hb + 2 * ow,   q + ow),
+                (width - px - ow,  q + ow),
+                (width - px - ow,  height - q - ow),
+                (hb + 2 * ow,   height - q - 2 * ow),
+                (hb + ow,       shaft_y + height // 6 - ow),
+            ]
+            pygame.draw.polygon(surface, THROWING_AXES_OUTLINE_COLOR, blade_pts)
+            pygame.draw.polygon(surface, self.color, fill_pts)
+
+            # 4. Edge highlight: bright bevel stripe on cutting edge for a sharp steel look
+            highlight = tuple(min(255, c + 70) for c in self.color)
+            highlight_x = width - px - ow - ehw        # inside the fill polygon, near cutting edge
+            pygame.draw.line(surface, highlight,
+                (highlight_x, q + 2 * px), (highlight_x, height - q - 2 * px), ehw)
         else:
             radius = min(width, height) // 2
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
@@ -115,6 +184,12 @@ class Projectile(pygame.sprite.Sprite):
         if (self.pos.x < 0 or self.pos.x > WORLD_WIDTH or
             self.pos.y < 0 or self.pos.y > WORLD_HEIGHT):
             self.kill()
+
+        # Continuously spin the image when spin_speed is set (e.g. throwing axe tumble)
+        if self.spin_speed != 0.0:
+            self._spin_angle = (self._spin_angle + self.spin_speed * dt) % 360
+            self.image = pygame.transform.rotate(self._base_image, self._spin_angle)
+            self.rect = self.image.get_rect(center=self.rect.center)
 
     def on_hit(self, enemy, effect_group=None):
         """Handle projectile hitting an enemy."""

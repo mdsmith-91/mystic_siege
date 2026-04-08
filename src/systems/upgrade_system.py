@@ -78,6 +78,7 @@ WEAPON_CLASSES = [
     "FrostRing",
     "LightningChain",
     "Longbow",
+    "ThrowingAxes",
 ]
 
 WEAPON_META = {
@@ -129,6 +130,13 @@ WEAPON_META = {
         "upgrade_description": "More damage at L2, faster shots at L3, pierce at L4, and an extra arrow plus higher crit at L5.",
         "icon_color": (170, 120, 60),
         "symbol": "LB",
+    },
+    "ThrowingAxes": {
+        "name": "Throwing Axes",
+        "new_description": "Hurls a spinning axe at the nearest enemy. Shorter range than a bow but hits harder.",
+        "upgrade_description": "More damage at L2, faster throws at L3, cleave through targets at L4, twin axes plus higher crit at L5.",
+        "icon_color": (160, 160, 170),
+        "symbol": "TA",
     },
 }
 
