@@ -154,7 +154,7 @@ Knight passive: 15% damage reduction, knockback immune
 Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
-Barbarian passive: +20% physical damage, +10 max HP
+Barbarian passive: +20% physical damage, +10% max HP
 
 Current hero architecture rules:
 
@@ -165,7 +165,7 @@ Current hero architecture rules:
 - Hero passive behavior is now declarative via each hero dict's `passives` mapping.
   Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
   `crit_chance_bonus`, `spell_damage_bonus_pct`, `physical_damage_bonus_pct`,
-  `projectile_pierce_bonus`, `heal_per_xp`, and `max_hp_bonus`.
+  `projectile_pierce_bonus`, `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.

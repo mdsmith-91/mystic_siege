@@ -54,7 +54,7 @@ CRIT_MULTIPLIER = 2.0     # crits deal 2x damage
 WIZARD_CRIT_CHANCE_BONUS = 0.10
 WIZARD_SPELL_DAMAGE_BONUS = 0.20  # Wizard passive: spells deal 20% more damage
 BARBARIAN_PHYSICAL_DAMAGE_BONUS = 0.20
-BARBARIAN_MAX_HP_BONUS = 10
+BARBARIAN_MAX_HP_BONUS_PCT = 0.10
 RANGER_CRIT_CHANCE_BONUS = 0.10
 RANGER_PROJECTILE_PIERCE_BONUS = 1
 
@@ -671,13 +671,13 @@ HERO_CLASSES = [
         "hp": 120,
         "speed": 205,
         "armor": 8,
-        "passive_desc": "Physical attacks deal 20% more damage. Gain +10 max HP.",
+        "passive_desc": "Physical attacks deal 20% more damage. Gain +10% max HP.",
         "starting_weapon": "ThrowingAxes",
         "color": (170, 80, 45),
         "sprite": "assets/sprites/heroes/barbarian.png",
         "passives": {
             "physical_damage_bonus_pct": BARBARIAN_PHYSICAL_DAMAGE_BONUS,
-            "max_hp_bonus": BARBARIAN_MAX_HP_BONUS,
+            "max_hp_bonus_pct": BARBARIAN_MAX_HP_BONUS_PCT,
         },
     },
 ]

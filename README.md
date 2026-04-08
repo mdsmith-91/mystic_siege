@@ -84,7 +84,7 @@ Not yet verified:
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
-| Barbarian | 120 | 205 | 8 | +20% physical damage, +10 max HP | Throwing Axes |
+| Barbarian | 120 | 205 | 8 | +20% physical damage, +10% max HP | Throwing Axes |
 
 ## Hero Architecture
 

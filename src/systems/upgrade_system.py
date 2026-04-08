@@ -261,8 +261,7 @@ class UpgradeSystem:
 
         # Handle each stat type:
         if stat == "max_hp":
-            player.max_hp += value
-            player.hp += value
+            player.add_flat_max_hp(value)
         elif stat == "speed_pct":
             player.add_flat_percent_bonus(stat, value)
         elif stat == "pickup_radius_pct":

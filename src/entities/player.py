@@ -32,7 +32,8 @@ class Player(BaseEntity):
         self.hero_class = hero_class_data.get("name", "")
 
         # Read hp, speed, armor from hero_class_data
-        self.max_hp = hero_class_data["hp"]
+        self.base_max_hp = hero_class_data["hp"]
+        self.max_hp = self.base_max_hp
         self.hp = self.max_hp
         self.speed = hero_class_data["speed"]
         self.base_speed = self.speed
@@ -73,6 +74,7 @@ class Player(BaseEntity):
         self.base_physical_damage_multiplier = 1.0
         self.physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
+        self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
         self.damage_taken_multiplier = 1.0
         self.knockback_immune = False
@@ -186,6 +188,18 @@ class Player(BaseEntity):
         self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
         self.physical_damage_multiplier = self.base_physical_damage_multiplier * (1.0 + self.physical_damage_bonus_pct)
 
+    def _recalculate_max_hp(self) -> float:
+        """Recompute effective max HP and return how much it changed."""
+        previous_max_hp = self.max_hp
+        self.max_hp = self.base_max_hp * (1.0 + self.max_hp_bonus_pct)
+        return self.max_hp - previous_max_hp
+
+    def add_flat_max_hp(self, value: float) -> None:
+        """Increase base max HP so percent bonuses keep scaling with flat upgrades."""
+        self.base_max_hp += value
+        max_hp_delta = self._recalculate_max_hp()
+        self.hp = min(self.max_hp, self.hp + max_hp_delta)
+
     def _apply_hero_passives(self) -> None:
         """Apply declarative passive bonuses from the hero config."""
         passives = self.hero_data.get("passives", {})
@@ -196,10 +210,13 @@ class Player(BaseEntity):
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
+        self.max_hp_bonus_pct += passives.get("max_hp_bonus_pct", 0.0)
         max_hp_bonus = passives.get("max_hp_bonus", 0.0)
+        if self.max_hp_bonus_pct:
+            max_hp_delta = self._recalculate_max_hp()
+            self.hp = min(self.max_hp, self.hp + max_hp_delta)
         if max_hp_bonus:
-            self.max_hp += max_hp_bonus
-            self.hp += max_hp_bonus
+            self.add_flat_max_hp(max_hp_bonus)
 
     def add_flat_percent_bonus(self, stat: str, value: float) -> None:
         """Apply a percent bonus additively from the stat's base value."""
