@@ -221,6 +221,17 @@ LIGHTNING_CHAIN_ARC_JITTER = 15
 LIGHTNING_CHAIN_ARC_COLOR = (255, 255, 200)
 LIGHTNING_CHAIN_ARC_WIDTH = 2
 LIGHTNING_CHAIN_HIT_SPARK_COLOR = (255, 255, 100)
+# Multi-layer arc rendering (outer glow → mid → core)
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_COLOR = (80, 160, 255)   # electric blue bloom
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_WIDTH = 5                 # px
+LIGHTNING_CHAIN_ARC_OUTER_GLOW_ALPHA = 70                # max alpha (fades with arc timer)
+LIGHTNING_CHAIN_ARC_MID_COLOR = (180, 225, 255)          # pale blue-white
+LIGHTNING_CHAIN_ARC_MID_WIDTH = 3                        # px
+LIGHTNING_CHAIN_ARC_MID_ALPHA = 160                      # max alpha (fades with arc timer)
+# Impact flash at each chain node end-point
+LIGHTNING_CHAIN_IMPACT_RADIUS = 6                        # px
+LIGHTNING_CHAIN_IMPACT_COLOR = (180, 220, 255)           # cold electric blue-white
+LIGHTNING_CHAIN_IMPACT_ALPHA = 200                       # max alpha (fades with arc timer)
 LIGHTNING_CHAIN_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
@@ -611,7 +622,7 @@ HERO_CLASSES = [
         "speed": 225,
         "armor": 3,
         "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
-        "starting_weapon": "Longbow",
+        "starting_weapon": "LightningChain",
         "color": (90, 170, 110),
         "sprite": "assets/sprites/heroes/ranger.png",
         "passives": {

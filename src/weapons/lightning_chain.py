@@ -8,7 +8,13 @@ from settings import (
     LIGHTNING_CHAIN_ARC_JITTER,
     LIGHTNING_CHAIN_ARC_LIFETIME,
     LIGHTNING_CHAIN_ARC_MAX_SEGMENTS,
+    LIGHTNING_CHAIN_ARC_MID_ALPHA,
+    LIGHTNING_CHAIN_ARC_MID_COLOR,
+    LIGHTNING_CHAIN_ARC_MID_WIDTH,
     LIGHTNING_CHAIN_ARC_MIN_SEGMENTS,
+    LIGHTNING_CHAIN_ARC_OUTER_GLOW_ALPHA,
+    LIGHTNING_CHAIN_ARC_OUTER_GLOW_COLOR,
+    LIGHTNING_CHAIN_ARC_OUTER_GLOW_WIDTH,
     LIGHTNING_CHAIN_ARC_WIDTH,
     LIGHTNING_CHAIN_BASE_CHAIN_COUNT,
     LIGHTNING_CHAIN_BASE_COOLDOWN,
@@ -17,6 +23,9 @@ from settings import (
     LIGHTNING_CHAIN_CHAIN_RANGE,
     LIGHTNING_CHAIN_HIT_SPARK_COLOR,
     LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER,
+    LIGHTNING_CHAIN_IMPACT_ALPHA,
+    LIGHTNING_CHAIN_IMPACT_COLOR,
+    LIGHTNING_CHAIN_IMPACT_RADIUS,
     LIGHTNING_CHAIN_STUN_DURATION,
     LIGHTNING_CHAIN_TARGETING_RANGE,
     LIGHTNING_CHAIN_UPGRADE_LEVELS,
@@ -39,8 +48,8 @@ class LightningChain(BaseWeapon):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in LIGHTNING_CHAIN_UPGRADE_LEVELS]
 
-        # lightning_arcs: list — each arc is {"start": Vector2, "end": Vector2, "timer": float}
-        # Timer counts down from 0.12s — arcs are drawn for that long then removed.
+        # lightning_arcs: list of {"end": Vector2, "timer": float, "points": list[Vector2]}
+        # Geometry frozen at fire time; timer counts down from ARC_LIFETIME then arc is removed.
         self.lightning_arcs = []
         self.stunned_enemies: dict[object, float] = {}
 
@@ -94,10 +103,10 @@ class LightningChain(BaseWeapon):
         chain = [nearest_enemy]
         enemies_hit = {nearest_enemy.sprite_id}
 
+        chain_range_sq = self.chain_range * self.chain_range
         for _ in range(self.chain_count):
             closest_enemy = None
             closest_distance_sq = float("inf")
-            chain_range_sq = self.chain_range * self.chain_range
 
             for enemy in self.enemy_group:
                 if enemy.sprite_id in enemies_hit:
@@ -114,8 +123,7 @@ class LightningChain(BaseWeapon):
             else:
                 break
 
-        # For each enemy in chain: deal base_damage * owner.damage_multiplier (diminish by 10% per hop)
-        # Chance to stun: if random() < stun_chance: freeze enemy briefly
+        # Damage each enemy in chain; diminish by hop multiplier and roll crit independently per target
         for i, enemy in enumerate(chain):
             # Diminish damage by 10% per hop, then roll crit independently per enemy
             damage_multiplier = LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER ** i
@@ -131,27 +139,27 @@ class LightningChain(BaseWeapon):
                 HitSpark(enemy.pos, LIGHTNING_CHAIN_HIT_SPARK_COLOR, [self.effect_group])
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
-            if random.random() < self.stun_chance:
+            if self.stun_chance > 0.0 and random.random() < self.stun_chance:
                 enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), self.stun_duration)
                 if hasattr(enemy, "_refresh_speed"):
                     enemy._refresh_speed()
                 self.stunned_enemies[enemy] = self.stun_duration
 
         # Store arc positions for drawing — first arc runs from player to initial target
+        arc_start = Vector2(self.owner.pos)
+        arc_end = Vector2(chain[0].pos)
         self.lightning_arcs.append({
-            "start": Vector2(self.owner.pos),
-            "end": Vector2(chain[0].pos),
+            "end": arc_end,
             "timer": LIGHTNING_CHAIN_ARC_LIFETIME,
-            "points": self._build_arc_points(Vector2(self.owner.pos), Vector2(chain[0].pos)),
+            "points": self._build_arc_points(arc_start, arc_end),
         })
         for i in range(len(chain) - 1):
-            start = chain[i].pos
-            end = chain[i + 1].pos
+            start = Vector2(chain[i].pos)
+            end = Vector2(chain[i + 1].pos)
             self.lightning_arcs.append({
-                "start": start,
                 "end": end,
                 "timer": LIGHTNING_CHAIN_ARC_LIFETIME,
-                "points": self._build_arc_points(Vector2(start), Vector2(end)),
+                "points": self._build_arc_points(start, end),
             })
 
     def update(self, dt):
@@ -180,16 +188,42 @@ class LightningChain(BaseWeapon):
             enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), remaining)
 
     def draw(self, surface, camera_offset):
-        """Draw jagged lightning arcs."""
+        """Draw jagged lightning arcs with layered glow and per-node impact flashes."""
+        if not self.lightning_arcs:
+            return
+        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         for arc in self.lightning_arcs:
-            points = arc["points"]
-            if len(points) < 2:
-                continue
+            fade = arc["timer"] / LIGHTNING_CHAIN_ARC_LIFETIME
+            points = [
+                (int(p.x - camera_offset.x), int(p.y - camera_offset.y))
+                for p in arc["points"]
+            ]
 
+            # Outer glow: wide electric-blue bloom
+            ga = int(LIGHTNING_CHAIN_ARC_OUTER_GLOW_ALPHA * fade)
             pygame.draw.lines(
-                surface,
-                LIGHTNING_CHAIN_ARC_COLOR,
-                False,
-                [(p.x - camera_offset.x, p.y - camera_offset.y) for p in points],
-                LIGHTNING_CHAIN_ARC_WIDTH,
+                tmp, (*LIGHTNING_CHAIN_ARC_OUTER_GLOW_COLOR, ga),
+                False, points, LIGHTNING_CHAIN_ARC_OUTER_GLOW_WIDTH,
             )
+            # Mid layer: pale blue-white
+            ma = int(LIGHTNING_CHAIN_ARC_MID_ALPHA * fade)
+            pygame.draw.lines(
+                tmp, (*LIGHTNING_CHAIN_ARC_MID_COLOR, ma),
+                False, points, LIGHTNING_CHAIN_ARC_MID_WIDTH,
+            )
+            # Core: original yellow-white, fades with arc timer
+            ca = int(255 * fade)
+            pygame.draw.lines(
+                tmp, (*LIGHTNING_CHAIN_ARC_COLOR, ca),
+                False, points, LIGHTNING_CHAIN_ARC_WIDTH,
+            )
+
+            # Impact flash at chain node (arc end-point)
+            ia = int(LIGHTNING_CHAIN_IMPACT_ALPHA * fade)
+            end = arc["end"]
+            pygame.draw.circle(
+                tmp, (*LIGHTNING_CHAIN_IMPACT_COLOR, ia),
+                (int(end.x - camera_offset.x), int(end.y - camera_offset.y)),
+                LIGHTNING_CHAIN_IMPACT_RADIUS,
+            )
+        surface.blit(tmp, (0, 0))
