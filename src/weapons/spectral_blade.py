@@ -40,11 +40,11 @@ class SpectralBlade(BaseWeapon):
     blade_count = SPECTRAL_BLADE_BASE_BLADE_COUNT
     orbit_radius = SPECTRAL_BLADE_ORBIT_RADIUS  # hilt offset from player center
     orbit_speed = SPECTRAL_BLADE_ORBIT_SPEED
-    orbit_angle = 0.0  # current rotation angle in degrees, increments each frame
     IS_SPELL = False
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
+        self.orbit_angle = 0.0  # current rotation angle in degrees, increments each frame
         self.upgrade_levels = [dict(upgrade) for upgrade in SPECTRAL_BLADE_UPGRADE_LEVELS]
 
         # Per-enemy hit cooldown dict: {enemy_id: timer} — prevents rapid re-hits on the same enemy

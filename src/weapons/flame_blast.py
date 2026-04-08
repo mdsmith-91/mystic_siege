@@ -66,10 +66,14 @@ class FlameBlast(BaseWeapon):
         if not nearest_enemy:
             return
 
+        raw = nearest_enemy.pos - self.owner.pos
+        if raw.length_squared() == 0:
+            return
+
         AudioManager.instance().play_sfx(AudioManager.WEAPON_FLAME_BLAST)
 
         # Aim the cone center at the nearest enemy
-        self.fire_direction = (nearest_enemy.pos - self.owner.pos).normalize()
+        self.fire_direction = raw.normalize()
         cone_range_sq = self.cone_range * self.cone_range
 
         # Hit every enemy within cone_range that falls inside the cone arc

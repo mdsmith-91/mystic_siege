@@ -123,14 +123,14 @@ class ArcaneBolt(BaseWeapon):
         if not bolts:
             return
 
-        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        tmp = None
         trail_len = ARCANE_BOLT_TRAIL_LENGTH
-        drew_anything = False
 
         for bolt in bolts:
             if not bolt._trail:
                 continue
-            drew_anything = True
+            if tmp is None:
+                tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
             for i, pos in enumerate(bolt._trail):
                 # Oldest segment = index 0, newest = index count-1
                 frac = (i + 1) / trail_len
@@ -140,5 +140,5 @@ class ArcaneBolt(BaseWeapon):
                 sy = int(pos.y - camera_offset.y)
                 pygame.draw.circle(tmp, (*ARCANE_BOLT_TRAIL_COLOR, alpha), (sx, sy), radius)
 
-        if drew_anything:
+        if tmp is not None:
             surface.blit(tmp, (0, 0))

@@ -198,6 +198,8 @@ class LightningChain(BaseWeapon):
                 (int(p.x - camera_offset.x), int(p.y - camera_offset.y))
                 for p in arc["points"]
             ]
+            if len(points) < 2:
+                continue
 
             # Outer glow: wide electric-blue bloom
             ga = int(LIGHTNING_CHAIN_ARC_OUTER_GLOW_ALPHA * fade)
