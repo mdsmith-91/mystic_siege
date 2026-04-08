@@ -873,9 +873,12 @@ class GameScene:
         sorted_sprites.sort(key=lambda sprite: sprite.rect.bottom)
 
         for sprite in sorted_sprites:
-            # Apply camera offset
-            screen_pos = sprite.rect.move(-local_offset)
-            world_surface.blit(sprite.image, screen_pos)
+            # Center image on rect.center so sprites whose image is larger than
+            # their collision rect (e.g. ArcaneBoltProjectile) still render correctly.
+            # For sprites where image.size == rect.size this is identical to rect.move().
+            blit_x = sprite.rect.centerx - sprite.image.get_width() // 2 - int(local_offset.x)
+            blit_y = sprite.rect.centery - sprite.image.get_height() // 2 - int(local_offset.y)
+            world_surface.blit(sprite.image, (blit_x, blit_y))
 
             # Draw health bar if it's an enemy
             if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite not in self.player_group:
