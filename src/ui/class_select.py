@@ -16,7 +16,6 @@ from settings import (
     CONTROLLER_AXIS_REPEAT_DELAY,
     CONTROLLER_AXIS_REPEAT_RATE,
     HERO_CLASSES,
-    PLAYER_COLORS,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     STATE_CLASS_SELECT,
@@ -654,13 +653,6 @@ class ClassSelect:
                 prompt_surface,
                 (SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, prompt_y),
             )
-
-            slot_badge = self.font_small.render(
-                f"Slot color",
-                True,
-                PLAYER_COLORS[self.current_slot.index],
-            )
-            screen.blit(slot_badge, (SCREEN_WIDTH - slot_badge.get_width() - 20, 26))
 
             if self.selected_class is None:
                 warning_surface = self.font_small.render(
