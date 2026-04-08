@@ -171,6 +171,14 @@ FROST_RING_HALF_WIDTH = 5
 FROST_RING_DRAW_WIDTH = 3
 FROST_RING_COLOR = (0, 200, 255)
 FROST_RING_HIT_SPARK_COLOR = (0, 200, 255)
+FROST_RING_INNER_GLOW_COLOR    = (200, 240, 255)  # pale ice-blue flash at cast origin
+FROST_RING_OUTER_BLOOM_COLOR   = ( 80, 160, 220)  # deeper cold-blue halo just outside ring
+FROST_RING_SHARD_COLOR         = (220, 245, 255)  # near-white frost crystal shards
+FROST_RING_MOTE_COLOR          = (160, 220, 255)  # light ice-blue mote particles
+FROST_RING_SHARD_COUNT         = 6                # ice crystal spike points on ring edge
+FROST_RING_SHARD_LENGTH        = 12               # pixel length of each crystal shard
+FROST_RING_MOTE_COUNT          = 12               # ice mote particles spawned per ring cast
+FROST_RING_MOTE_SPEED_VARIANCE = 30               # ±px/s variance on mote radial speed
 FROST_RING_UPGRADE_LEVELS = [
     {},
     {"freeze_duration": 0.5},
