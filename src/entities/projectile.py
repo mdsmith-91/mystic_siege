@@ -80,48 +80,53 @@ class Projectile(pygame.sprite.Sprite):
         elif self.draw_shape == "axe":
             # Hand axe pointing RIGHT — rotate_to_direction orients it toward the target;
             # spin_speed tumbles it continuously in flight.
-            # Layers: glow bloom → handle → guard/bolster → outlined blade → edge highlight
+            # Layers: handle → guard/bolster → outlined blade (6-point) → edge highlight
             mid = height // 2
-            handle_w = width // 2
-            blade_back_x = handle_w - 1        # socket edge of blade, overlaps guard slightly
-            blade_front_x = width - 1          # cutting edge (rightmost column)
-            blade_back_top = mid - height // 4  # top of socket (narrower back)
-            blade_back_bot = mid + height // 4  # bottom of socket
-            blade_front_top = 1                 # top of cutting edge (nearly full height)
-            blade_front_bot = height - 2        # bottom of cutting edge
+            # Shaft runs along the lower portion of the canvas so the head sweeps upward,
+            # matching a real hatchet/throwing-axe profile.
+            shaft_y = mid + height // 5        # handle y-center, offset toward bottom
+            handle_end = (width * 5) // 9      # longer grip (~55% of width)
+            hb = handle_end + 1                # head-back x-coordinate
 
-            # 1. Handle (dark wood, wider than before for readability)
-            handle_h = max(3, height // 4)
+            # 1. Handle (longer dark-wood shaft, offset below center)
+            handle_h = max(2, height // 6)
             pygame.draw.rect(surface, THROWING_AXES_HANDLE_COLOR,
-                pygame.Rect(0, mid - handle_h // 2, handle_w, handle_h))
+                pygame.Rect(0, shaft_y - handle_h // 2, handle_end + 2, handle_h))
 
             # 2. Guard/bolster at handle-to-blade joint (dark iron accent)
-            guard_h = max(5, height // 3 + 1)
+            guard_h = max(4, height // 3)
             pygame.draw.rect(surface, THROWING_AXES_GUARD_COLOR,
-                pygame.Rect(blade_back_x - 2, mid - guard_h // 2, 4, guard_h))
+                pygame.Rect(handle_end - 1, shaft_y - guard_h // 2, 3, guard_h))
 
-            # 3. Blade: fill in outline color first, then inset fill in blade color
-            #    — net effect is a 1px dark border on all blade edges
+            # 3. Blade: 6-point polygon — compact hatchet head extending mostly above
+            #    the shaft, with a small lower beard.  Blade height ≈ 10px on an 18px
+            #    canvas so it reads as a stubby hand-axe, not an elongated cleaver.
+            #    socket-top → top-spike → cutting-top → cutting-bot → beard → socket-bot
+            q = height // 4    # quarter-height unit used for blade sizing
             blade_pts = [
-                (blade_back_x,  blade_back_top),
-                (blade_front_x, blade_front_top),
-                (blade_front_x, blade_front_bot),
-                (blade_back_x,  blade_back_bot),
+                (hb,         shaft_y - q),          # socket top
+                (hb + 1,     q),                     # top spike/corner
+                (width - 1,  q),                     # cutting-edge top (flat top rail)
+                (width - 1,  height - q),            # cutting-edge bottom
+                (hb + 1,     height - q - 1),        # beard
+                (hb,         shaft_y + height // 6), # socket bottom (small lower extension)
             ]
+            # Inset fill gives 1px dark border around all blade edges
             fill_pts = [
-                (blade_back_x + 1,  blade_back_top + 1),
-                (blade_front_x - 1, blade_front_top + 1),
-                (blade_front_x - 1, blade_front_bot - 1),
-                (blade_back_x + 1,  blade_back_bot - 1),
+                (hb + 1,     shaft_y - q + 1),
+                (hb + 2,     q + 1),
+                (width - 2,  q + 1),
+                (width - 2,  height - q - 1),
+                (hb + 2,     height - q - 2),
+                (hb + 1,     shaft_y + height // 6 - 1),
             ]
             pygame.draw.polygon(surface, THROWING_AXES_OUTLINE_COLOR, blade_pts)
             pygame.draw.polygon(surface, self.color, fill_pts)
 
-            # 4. Edge highlight: 2px bright stripe on cutting edge to convey a sharp steel bevel
+            # 4. Edge highlight: 2px bright stripe on cutting edge for a sharp steel bevel
             highlight = tuple(min(255, c + 70) for c in self.color)
             pygame.draw.line(surface, highlight,
-                (blade_front_x - 2, blade_front_top + 2),
-                (blade_front_x - 2, blade_front_bot - 2), 2)
+                (width - 3, q + 2), (width - 3, height - q - 2), 2)
         else:
             radius = min(width, height) // 2
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)
