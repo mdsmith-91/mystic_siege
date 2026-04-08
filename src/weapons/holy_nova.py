@@ -108,6 +108,9 @@ class HolyNova(BaseWeapon):
             else:
                 i += 1
 
+    def on_owner_inactive(self):
+        self.rings.clear()
+
     def draw(self, surface, camera_offset):
         """Draw the expanding holy rings with layered glow, flares, and sparks."""
         if not self.rings:

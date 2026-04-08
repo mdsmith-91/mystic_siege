@@ -146,6 +146,10 @@ class FlameBlast(BaseWeapon):
             self.burning_enemies[enemy] = remaining
             enemy.take_damage(self.burn_damage * dt, attacker=self.owner)
 
+    def on_owner_inactive(self):
+        self.burning_enemies.clear()
+        self.effect_particles.clear()
+
     def draw_effect(self, surface, camera_offset):
         """Draw the particle explosion blast.
 

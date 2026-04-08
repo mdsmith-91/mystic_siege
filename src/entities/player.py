@@ -284,6 +284,8 @@ class Player(BaseEntity):
 
         if self.supports_revive:
             if self.hp <= 0:
+                for weapon in self.weapons:
+                    weapon.on_owner_inactive()
                 self.is_downed = True
                 self.revive_timer = 0.0
                 self.iframes = 0.0
@@ -295,6 +297,8 @@ class Player(BaseEntity):
             return actual_damage
 
         if self.hp <= 0:
+            for weapon in self.weapons:
+                weapon.on_owner_inactive()
             self.dying = True
             self.death_timer = 1.0
             self.iframes = 0.0

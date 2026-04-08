@@ -38,6 +38,10 @@ class BaseWeapon(ABC):
 
         self.level += 1
 
+    def on_owner_inactive(self):
+        """Clear transient runtime-only state when the owner stops acting."""
+        pass
+
     @abstractmethod
     def fire(self):
         """Fire the weapon - must be implemented by subclasses."""
