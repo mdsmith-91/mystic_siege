@@ -1,0 +1,13 @@
+{
+  "frame_w": 32,
+  "frame_h": 32,
+  "frame_count": 4,
+  "cols": 4,
+  "rows": 1,
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ]
+}

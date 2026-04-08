@@ -648,7 +648,7 @@ HERO_CLASSES = [
         "speed": 225,
         "armor": 3,
         "passive_desc": "Gain +10% crit chance. Arrows pierce 1 extra enemy.",
-        "starting_weapon": "ThrowingAxes",
+        "starting_weapon": "Longbow",
         "color": (90, 170, 110),
         "sprite": "assets/sprites/heroes/ranger.png",
         "passives": {
