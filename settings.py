@@ -97,6 +97,14 @@ HOLY_NOVA_UPGRADE_LEVELS = [
     {"base_cooldown": -0.4},
     {"base_damage": 20, "ring_width": -4},
 ]
+HOLY_NOVA_INNER_GLOW_COLOR       = (255, 245, 180)  # soft white-gold flash at cast origin
+HOLY_NOVA_OUTER_BLOOM_COLOR      = (255, 215,  80)  # faint gold ring just outside primary ring
+HOLY_NOVA_FLARE_COLOR            = (255, 255, 220)  # bright near-white for cardinal flare spikes
+HOLY_NOVA_SPARK_COLOR            = (255, 240, 140)  # warm gold for radiant sparks
+HOLY_NOVA_SPARK_COUNT            = 16               # spark particles spawned per ring cast
+HOLY_NOVA_FLARE_COUNT            = 8                # flare spike points on ring edge
+HOLY_NOVA_FLARE_LENGTH           = 14               # pixel length of each flare spike
+HOLY_NOVA_PARTICLE_SPEED_VARIANCE = 40              # ±px/s variance on particle radial speed
 
 # Spectral Blade
 SPECTRAL_BLADE_BASE_DAMAGE = 18.0
