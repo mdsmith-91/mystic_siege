@@ -199,6 +199,7 @@ Current implementation note:
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
 | Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
 | Longbow | Projectile | Fires fast arrows at nearby enemies with pierce/crit scaling |
+| Throwing Axes | Projectile | Hurls spinning axes at nearby enemies with heavier hits and shorter reach |
 
 Each weapon has **5 upgrade levels** (damage, speed, area, count, special).
 
@@ -211,6 +212,7 @@ Current implementation note:
   both resolve through the same factory path
 - player-facing labels may differ from those ids; the internal `FlameBlast` id is
   presented in UI as `Flame Blast`
+- current Flame Blast behavior targets the nearest enemy, not movement direction
 
 ---
 

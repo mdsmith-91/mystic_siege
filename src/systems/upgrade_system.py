@@ -120,7 +120,7 @@ WEAPON_META = {
     "LightningChain": {
         "name": "Lightning Chain",
         "new_description": "Strikes the nearest enemy with lightning that chains to nearby foes.",
-        "upgrade_description": "More damage at L2 and L3, chains to 5 enemies at L3, longer chain range at L4, 6 chains and stun chance at L5.",
+        "upgrade_description": "More damage at L2, chains to 5 enemies at L3, longer chain range at L4, 6 chains and stun chance at L5.",
         "icon_color": (255, 255, 100),
         "symbol": "LC",
     },

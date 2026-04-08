@@ -177,6 +177,7 @@ Current hero architecture rules:
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
+- ThrowingAxes (`Throwing Axes`) — spinning thrown axes with shorter range and heavier hits
 
 The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
 limits a player to 6 equipped weapons, and `UpgradeSystem` should not offer
@@ -192,7 +193,8 @@ Current weapon architecture rules:
   resolution, `src/systems/upgrade_system.py` owns player-facing card metadata (`WEAPON_META`,
   `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
 - Weapon ids are stable strings: `ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
-  `FrostRing`, `LightningChain`, `Longbow`. `FlameBlast` displays as `Flame Blast` in UI.
+  `FrostRing`, `LightningChain`, `Longbow`, `ThrowingAxes`. `FlameBlast` displays as
+  `Flame Blast` in UI, and `ThrowingAxes` displays as `Throwing Axes`.
 - HUD chrome tied to weapon slots is also settings-driven: `HUD_EMPTY_SLOT_BG_COLOR` drives
   both empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment border tracker
   (fills clockwise from top as levels 2–5 are earned; unearned segments use the empty-slot gray).

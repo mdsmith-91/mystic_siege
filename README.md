@@ -14,7 +14,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 Mystic Siege is a playable survivor-style action game with:
 
 - 4 hero classes with unique passives and starting weapons
-- 7 weapon types with 5 upgrade levels each
+- 8 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
@@ -103,7 +103,7 @@ Not yet verified:
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - The intended ownership split is: `settings.py` for gameplay values, `src/weapons/factory.py` for id-to-class lookup, and `src/systems/upgrade_system.py` for player-facing card metadata.
 - `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
-- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`) because hero data and upgrade choices reference them directly.
+- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`, `ThrowingAxes`) because hero data and upgrade choices reference them directly.
 - Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.

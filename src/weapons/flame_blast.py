@@ -57,9 +57,10 @@ class FlameBlast(BaseWeapon):
         # Find nearest enemy to aim the cone at
         nearest_enemy = None
         nearest_distance_sq = float("inf")
+        cone_range_sq = self.cone_range * self.cone_range
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()
-            if distance_sq < nearest_distance_sq:
+            if distance_sq < nearest_distance_sq and distance_sq <= cone_range_sq:
                 nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
@@ -74,7 +75,6 @@ class FlameBlast(BaseWeapon):
 
         # Aim the cone center at the nearest enemy
         self.fire_direction = raw.normalize()
-        cone_range_sq = self.cone_range * self.cone_range
 
         # Hit every enemy within cone_range that falls inside the cone arc
         for enemy in self.enemy_group:
