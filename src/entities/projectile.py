@@ -1,7 +1,10 @@
 import pygame
 from pygame.math import Vector2
 import random
-from settings import WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER
+from settings import (
+    WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER,
+    THROWING_AXES_HANDLE_COLOR, THROWING_AXES_GUARD_COLOR, THROWING_AXES_OUTLINE_COLOR,
+)
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
@@ -75,28 +78,50 @@ class Projectile(pygame.sprite.Sprite):
             pygame.draw.line(surface, self.color,
                 (nock_x - 1, mid), (0, height - 2), 2)
         elif self.draw_shape == "axe":
-            # Throwing axe drawn pointing RIGHT. rotate_to_direction orients it toward
-            # the target; spin_speed then tumbles it continuously in flight.
-            # Handle: thin dark-brown rectangle along the left half, vertically centred
-            handle_color = (100, 70, 40)
+            # Hand axe pointing RIGHT — rotate_to_direction orients it toward the target;
+            # spin_speed tumbles it continuously in flight.
+            # Layers: glow bloom → handle → guard/bolster → outlined blade → edge highlight
+            mid = height // 2
             handle_w = width // 2
-            handle_h = max(2, height // 5)
-            handle_y = height // 2 - handle_h // 2
-            pygame.draw.rect(surface, handle_color,
-                pygame.Rect(0, handle_y, handle_w, handle_h))
-            # Blade: D-shaped wedge on the right half (primary color = steel tint)
-            blade_x = handle_w - 2   # slight overlap with handle for visual continuity
-            pygame.draw.polygon(surface, self.color, [
-                (blade_x, 1),           # back-top of blade
-                (width - 1, height // 4),    # front-top shoulder
-                (width - 1, height - height // 4),  # front-bottom shoulder
-                (blade_x, height - 2),  # back-bottom of blade
-            ])
-            # Edge highlight: 1px brighter line along the front cutting edge
-            highlight = tuple(min(255, c + 60) for c in self.color)
+            blade_back_x = handle_w - 1        # socket edge of blade, overlaps guard slightly
+            blade_front_x = width - 1          # cutting edge (rightmost column)
+            blade_back_top = mid - height // 4  # top of socket (narrower back)
+            blade_back_bot = mid + height // 4  # bottom of socket
+            blade_front_top = 1                 # top of cutting edge (nearly full height)
+            blade_front_bot = height - 2        # bottom of cutting edge
+
+            # 1. Handle (dark wood, wider than before for readability)
+            handle_h = max(3, height // 4)
+            pygame.draw.rect(surface, THROWING_AXES_HANDLE_COLOR,
+                pygame.Rect(0, mid - handle_h // 2, handle_w, handle_h))
+
+            # 2. Guard/bolster at handle-to-blade joint (dark iron accent)
+            guard_h = max(5, height // 3 + 1)
+            pygame.draw.rect(surface, THROWING_AXES_GUARD_COLOR,
+                pygame.Rect(blade_back_x - 2, mid - guard_h // 2, 4, guard_h))
+
+            # 3. Blade: fill in outline color first, then inset fill in blade color
+            #    — net effect is a 1px dark border on all blade edges
+            blade_pts = [
+                (blade_back_x,  blade_back_top),
+                (blade_front_x, blade_front_top),
+                (blade_front_x, blade_front_bot),
+                (blade_back_x,  blade_back_bot),
+            ]
+            fill_pts = [
+                (blade_back_x + 1,  blade_back_top + 1),
+                (blade_front_x - 1, blade_front_top + 1),
+                (blade_front_x - 1, blade_front_bot - 1),
+                (blade_back_x + 1,  blade_back_bot - 1),
+            ]
+            pygame.draw.polygon(surface, THROWING_AXES_OUTLINE_COLOR, blade_pts)
+            pygame.draw.polygon(surface, self.color, fill_pts)
+
+            # 4. Edge highlight: 2px bright stripe on cutting edge to convey a sharp steel bevel
+            highlight = tuple(min(255, c + 70) for c in self.color)
             pygame.draw.line(surface, highlight,
-                (width - 1, height // 4),
-                (width - 1, height - height // 4), 1)
+                (blade_front_x - 2, blade_front_top + 2),
+                (blade_front_x - 2, blade_front_bot - 2), 2)
         else:
             radius = min(width, height) // 2
             pygame.draw.circle(surface, self.color, (width // 2, height // 2), radius)

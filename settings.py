@@ -273,6 +273,9 @@ THROWING_AXES_BASE_CRIT_BONUS = 0.05
 THROWING_AXES_SPIN_SPEED = 360.0        # degrees per second — one full tumble per second
 THROWING_AXES_PROJECTILE_COLOR = (160, 160, 170)   # steel-gray blade tint
 THROWING_AXES_PROJECTILE_SIZE = (18, 18)            # square so all spin angles stay readable
+THROWING_AXES_HANDLE_COLOR = (90, 60, 30)           # dark wood brown
+THROWING_AXES_GUARD_COLOR = (75, 75, 85)             # dark iron bolster where handle meets blade
+THROWING_AXES_OUTLINE_COLOR = (45, 45, 55)           # dark border around blade for silhouette contrast
 THROWING_AXES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 12.0},
