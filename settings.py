@@ -101,6 +101,122 @@ FRIAR_AREA_SIZE_BONUS_PCT = 0.20     # fraction added to area-based effects by F
 
 
 # ============================================================================
+# Pickups And Consumables
+# ============================================================================
+# Stable pickup ids, drop tuning, and timed-buff values all live here so the
+# new world-pickup system stays small and settings-driven.
+PICKUP_MAGNET = "Magnet"
+PICKUP_HEALTH_POTION = "HealthPotion"
+PICKUP_BATTLE_RAGE = "BattleRage"
+PICKUP_IRON_SKIN = "IronSkin"
+PICKUP_HASTE = "Haste"
+
+PICKUP_DISPLAY_NAMES = {
+    PICKUP_MAGNET: "Magnet",
+    PICKUP_HEALTH_POTION: "Health Potion",
+    PICKUP_BATTLE_RAGE: "Battle Rage",
+    PICKUP_IRON_SKIN: "Iron Skin",
+    PICKUP_HASTE: "Haste",
+}
+
+PICKUP_REQUIRES_MISSING_HP = {
+    PICKUP_HEALTH_POTION: True,
+}
+
+WORLD_PICKUP_RADIUS = 26              # pixels; pickup collection radius around the pickup itself
+PICKUP_BOB_SPEED = 3.5                # radians/second for pickup idle bob
+PICKUP_BOB_HEIGHT = 4                 # pixels of visual bob amplitude
+PICKUP_PULSE_SPEED = 4.0              # radians/second for pickup glow pulse
+PICKUP_DRAW_SIZE = 24                 # pixels; world icon footprint used for placeholder/fallback scale
+PICKUP_OUTLINE_WIDTH = 2              # pixels; fallback icon outline thickness
+PICKUP_TEXT_LIFETIME = 0.8            # seconds for pickup floating text feedback
+
+PICKUP_CATEGORY_NORMAL = "normal"
+PICKUP_CATEGORY_ELITE = "elite"
+PICKUP_CATEGORY_BOSS = "boss"
+PICKUP_CATEGORY_NONE = "none"
+
+PICKUP_ENEMY_DROP_CATEGORY = {
+    "Skeleton": PICKUP_CATEGORY_NORMAL,
+    "Goblin": PICKUP_CATEGORY_NORMAL,
+    "Wraith": PICKUP_CATEGORY_NORMAL,
+    "Bat": PICKUP_CATEGORY_NORMAL,
+    "MiniBat": PICKUP_CATEGORY_NONE,
+    "Knight": PICKUP_CATEGORY_ELITE,
+    "Lich": PICKUP_CATEGORY_ELITE,
+    "Golem": PICKUP_CATEGORY_BOSS,
+}
+
+PICKUP_DROP_CHANCE_BY_CATEGORY = {
+    PICKUP_CATEGORY_NORMAL: 0.06,
+    PICKUP_CATEGORY_ELITE: 0.18,
+    PICKUP_CATEGORY_BOSS: 0.65,
+    PICKUP_CATEGORY_NONE: 0.0,
+}
+
+PICKUP_DROP_WEIGHTS_BY_CATEGORY = {
+    PICKUP_CATEGORY_NORMAL: {
+        PICKUP_HEALTH_POTION: 7,
+        PICKUP_BATTLE_RAGE: 3,
+        PICKUP_IRON_SKIN: 3,
+        PICKUP_HASTE: 3,
+        PICKUP_MAGNET: 1,
+    },
+    PICKUP_CATEGORY_ELITE: {
+        PICKUP_HEALTH_POTION: 5,
+        PICKUP_BATTLE_RAGE: 4,
+        PICKUP_IRON_SKIN: 4,
+        PICKUP_HASTE: 4,
+        PICKUP_MAGNET: 2,
+    },
+    PICKUP_CATEGORY_BOSS: {
+        PICKUP_HEALTH_POTION: 4,
+        PICKUP_BATTLE_RAGE: 4,
+        PICKUP_IRON_SKIN: 4,
+        PICKUP_HASTE: 4,
+        PICKUP_MAGNET: 3,
+    },
+}
+
+PICKUP_ICON_COLORS = {
+    PICKUP_MAGNET: (120, 220, 255),
+    PICKUP_HEALTH_POTION: (220, 70, 90),
+    PICKUP_BATTLE_RAGE: (255, 145, 60),
+    PICKUP_IRON_SKIN: (160, 170, 190),
+    PICKUP_HASTE: (120, 255, 160),
+}
+
+PICKUP_GLOW_COLORS = {
+    PICKUP_MAGNET: (110, 210, 255),
+    PICKUP_HEALTH_POTION: (255, 90, 110),
+    PICKUP_BATTLE_RAGE: (255, 170, 70),
+    PICKUP_IRON_SKIN: (190, 200, 220),
+    PICKUP_HASTE: (150, 255, 185),
+}
+
+HEALTH_POTION_HEAL_FRACTION = 0.35    # fraction of max HP restored instantly on pickup
+HEALTH_POTION_HEAL_FLAT = 0.0         # flat HP restored on pickup; 0 keeps the fraction-only path
+
+BUFF_DEFAULT_DURATION = 10.0          # seconds fallback for timed buffs if no per-item override exists
+BUFF_DURATION_BY_ITEM = {
+    PICKUP_BATTLE_RAGE: 10.0,
+    PICKUP_IRON_SKIN: 10.0,
+    PICKUP_HASTE: 10.0,
+}
+
+BATTLE_RAGE_DAMAGE_BONUS_PCT = 0.30   # fraction added to outgoing damage while active
+IRON_SKIN_DAMAGE_TAKEN_MULTIPLIER = 0.75  # multiplier applied to incoming damage while active
+HASTE_SPEED_BONUS_PCT = 0.20          # fraction added to movement speed while active
+HASTE_COOLDOWN_REDUCTION = 0.20       # additive cooldown reduction while active
+
+MAGNET_PULL_SPEED_MIN = 520           # pixels/second starting homing speed for magnetized XP orbs
+MAGNET_PULL_SPEED_MAX = 1200          # pixels/second cap for magnetized XP orbs
+MAGNET_PULL_ACCELERATION = 2200       # pixels/second^2 added while the orb is magnetized
+MAGNET_PULL_REFRESH_DURATION = 2.0    # seconds magnet state remains active on each orb
+MAGNET_PULL_GRACE_RADIUS = 36         # pixels; close-enough range before normal pickup resolves
+
+
+# ============================================================================
 # Weapons
 # ============================================================================
 # Tuning note:

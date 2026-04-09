@@ -16,6 +16,7 @@ Mystic Siege is a playable survivor-style action game with:
 - 5 hero classes with unique passives and starting weapons
 - 8 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
+- settings-driven world pickups and temporary buffs
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
 - controller support, hot-plug detection, and remappable controller confirm/back/pause bindings
@@ -74,6 +75,7 @@ Not yet verified:
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
+- World pickups are shared-world objects. The nearest eligible player collects them; health potions require missing HP, timed buffs stay on the collector, and `Magnet` retargets current XP orbs toward the closest eligible player per orb without changing shared-pool XP semantics.
 - Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
@@ -109,6 +111,7 @@ Not yet verified:
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
 - The shared HUD renderer now caches stable panel rect conversion, weapon-slot row geometry, weapon icon surfaces, and text surfaces inside `src/ui/hud.py` rather than rebuilding equivalent data every frame. Offscreen downed-player revive rings are culled while teammate threat arrows remain active.
+- Timed pickup buff durations render in the optional stat-bonus readout rather than inside the main HUD panel. The buff column sits beside the stat column and mirrors inward for right-side player panels.
 
 ## Enemy Architecture
 
@@ -205,6 +208,7 @@ Recommended manual verification for the current state:
 3. Trigger a multiplayer level-up and confirm only the owning slot can resolve its upgrade menu.
 4. Disconnect and reclaim a controller mid-run and confirm gameplay stays safely paused until the slot is recovered.
 5. Finish a multiplayer run and confirm the game-over screen shows party results while `saves/progress.json` updates aggregate run totals.
+6. Defeat several enemies, confirm pickups can drop and be collected in 1P/2P+, verify full-health players do not consume health potions, verify `Magnet` pulls each existing XP orb toward the closest eligible player without changing shared-pool XP ownership, and verify buff durations only appear in the optional stat-bonus readout with mirrored inward placement on right-side panels.
 
 ## Safe Next Work
 

@@ -18,9 +18,10 @@ class CursedKnight(Enemy):
         all_groups: tuple,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
-        super().__init__(pos, player_list, all_groups, CURSED_KNIGHT_ENEMY_DATA, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, CURSED_KNIGHT_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
         # Shield mechanic — faces toward player each frame
         self.shield_facing = Vector2(1, 0)

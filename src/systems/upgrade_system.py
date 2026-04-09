@@ -287,7 +287,8 @@ class UpgradeSystem:
         elif stat == "xp_multiplier_pct":
             player.add_flat_percent_bonus(stat, value)
         elif stat == "cooldown_reduction":
-            player.cooldown_reduction = min(0.9, player.cooldown_reduction + value)
+            player.base_cooldown_reduction = min(0.9, player.base_cooldown_reduction + value)
+            player._rebuild_combat_modifiers()
         elif stat == "crit_chance":
             player.crit_chance += value
         elif stat == "spell_damage_multiplier_pct":

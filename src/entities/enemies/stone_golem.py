@@ -17,9 +17,10 @@ class StoneGolem(Enemy):
         all_groups: tuple,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
-        super().__init__(pos, player_list, all_groups, STONE_GOLEM_ENEMY_DATA, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, STONE_GOLEM_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
         # Scale to the settings-driven size to reflect the golem's mini-boss stature

@@ -27,11 +27,12 @@ def create_enemy(
     enemy_data: dict,
     xp_orb_group=None,
     effect_group=None,
+    pickup_group=None,
     projectile_group=None,
 ):
     enemy_class = ENEMY_CLASS_REGISTRY.get(enemy_id)
     if enemy_class is None:
-        return Enemy(pos, players, all_groups, enemy_data, xp_orb_group, effect_group)
+        return Enemy(pos, players, all_groups, enemy_data, xp_orb_group, effect_group, pickup_group)
 
     return enemy_class(
         pos,
@@ -39,6 +40,7 @@ def create_enemy(
         all_groups,
         xp_orb_group=xp_orb_group,
         effect_group=effect_group,
+        pickup_group=pickup_group,
         projectile_group=projectile_group,
     )
 

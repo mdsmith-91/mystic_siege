@@ -203,6 +203,8 @@ Current weapon architecture rules:
   (fills clockwise from top as levels 2–5 are earned; unearned segments use the empty-slot gray).
 - The HUD renderer caches stable panel/slot geometry, icon surfaces, and text surfaces rather
   than rebuilding each frame. Offscreen downed-player revive rings are culled.
+- Timed pickup buff durations live in the optional stat-bonus readout, rendered as a
+  separate adjacent buff column. Right-side HUD panels mirror that buff column inward.
 
 ### Enemies
 
@@ -259,6 +261,10 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   shared `saves/progress.json`, not per-person profiles.
 - XP orb collection is a shared pool. If two players are equally close, the lower
   slot index wins the tie.
+- World pickups are shared-world objects. Health potions require missing HP,
+  timed buff pickups affect only the collector, and `Magnet` retargets currently
+  spawned XP orbs toward the closest eligible player per orb without changing
+  shared-pool XP semantics.
 - Owned multiplayer menu flows now enforce device identity:
   - lobby claims devices by slot and rejects duplicate controller claims
   - class select and upgrade menus route controller input by owned joystick instance

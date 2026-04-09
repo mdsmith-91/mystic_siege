@@ -24,6 +24,7 @@ from src.entities.player import Player
 from src.systems.camera import Camera
 from src.systems.wave_manager import WaveManager
 from src.systems.xp_system import XPSystem
+from src.systems.pickup_system import PickupSystem
 from src.systems.upgrade_system import UpgradeSystem
 from src.systems.collision import CollisionSystem
 from src.ui.hud import HUD
@@ -41,6 +42,7 @@ class GameScene:
         self.enemy_group = pygame.sprite.Group()
         self.projectile_group = pygame.sprite.Group()
         self.xp_orb_group = pygame.sprite.Group()
+        self.pickup_group = pygame.sprite.Group()
         self.effect_group = pygame.sprite.Group()
 
         if not slots:
@@ -74,6 +76,7 @@ class GameScene:
             self.xp_orb_group,
             self.projectile_group,
             self.effect_group,
+            self.pickup_group,
         )
 
         # Per-player XP state is required before multiplayer collision/camera/HUD land.
@@ -97,6 +100,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
         _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
         _am.load_sfx(AudioManager.WEAPON_THROWING_AXES, "assets/audio/sfx/throwing_axes.wav")
+        _am.load_sfx(AudioManager.PICKUP_COLLECT, "assets/audio/sfx/pickup_collect.wav")
 
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()
@@ -227,6 +231,35 @@ class GameScene:
         xp_system.consume_levelup()
         self.upgrade_menu = None
         self.active_upgrade_context = None
+
+    def apply_magnet(self, player: Player) -> None:
+        eligible_players = [
+            candidate for candidate in self.players
+            if getattr(candidate, "can_collect_xp", candidate.is_alive)
+        ]
+        if not eligible_players:
+            return
+
+        for orb in self.xp_orb_group:
+            chosen_player = None
+            chosen_dist_sq = 0.0
+            chosen_slot_order = 0
+
+            for candidate in eligible_players:
+                dist_sq = (candidate.pos - orb.pos).length_squared()
+                slot = getattr(candidate, "slot", None)
+                slot_order = slot.index if slot is not None else 0
+                if (
+                    chosen_player is None
+                    or dist_sq < chosen_dist_sq
+                    or (dist_sq == chosen_dist_sq and slot_order < chosen_slot_order)
+                ):
+                    chosen_player = candidate
+                    chosen_dist_sq = dist_sq
+                    chosen_slot_order = slot_order
+
+            if chosen_player is not None:
+                orb.magnetize(chosen_player)
 
     def _build_gameover_stats(self) -> dict:
         weapons: list[str] = []
@@ -825,6 +858,7 @@ class GameScene:
 
         # xp_system.update(dt, player, xp_orb_group)
         XPSystem.update_all(self.players, self.xp_systems, self.xp_orb_group)
+        PickupSystem.update_all(self.players, self.pickup_group, self)
 
         camera_targets = [player.pos for player in self.players if player.is_alive]
         self.camera.update_multi(camera_targets, dt)
