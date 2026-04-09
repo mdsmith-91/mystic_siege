@@ -83,13 +83,19 @@ class SaveSystem:
     def load(self) -> Dict[str, Any]:
         """Load save data from file or return default if not found"""
         defaults = _build_default_save()
+        loaded_from_disk = True
         try:
             with open(self.save_path, 'r') as f:
                 loaded_data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             loaded_data = {}
+            loaded_from_disk = False
 
-        return _normalize_save_data(_merge_save_data(defaults, loaded_data))
+        merged_data = _merge_save_data(defaults, loaded_data)
+        normalized_data = _normalize_save_data(merged_data)
+        if loaded_from_disk and normalized_data != merged_data:
+            self.save(normalized_data)
+        return normalized_data
 
     def save(self, data: Dict[str, Any]) -> None:
         """Write data to save file, creating directory if needed"""

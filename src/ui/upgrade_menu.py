@@ -2,8 +2,13 @@ import pygame
 import math
 import textwrap
 from settings import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE,
+    SCREEN_WIDTH, SCREEN_HEIGHT, GOLD,
     CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
+    UPGRADE_MENU_TITLE_FONT_SIZE, UPGRADE_MENU_TITLE_Y,
+    UPGRADE_MENU_CARDS_Y, UPGRADE_MENU_CARD_WIDTH, UPGRADE_MENU_CARD_HEIGHT,
+    UPGRADE_MENU_CARD_GAP, UPGRADE_MENU_CARD_NAME_FONT_SIZE,
+    UPGRADE_MENU_CARD_DESC_FONT_SIZE, UPGRADE_MENU_SYMBOL_FONT_SIZE,
+    UPGRADE_MENU_HINT_FONT_SIZE,
 )
 from src.utils.input_manager import InputManager
 
@@ -19,22 +24,33 @@ class UpgradeMenu:
         self.done = False
 
         # Card layout parameters
-        self.card_width = 260
-        self.card_height = 360
-        self.gap = 30
-        self.start_x = (SCREEN_WIDTH - (3 * self.card_width + 2 * self.gap)) // 2
+        self.card_width = UPGRADE_MENU_CARD_WIDTH
+        self.card_height = UPGRADE_MENU_CARD_HEIGHT
+        self.gap = UPGRADE_MENU_CARD_GAP
+        self.title_y = UPGRADE_MENU_TITLE_Y
+        self.cards_y = UPGRADE_MENU_CARDS_Y
+        total_width = len(self.choices) * self.card_width + max(0, len(self.choices) - 1) * self.gap
+        self.start_x = (SCREEN_WIDTH - total_width) // 2
 
         # Cached surfaces and fonts
         self._overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self._overlay.fill((0, 0, 0, 160))
-        self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
-        self.font_card_name = pygame.font.SysFont("serif", 24)
-        self.font_desc = pygame.font.SysFont("serif", 14)
-        self.font_symbol = pygame.font.SysFont("serif", 36)
-        self.font_hint = pygame.font.SysFont("serif", 16)
+        self.font_title = pygame.font.SysFont("serif", UPGRADE_MENU_TITLE_FONT_SIZE)
+        self.font_card_name = pygame.font.SysFont("serif", UPGRADE_MENU_CARD_NAME_FONT_SIZE)
+        self.font_desc = pygame.font.SysFont("serif", UPGRADE_MENU_CARD_DESC_FONT_SIZE)
+        self.font_symbol = pygame.font.SysFont("serif", UPGRADE_MENU_SYMBOL_FONT_SIZE)
+        self.font_hint = pygame.font.SysFont("serif", UPGRADE_MENU_HINT_FONT_SIZE)
         self._controller_nav_dir = 0
         self._controller_nav_timer = 0.0
         self._controller_confirm_was_pressed = False
+
+    def _card_rect(self, index: int) -> pygame.Rect:
+        return pygame.Rect(
+            self.start_x + index * (self.card_width + self.gap),
+            self.cards_y,
+            self.card_width,
+            self.card_height,
+        )
 
     def _input_config(self) -> dict | None:
         slot = getattr(self.player, "slot", None)
@@ -103,7 +119,8 @@ class UpgradeMenu:
     def _keyboard_hint_text(self) -> str:
         cfg = self._input_config()
         if cfg is None:
-            return "1 / 2 / 3, Arrow keys, A/D, or click  -  Enter confirms"
+            hotkeys = " / ".join(str(index) for index in range(1, len(self.choices) + 1))
+            return f"{hotkeys}, Arrow keys, A/D, or click  -  Enter confirms"
 
         if cfg["type"] != "keyboard":
             return "Use the owning input device to choose and confirm"
@@ -153,6 +170,7 @@ class UpgradeMenu:
                 pygame.K_1,
                 pygame.K_2,
                 pygame.K_3,
+                pygame.K_4,
             }
 
         if cfg["type"] != "keyboard":
@@ -198,6 +216,9 @@ class UpgradeMenu:
         elif cfg is None and event.key == pygame.K_3:
             self._apply_choice(2)
             self.done = True
+        elif cfg is None and event.key == pygame.K_4:
+            self._apply_choice(3)
+            self.done = True
 
     def _handle_controller_button(self, event: pygame.event.Event) -> None:
         cfg = self._input_config()
@@ -222,8 +243,8 @@ class UpgradeMenu:
             if event.type == pygame.MOUSEMOTION and self._mouse_input_enabled():
                 self.keyboard_active = False
                 self.hovered = -1
-                for i in range(3):
-                    card_rect = pygame.Rect(self.start_x + i * (self.card_width + self.gap), 150, self.card_width, self.card_height)
+                for i in range(len(self.choices)):
+                    card_rect = self._card_rect(i)
                     if card_rect.collidepoint(mouse_pos):
                         self.hovered = i
                         break
@@ -231,8 +252,8 @@ class UpgradeMenu:
             elif event.type == pygame.MOUSEBUTTONDOWN and self._mouse_input_enabled():
                 if event.button == 1:  # Left mouse button
                     # Check if a card was clicked
-                    for i in range(3):
-                        card_rect = pygame.Rect(self.start_x + i * (self.card_width + self.gap), 150, self.card_width, self.card_height)
+                    for i in range(len(self.choices)):
+                        card_rect = self._card_rect(i)
                         if card_rect.collidepoint(mouse_pos):
                             self._apply_choice(i)
                             self.done = True
@@ -305,12 +326,12 @@ class UpgradeMenu:
         else:
             text = f"PLAYER {slot.index + 1} LEVEL UP!"
         text_surface = self.font_title.render(text, True, GOLD)
-        text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, self.title_y))
 
         # Apply scaling effect
         scaled_surface = pygame.transform.scale(text_surface,
                                                (int(text_rect.width * scale), int(text_rect.height * scale)))
-        scaled_rect = scaled_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        scaled_rect = scaled_surface.get_rect(center=(SCREEN_WIDTH // 2, self.title_y))
         screen.blit(scaled_surface, scaled_rect)
 
         # 3. For each card:
@@ -318,7 +339,7 @@ class UpgradeMenu:
         for i, choice in enumerate(self.choices):
             # Calculate card position
             x = self.start_x + i * (self.card_width + self.gap)
-            y = 150
+            y = self.cards_y
 
             # Create card surface with scaling effect
             card_surface = pygame.Surface((self.card_width, self.card_height), pygame.SRCALPHA)
@@ -374,11 +395,11 @@ class UpgradeMenu:
             # Description text (word-wrapped) in lower section
             desc_y = name_y + 40
             description = choice.get("description", "No description available")
-            wrapped_text = textwrap.wrap(description, width=30)
+            wrapped_text = textwrap.wrap(description, width=24)
 
             for j, line in enumerate(wrapped_text):
                 line_surface = self.font_desc.render(line, True, (200, 200, 200))
-                line_rect = line_surface.get_rect(center=(self.card_width // 2, desc_y + j * 20))
+                line_rect = line_surface.get_rect(center=(self.card_width // 2, desc_y + j * 18))
                 card_surface.blit(line_surface, line_rect)
 
             # Gold border (2px normally, 4px when hovered)

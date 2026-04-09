@@ -74,7 +74,7 @@ HUD_SAFE_RIGHT = 0      # pixels from right edge; increase if new right-edge HUD
 # These are gameplay tunables shared by movement, pickup, and contact damage flow.
 BASE_HP = 100                        # hit points; higher values increase survivability
 BASE_SPEED = 200                     # pixels/second; higher values increase movement speed
-PICKUP_RADIUS = 80                   # pixels; larger values vacuum XP from farther away
+PICKUP_RADIUS = 64                   # pixels; tighter baseline so XP orbs require a moderately closer initial pickup
 PLAYER_HIT_IFRAME_DURATION = 0.5     # seconds; longer values reduce repeated contact damage
 PLAYER_HIT_KNOCKBACK_FORCE = 300     # pixels/second impulse; higher values push the player farther on hit
 
@@ -1042,6 +1042,20 @@ CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping — 4-wide 
 CLASS_SELECT_CARD_PADDING_X = 16      # pixels; inner horizontal card padding
 CLASS_SELECT_COLOR_BAND_HEIGHT = 32   # pixels; color accent band height on each card
 
+# Upgrade menu layout (UI-only). These are sized to keep 4 cards clear of the
+# shared 1P–4P HUD panel rectangles, including the 2x2 4-player corner layout.
+UPGRADE_MENU_CARD_COUNT = 4           # cards offered per level-up menu
+UPGRADE_MENU_TITLE_FONT_SIZE = 40     # points; smaller than menu titles so the text fits between top HUD panels
+UPGRADE_MENU_TITLE_Y = 96             # pixels from top; centered between top HUD panels and the card row
+UPGRADE_MENU_CARDS_Y = 188            # pixels from top; keeps 4-card row below top HUDs and above bottom HUDs
+UPGRADE_MENU_CARD_WIDTH = 220         # pixels; narrowed from the original 3-card layout to fit 4 choices comfortably
+UPGRADE_MENU_CARD_HEIGHT = 320        # pixels; shortened so the hovered card stays clear of bottom HUD panels
+UPGRADE_MENU_CARD_GAP = 12            # pixels between upgrade cards
+UPGRADE_MENU_CARD_NAME_FONT_SIZE = 22 # points; keeps long weapon names inside narrower cards
+UPGRADE_MENU_CARD_DESC_FONT_SIZE = 13 # points; supports 4-card layout without clipping
+UPGRADE_MENU_SYMBOL_FONT_SIZE = 34    # points; icon-area symbol text size
+UPGRADE_MENU_HINT_FONT_SIZE = 16      # points; bottom ownership hint
+
 # Shared HUD chrome. HUD_EMPTY_SLOT_BG_COLOR is intentionally reused by empty
 # weapon slots and HP/XP bar backgrounds so the slot-panel treatment stays matched.
 HUD_EMPTY_SLOT_BG_COLOR = (40, 40, 40)    # RGB shared panel/slot background tint
@@ -1262,53 +1276,11 @@ HERO_CLASSES = [
         "armor": 15,
         "passive_desc": "+10% armor bonus.\nImmune to knockback.",
         "starting_weapon": "Sword",
-        "color": (180, 140, 60),
+        "color": (115, 145, 180),
         "sprite": "assets/sprites/heroes/knight.png",
         "passives": {
             "armor_bonus_pct": KNIGHT_ARMOR_BONUS_PCT,
             "knockback_immune": True,
-        },
-    },
-    {
-        "name": "Wizard",
-        "hp": 80,
-        "speed": 240,
-        "armor": 0,
-        "passive_desc": "+20% spell damage.\n+10% crit chance.",
-        "starting_weapon": "ArcaneBolt",
-        "color": (160, 60, 220),
-        "sprite": "assets/sprites/heroes/wizard.png",
-        "passives": {
-            "crit_chance_bonus": WIZARD_CRIT_CHANCE_BONUS,
-            "spell_damage_bonus_pct": WIZARD_SPELL_DAMAGE_BONUS,
-        },
-    },
-    {
-        "name": "Friar",
-        "hp": 110,
-        "speed": 210,
-        "armor": 5,
-        "passive_desc": "Heal 1 HP per 10 XP gained.\n+20% area size.",
-        "starting_weapon": "HolyNova",
-        "color": (200, 180, 120),
-        "sprite": "assets/sprites/heroes/friar.png",
-        "passives": {
-            "heal_per_xp": FRIAR_HEAL_PER_XP,
-            "area_size_bonus_pct": FRIAR_AREA_SIZE_BONUS_PCT,
-        },
-    },
-    {
-        "name": "Ranger",
-        "hp": 95,
-        "speed": 225,
-        "armor": 3,
-        "passive_desc": "+10% crit chance.\nArrows pierce 1 extra enemy.",
-        "starting_weapon": "Longbow",
-        "color": (90, 170, 110),
-        "sprite": "assets/sprites/heroes/ranger.png",
-        "passives": {
-            "crit_chance_bonus": RANGER_CRIT_CHANCE_BONUS,
-            "arrow_pierce_bonus": RANGER_ARROW_PIERCE_BONUS,
         },
     },
     {
@@ -1326,17 +1298,59 @@ HERO_CLASSES = [
         },
     },
     {
+        "name": "Ranger",
+        "hp": 95,
+        "speed": 225,
+        "armor": 3,
+        "passive_desc": "+10% crit chance.\nArrows pierce 1 extra enemy.",
+        "starting_weapon": "Longbow",
+        "color": (90, 170, 110),
+        "sprite": "assets/sprites/heroes/ranger.png",
+        "passives": {
+            "crit_chance_bonus": RANGER_CRIT_CHANCE_BONUS,
+            "arrow_pierce_bonus": RANGER_ARROW_PIERCE_BONUS,
+        },
+    },
+    {
         "name": "Rogue",
         "hp": 85,
         "speed": 250,
         "armor": 2,
         "passive_desc": "+15% crit chance.\n+10% physical damage.",
         "starting_weapon": "ShadowKnives",
-        "color": (95, 95, 125),
+        "color": (70, 125, 145),
         "sprite": "assets/sprites/heroes/rogue.png",
         "passives": {
             "crit_chance_bonus": ROGUE_CRIT_CHANCE_BONUS,
             "physical_damage_bonus_pct": ROGUE_PHYSICAL_DAMAGE_BONUS,
+        },
+    },
+    {
+        "name": "Friar",
+        "hp": 110,
+        "speed": 210,
+        "armor": 5,
+        "passive_desc": "Heal 1 HP per 10 XP gained.\n+20% area size.",
+        "starting_weapon": "HolyNova",
+        "color": (190, 150, 85),
+        "sprite": "assets/sprites/heroes/friar.png",
+        "passives": {
+            "heal_per_xp": FRIAR_HEAL_PER_XP,
+            "area_size_bonus_pct": FRIAR_AREA_SIZE_BONUS_PCT,
+        },
+    },
+    {
+        "name": "Wizard",
+        "hp": 80,
+        "speed": 240,
+        "armor": 0,
+        "passive_desc": "+20% spell damage.\n+10% crit chance.",
+        "starting_weapon": "ArcaneBolt",
+        "color": (60, 120, 220),
+        "sprite": "assets/sprites/heroes/wizard.png",
+        "passives": {
+            "crit_chance_bonus": WIZARD_CRIT_CHANCE_BONUS,
+            "spell_damage_bonus_pct": WIZARD_SPELL_DAMAGE_BONUS,
         },
     },
     {
@@ -1360,7 +1374,7 @@ HERO_CLASSES = [
         "armor": 4,
         "passive_desc": "+20% area size.\n+10% max HP.",
         "starting_weapon": "BrambleSeeds",
-        "color": (78, 155, 76),
+        "color": (105, 195, 85),
         "sprite": "assets/sprites/heroes/druid.png",
         "passives": {
             "area_size_bonus_pct": DRUID_AREA_SIZE_BONUS_PCT,
