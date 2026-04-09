@@ -844,12 +844,13 @@ HERO_CLASSES = [
         "hp": 150,
         "speed": 180,
         "armor": 15,
-        "passive_desc": "+10% armor bonus.\nScales with armor upgrades.",
+        "passive_desc": "+10% armor bonus.\nImmune to knockback.",
         "starting_weapon": "SpectralBlade",
         "color": (180, 140, 60),
         "sprite": "assets/sprites/heroes/knight.png",
         "passives": {
             "armor_bonus_pct": KNIGHT_ARMOR_BONUS_PCT,
+            "knockback_immune": True,
         },
     },
     {

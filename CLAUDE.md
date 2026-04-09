@@ -150,7 +150,7 @@ mystic_siege/
 | Ranger | 95 | 225 | 3 | Longbow |
 | Barbarian | 120 | 205 | 8 | ThrowingAxes |
 
-Knight passive: +10% armor bonus (scales with armor upgrades)  
+Knight passive: +10% armor bonus (scales with armor upgrades), immune to knockback  
 Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
