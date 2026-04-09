@@ -94,6 +94,8 @@ class GameScene:
         _am.load_sfx(AudioManager.LEVEL_UP,      "assets/audio/sfx/level_up.wav")
         _am.load_sfx(AudioManager.WEAPON_ARCANE, "assets/audio/sfx/arcane_bolt.wav")
         _am.load_sfx(AudioManager.WEAPON_BRAMBLE_SEEDS, "assets/audio/sfx/bramble_seeds.wav")
+        _am.load_sfx(AudioManager.WEAPON_CALTROPS, "assets/audio/sfx/caltrops.wav")
+        _am.load_sfx(AudioManager.WEAPON_CHAIN_FLAIL, "assets/audio/sfx/chain_flail.wav")
         _am.load_sfx(AudioManager.WEAPON_HEX_ORB, "assets/audio/sfx/hex_orb.wav")
         _am.load_sfx(AudioManager.WEAPON_NOVA,   "assets/audio/sfx/holy_nova.wav")
         _am.load_sfx(AudioManager.WEAPON_FLAME_BLAST, "assets/audio/sfx/flame_blast.wav")
@@ -102,6 +104,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
         _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
         _am.load_sfx(AudioManager.WEAPON_SHADOW_KNIVES, "assets/audio/sfx/shadow_knives.wav")
+        _am.load_sfx(AudioManager.WEAPON_SPEAR,         "assets/audio/sfx/spear.wav")
         _am.load_sfx(AudioManager.WEAPON_THROWING_AXES, "assets/audio/sfx/throwing_axes.wav")
         _am.load_sfx(AudioManager.PICKUP_COLLECT, "assets/audio/sfx/pickup_collect.wav")
 

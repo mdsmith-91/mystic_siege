@@ -182,6 +182,8 @@ Current hero architecture rules:
 - ArcaneBolt — homing projectiles, 1→3 bolts
 - HolyNova — expanding damage ring, no projectile object
 - SpectralBlade — orbiting swords, continuous collision
+- Caltrops — scattered physical traps with slow and bleed
+- ChainFlail — tethered flail swing with extend/sweep/retract timing
 - FlameBlast (`Flame Blast`) — directional cone, burn DOT
 - HexOrb (`Hex Orb`) — slow curse projectile with damage over time
 - BrambleSeeds (`Bramble Seeds`) — thrown seeds that create lingering thorn patches with repeated damage and slow
@@ -204,9 +206,9 @@ Current weapon architecture rules:
 - Ownership split: `settings.py` owns gameplay values, `factory.py` owns id-to-class
   resolution, `src/systems/upgrade_system.py` owns player-facing card metadata (`WEAPON_META`,
   `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
-- Weapon ids are stable strings: `ArcaneBolt`, `BrambleSeeds`, `HolyNova`,
-  `SpectralBlade`, `FlameBlast`, `FrostRing`, `HexOrb`, `LightningChain`,
-  `Longbow`, `ShadowKnives`, `ThrowingAxes`.
+- Weapon ids are stable strings: `ArcaneBolt`, `BrambleSeeds`, `Caltrops`,
+  `ChainFlail`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`,
+  `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`.
   `BrambleSeeds` displays as `Bramble Seeds`, `FlameBlast` displays as
   `Flame Blast`, `HexOrb` displays as `Hex Orb`, and `ThrowingAxes` displays as
   `Throwing Axes`.

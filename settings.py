@@ -673,6 +673,128 @@ SHADOW_KNIVES_RETURN_TRAIL_LENGTH = 4       # samples retained for the return tr
 SHADOW_KNIVES_RETURN_TRAIL_INTERVAL = 0.025 # seconds between trail samples
 
 
+# Caltrops -------------------------------------------------------------------
+# Gameplay role: physical ground-control trap that litters a lane with hazards,
+# dealing repeated light damage, slowing enemies, and applying a small bleed.
+# Gameplay
+CALTROPS_BASE_DAMAGE = 6.0              # damage per trap tick before bleed
+CALTROPS_BASE_COOLDOWN = 1.8            # seconds between throws
+CALTROPS_TARGETING_RANGE = 380          # pixels; acquisition distance for the throw lane
+CALTROPS_THROW_SPEED = 540              # pixels/second; flight speed of thrown caltrops
+CALTROPS_PROJECTILE_LIFETIME = 0.35     # seconds before caltrops settle into hazards
+CALTROPS_BASE_PROJECTILE_COUNT = 3      # caltrops thrown per cast at level 1
+CALTROPS_SPREAD = 18                    # degrees across the thrown fan
+CALTROPS_PATCH_RADIUS = 28              # pixels; catch zone for enemies stepping into hazard
+CALTROPS_PATCH_DURATION = 6.0           # seconds each hazard remains active
+CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
+CALTROPS_SLOW_MULTIPLIER = 0.75         # enemy speed multiplier while in the hazard
+CALTROPS_SLOW_DURATION = 0.6            # seconds slow lingers after enemy exits the patch; refreshed every frame while inside
+CALTROPS_BLEED_DAMAGE = 2.0             # damage per second from bleed
+CALTROPS_BLEED_DURATION = 1.5           # seconds bleed remains after each refresh
+CALTROPS_HITBOX_SIZE = (10, 10)         # pixels; thrown-caltrop collision rect
+
+# Upgrade Levels
+# Levels 2-5: +trap damage, +1 caltrop, longer hazard life with stronger bleed,
+# then faster cooldown and larger trap radius.
+CALTROPS_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 2.0},
+    {"projectile_count": 1},
+    {"patch_duration": 1.0, "bleed_damage": 1.0},
+    {"base_cooldown": -0.3, "patch_radius": 6},
+]
+
+# Visual
+# Ground hazard styling only. These do not change damage, slow, or bleed logic.
+CALTROPS_PROJECTILE_SIZE = (12, 12)          # pixels; thrown-caltrop sprite size
+CALTROPS_PROJECTILE_COLOR = (130, 130, 140)  # RGB dark steel tint
+CALTROPS_PROJECTILE_EDGE_COLOR = (210, 215, 220)  # RGB spike highlight tint
+CALTROPS_PROJECTILE_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
+CALTROPS_PATCH_FILL_COLOR = (95, 95, 105)    # RGB translucent hazard tint
+CALTROPS_PATCH_ALPHA = 60                    # alpha 0-255 for hazard fill
+CALTROPS_PATCH_CALTROP_ALPHA = 150           # alpha 0-255 for scattered caltrop shapes
+CALTROPS_BLEED_COLOR = (185, 55, 55)         # RGB bleed hit-feedback tint
+
+
+# Chain Flail ----------------------------------------------------------------
+# Gameplay role: physical tethered sweep with burst windows, reach, and lane
+# disruption rather than continuous orbit uptime.
+# Gameplay
+CHAIN_FLAIL_BASE_DAMAGE = 26.0          # damage per enemy hit during a swing
+CHAIN_FLAIL_BASE_COOLDOWN = 1.6         # seconds between swings
+CHAIN_FLAIL_CHAIN_LENGTH = 110          # pixels; max reach of the flail head from the player
+CHAIN_FLAIL_HEAD_RADIUS = 11            # pixels; damaging footprint of the flail head
+CHAIN_FLAIL_SWEEP_ANGLE = 120           # degrees traversed during the swing phase
+CHAIN_FLAIL_EXTEND_DURATION = 0.14      # seconds from hand to full extension
+CHAIN_FLAIL_SWEEP_DURATION = 0.18       # seconds spent traversing the arc
+CHAIN_FLAIL_RETRACT_DURATION = 0.12     # seconds from full extension back to the player
+CHAIN_FLAIL_KNOCKBACK_FORCE = 230       # pixels/second impulse applied on hit
+CHAIN_FLAIL_CHAIN_SAMPLE_COUNT = 5      # points along the chain used for light body collision checks
+
+# Upgrade Levels
+# Levels 2-5: +damage, longer reach, wider sweep, then faster cooldown with a
+# slightly larger head for consistency.
+CHAIN_FLAIL_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 8.0},
+    {"chain_length": 24},
+    {"sweep_angle": 28},
+    {"base_cooldown": -0.2, "head_radius": 4},
+]
+
+# Visual
+# Chain and flail-head styling only. These do not change sweep timing or damage.
+CHAIN_FLAIL_CHAIN_COLOR = (120, 120, 130)      # RGB chain tint
+CHAIN_FLAIL_CHAIN_WIDTH = 3                    # pixels; rendered chain thickness
+CHAIN_FLAIL_HEAD_COLOR = (150, 150, 160)       # RGB flail head tint
+CHAIN_FLAIL_HEAD_HIGHLIGHT_COLOR = (220, 220, 230)  # RGB metallic highlight tint
+CHAIN_FLAIL_HEAD_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
+CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
+
+
+# Spear -----------------------------------------------------------------------
+# Gameplay role: disciplined lane-control melee with a narrow forward thrust and
+# strong pierce identity. Heavier per-hit than Longbow, slower cadence, tighter
+# coverage than ChainFlail.
+# Gameplay
+SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
+SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
+SPEAR_TARGETING_RANGE    = 380           # pixels; comparable to ThrowingAxes range
+SPEAR_THRUST_LENGTH      = 100           # pixels from hand position to spear tip
+SPEAR_HAND_OFFSET        = 8            # px perpendicular right of thrust direction — right-hand grip position
+SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
+SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
+
+# Thrust timing phases (extend → hold → retract)
+SPEAR_EXTEND_DURATION    = 0.10          # seconds to push the spear to full extension
+SPEAR_HOLD_DURATION      = 0.06          # seconds held at full extension
+SPEAR_RETRACT_DURATION   = 0.09          # seconds to pull the spear back
+
+# L5 double-thrust: a follow-up stab fires this many seconds after the first
+SPEAR_L5_SECOND_DELAY    = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
+
+SPEAR_UPGRADE_LEVELS = [
+    {},                                               # L1 baseline
+    {"base_damage": 10.0},                            # L2 +10 damage
+    {"thrust_length": 24, "base_cooldown": -0.15},    # L3 longer reach + faster cooldown
+    {"pierce": 1},                                    # L4 +1 pierce
+    {"double_thrust_count": 1, "crit_bonus": 0.08},    # L5 double thrust + crit bonus
+]
+
+# Visual
+SPEAR_HEAD_COLOR         = (190, 195, 205)   # RGB steel blue-grey
+SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)      # RGB silhouette outline
+SPEAR_HIGHLIGHT_COLOR    = (235, 240, 250)   # RGB blade edge highlight
+SPEAR_SHAFT_COLOR        = (110, 75, 40)     # RGB wooden shaft brown
+SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)     # RGB shaft silhouette
+SPEAR_BUTT_COLOR         = (155, 158, 168)   # RGB metal butt cap
+SPEAR_HEAD_LENGTH        = 28                # px length from socket to tip
+SPEAR_HEAD_HALF_WIDTH    = 5                 # px half-width at the widest point of the head
+SPEAR_SHAFT_HALF_WIDTH   = 3                 # px half-width of the shaft
+SPEAR_HIT_SPARK_COLOR    = (220, 200, 120)   # RGB hit-feedback spark tint
+SPEAR_SAMPLE_COUNT       = 6                 # sample points along shaft for collision checks
+
+
 # ============================================================================
 # Enemies
 # ============================================================================

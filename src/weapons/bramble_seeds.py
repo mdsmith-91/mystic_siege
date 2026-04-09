@@ -125,6 +125,7 @@ class BrambleSeeds(BaseWeapon):
         self.upgrade_levels = [dict(upgrade) for upgrade in BRAMBLE_SEEDS_UPGRADE_LEVELS]
         self.patches: list[dict] = []
         self._enemy_hit_cooldowns: dict[int, float] = {}
+        self._draw_surface: pygame.Surface | None = None
 
     @property
     def effective_patch_radius(self) -> float:
@@ -291,8 +292,12 @@ class BrambleSeeds(BaseWeapon):
         if not self.patches:
             return
 
-        temp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        width, height = surface.get_size()
+        size = surface.get_size()
+        if self._draw_surface is None or self._draw_surface.get_size() != size:
+            self._draw_surface = pygame.Surface(size, pygame.SRCALPHA)
+        self._draw_surface.fill((0, 0, 0, 0))
+        temp = self._draw_surface
+        width, height = size
 
         for patch in self.patches:
             radius = int(patch["radius"])

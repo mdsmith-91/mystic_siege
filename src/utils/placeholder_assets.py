@@ -269,6 +269,33 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.circle(surface, detail, (16, 16), 7)
         pygame.draw.circle(surface, shadow, (16, 16), 7, 2)
         pygame.draw.line(surface, detail, (21, 11), (26, 6), 2)
+    elif weapon_key == "caltrops":
+        outline = (44, 46, 54)
+        spike = (192, 196, 205)
+        highlight = (235, 238, 244)
+        pygame.draw.line(surface, outline, (8, 16), (24, 16), 4)
+        pygame.draw.line(surface, outline, (16, 8), (16, 24), 4)
+        pygame.draw.line(surface, outline, (10, 10), (22, 22), 4)
+        pygame.draw.line(surface, outline, (22, 10), (10, 22), 4)
+        pygame.draw.line(surface, spike, (8, 16), (24, 16), 2)
+        pygame.draw.line(surface, spike, (16, 8), (16, 24), 2)
+        pygame.draw.line(surface, spike, (10, 10), (22, 22), 2)
+        pygame.draw.line(surface, spike, (22, 10), (10, 22), 2)
+        pygame.draw.circle(surface, highlight, (16, 16), 2)
+    elif weapon_key == "flail":
+        chain_color = (86, 88, 96)
+        chain_highlight = (138, 140, 148)
+        head_outline = (46, 48, 56)
+        head_fill = (155, 158, 168)
+        head_highlight = (230, 232, 238)
+        pygame.draw.line(surface, chain_color, (11, 22), (20, 11), 3)
+        pygame.draw.line(surface, chain_highlight, (11, 22), (20, 11), 1)
+        for link_center in ((13, 20), (15, 17), (17, 14)):
+            pygame.draw.circle(surface, chain_color, link_center, 2, 1)
+        pygame.draw.circle(surface, head_outline, (22, 10), 6)
+        pygame.draw.circle(surface, head_fill, (22, 10), 5)
+        pygame.draw.circle(surface, head_highlight, (20, 8), 2)
+        pygame.draw.line(surface, head_outline, (10, 23), (7, 26), 2)
     elif weapon_key == "nova":
         pygame.draw.circle(surface, detail, (16, 16), 8, 3)
         pygame.draw.circle(surface, detail, (16, 16), 3)
@@ -319,6 +346,23 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (18, 7), (18, 25), 1)
         pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
         pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
+    elif weapon_key == "spear":
+        shaft_color = (110, 75, 40)
+        shaft_outline = (60, 40, 20)
+        head_fill = (190, 195, 205)
+        head_outline = (45, 45, 55)
+        head_highlight = (235, 240, 250)
+        butt_color = (155, 158, 168)
+        # Diagonal shaft: lower-left to upper-right
+        pygame.draw.line(surface, shaft_outline, (8, 26), (22, 10), 5)
+        pygame.draw.line(surface, shaft_color,   (8, 26), (22, 10), 3)
+        # Spearhead: triangle pointing to upper-right corner
+        pygame.draw.polygon(surface, head_outline, [(26, 6), (18, 8), (20, 18)])
+        pygame.draw.polygon(surface, head_fill,    [(26, 6), (19, 9), (21, 17)])
+        pygame.draw.line(surface, head_highlight, (25, 7), (21, 12), 1)
+        # Butt cap at lower-left
+        pygame.draw.circle(surface, butt_color, (8, 26), 3)
+        pygame.draw.circle(surface, head_outline, (8, 26), 3, 1)
     elif weapon_key == "axe":
         _draw_throwing_hatchet_icon(surface)
     elif weapon_key == "knife":
@@ -504,8 +548,10 @@ def generate_weapon_icon_assets():
     # Weapon colors matching projectiles
     weapons = [
         ("arcane.png", (160, 80, 255)),
+        ("caltrops.png", (150, 150, 160)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
+        ("flail.png", (150, 150, 160)),
         ("hex.png", (95, 35, 145)),
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
@@ -513,6 +559,7 @@ def generate_weapon_icon_assets():
         ("blade.png", (100, 150, 255)),  # Spectral blade color
         ("longbow.png", (170, 120, 60)),
         ("knife.png", (105, 105, 135)),   # Shadow knives — muted rogue steel
+        ("spear.png", (185, 190, 200)),   # Spear — cool steel
         ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
@@ -627,6 +674,7 @@ def generate_audio_placeholders():
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
     maybe_write_sine("shadow_knives.wav",   freq_hz=660,  duration_s=0.07)
+    maybe_write_sweep("spear.wav",          freq_start=600, freq_end=200, duration_s=0.12)
     maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
     maybe_write_chord("pickup_collect.wav", freqs=[520, 780, 1040], duration_s=0.18)
 
