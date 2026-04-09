@@ -97,6 +97,8 @@ ROGUE_CRIT_CHANCE_BONUS = 0.15       # fraction added by Rogue passive
 ROGUE_PHYSICAL_DAMAGE_BONUS = 0.10   # fraction added to physical damage by Rogue passive
 WARLOCK_DOT_DAMAGE_BONUS = 0.20      # fraction added to damage-over-time effects by Warlock passive
 WARLOCK_SPELL_DAMAGE_BONUS = 0.10    # fraction added to spell damage by Warlock passive
+DRUID_AREA_SIZE_BONUS_PCT = 0.20     # fraction added to area-based effects by Druid passive
+DRUID_MAX_HP_BONUS_PCT = 0.10        # fraction added to max HP by Druid passive
 
 BASE_XP_REQUIRED = 50                # XP needed for the first level-up; higher values slow early progression
 XP_SCALE_FACTOR = 1.12               # exponential growth factor per level; higher values steepen later leveling
@@ -433,6 +435,59 @@ HEX_ORB_TRAIL_MAX_ALPHA = 120                 # alpha 0-255 of newest trail segm
 HEX_ORB_TRAIL_MAX_RADIUS = 4                  # pixels; radius of newest trail segment
 HEX_ORB_HIT_SPARK_COLOR = (120, 255, 100)     # RGB direct-hit feedback tint
 HEX_ORB_CURSE_TICK_COLOR = (110, 220, 95)     # RGB curse tick feedback tint
+
+
+# Bramble Seeds --------------------------------------------------------------
+# Gameplay role: thrown nature seeds that grow lingering damage fields with
+# light reusable slow control while enemies stand in the patch.
+# Gameplay
+BRAMBLE_SEEDS_BASE_DAMAGE = 7.0       # damage per bramble tick
+BRAMBLE_SEEDS_BASE_COOLDOWN = 1.8     # seconds between throws
+BRAMBLE_SEEDS_TARGETING_RANGE = 430   # pixels; larger values acquire targets farther away
+BRAMBLE_SEEDS_PROJECTILE_SPEED = 420  # pixels/second for thrown seeds
+BRAMBLE_SEEDS_PROJECTILE_LIFETIME = 0.75  # seconds before the seed sprouts at its current position
+BRAMBLE_SEEDS_BASE_PROJECTILE_COUNT = 1   # seeds per cast at level 1
+BRAMBLE_SEEDS_SPREAD = 16             # degrees between multiple seeds
+BRAMBLE_SEEDS_PATCH_RADIUS = 58       # pixels; larger values increase area denial coverage
+BRAMBLE_SEEDS_PATCH_DURATION = 3.0    # seconds each bramble patch remains active
+BRAMBLE_SEEDS_TICK_INTERVAL = 0.5     # seconds between repeated patch damage ticks
+BRAMBLE_SEEDS_SLOW_MULTIPLIER = 0.65  # enemy speed multiplier while slowed; lower values slow harder
+BRAMBLE_SEEDS_SLOW_DURATION = 0.6     # seconds slow remains after each patch refresh
+BRAMBLE_SEEDS_HITBOX_SIZE = (10, 10)  # pixels; gameplay collision rect for each seed
+
+# Upgrade Levels
+# Levels 2-5: larger patch, stronger ticks, longer patch duration, then faster
+# cooldown with an extra seed.
+BRAMBLE_SEEDS_UPGRADE_LEVELS = [
+    {},
+    {"patch_radius": 14},
+    {"base_damage": 3.0},
+    {"patch_duration": 1.0},
+    {"base_cooldown": -0.35, "projectile_count": 1},
+]
+
+# Visual
+# Seed and bramble patch presentation only. Collision, damage, and slow use the
+# gameplay values above.
+BRAMBLE_SEEDS_PROJECTILE_SIZE = (16, 16)     # pixels; seed sprite surface bounds
+BRAMBLE_SEEDS_PROJECTILE_COLOR = (96, 170, 75)   # RGB seed body tint
+BRAMBLE_SEEDS_PROJECTILE_CORE_COLOR = (205, 245, 130)  # RGB seed highlight tint
+BRAMBLE_SEEDS_PROJECTILE_OUTLINE_COLOR = (40, 80, 35)  # RGB seed silhouette outline tint
+BRAMBLE_SEEDS_PATCH_FILL_COLOR = (42, 115, 58)   # RGB translucent patch fill tint
+BRAMBLE_SEEDS_PATCH_RING_COLOR = (82, 190, 95)   # RGB patch edge tint
+BRAMBLE_SEEDS_PATCH_THORN_COLOR = (178, 225, 105)  # RGB thorn accent tint
+BRAMBLE_SEEDS_PATCH_ALPHA = 80              # alpha 0-255 for patch fill
+BRAMBLE_SEEDS_PATCH_RING_ALPHA = 150        # alpha 0-255 for patch ring
+BRAMBLE_SEEDS_PATCH_RING_WIDTH = 3          # pixels; patch edge stroke width
+BRAMBLE_SEEDS_PATCH_THORN_COUNT = 12        # thorns around each patch; higher values add detail
+BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT = 20      # inner vine strokes per patch; higher values make the patch denser
+BRAMBLE_SEEDS_PATCH_TENDRIL_WIDTH = 2       # pixels; inner vine stroke width
+BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS = 4    # jagged line segments per inner vine
+BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS = 0.0   # fraction of patch radius where inner vines begin
+BRAMBLE_SEEDS_PATCH_TENDRIL_OUTER_RADIUS = 1.0   # fraction of patch radius where inner vines end
+BRAMBLE_SEEDS_PATCH_TENDRIL_JAG = 0.14      # radians of angular bend per inner vine segment
+BRAMBLE_SEEDS_PATCH_THORN_WIDTH = 2         # pixels; outer thorn stroke width
+BRAMBLE_SEEDS_HIT_SPARK_COLOR = (115, 220, 95)  # RGB hit feedback tint
 
 
 # Frost Ring -----------------------------------------------------------------
@@ -1164,6 +1219,20 @@ HERO_CLASSES = [
         "passives": {
             "dot_damage_bonus_pct": WARLOCK_DOT_DAMAGE_BONUS,
             "spell_damage_bonus_pct": WARLOCK_SPELL_DAMAGE_BONUS,
+        },
+    },
+    {
+        "name": "Druid",
+        "hp": 105,
+        "speed": 220,
+        "armor": 4,
+        "passive_desc": "+20% area size.\n+10% max HP.",
+        "starting_weapon": "BrambleSeeds",
+        "color": (78, 155, 76),
+        "sprite": "assets/sprites/heroes/druid.png",
+        "passives": {
+            "area_size_bonus_pct": DRUID_AREA_SIZE_BONUS_PCT,
+            "max_hp_bonus_pct": DRUID_MAX_HP_BONUS_PCT,
         },
     },
 ]

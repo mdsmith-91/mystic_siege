@@ -1,4 +1,5 @@
 from src.weapons.arcane_bolt import ArcaneBolt
+from src.weapons.bramble_seeds import BrambleSeeds
 from src.weapons.flame_blast import FlameBlast
 from src.weapons.frost_ring import FrostRing
 from src.weapons.hex_orb import HexOrb
@@ -12,6 +13,7 @@ from src.weapons.throwing_axes import ThrowingAxes
 
 WEAPON_CLASS_REGISTRY = {
     "ArcaneBolt": ArcaneBolt,
+    "BrambleSeeds": BrambleSeeds,
     "HolyNova": HolyNova,
     "SpectralBlade": SpectralBlade,
     "FlameBlast": FlameBlast,

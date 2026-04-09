@@ -28,6 +28,7 @@ from src.utils.input_manager import InputManager
 
 _WEAPON_DISPLAY_NAMES = {
     "ArcaneBolt": "Arcane Bolt",
+    "BrambleSeeds": "Bramble Seeds",
     "HolyNova": "Holy Nova",
     "SpectralBlade": "Spectral Blade",
     "FlameBlast": "Flame Blast",

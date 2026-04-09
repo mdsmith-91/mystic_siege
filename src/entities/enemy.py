@@ -45,6 +45,7 @@ class Enemy(BaseEntity):
         self.base_speed = enemy_data["speed"]
         self.speed_multiplier = 1.0
         self.freeze_timer = 0.0
+        self.slow_effects: dict[object, dict[str, float]] = {}
         self.speed = self.base_speed
         self.damage = enemy_data["damage"]
         self.xp_value = enemy_data["xp_value"]
@@ -138,18 +139,49 @@ class Enemy(BaseEntity):
     def _refresh_speed(self) -> None:
         """Rebuild effective move speed from persistent enemy state."""
         if self.cc_immune:
+            self.slow_effects.clear()
             self.speed = self.base_speed * self.speed_multiplier
             return
-        self.speed = 0.0 if self.freeze_timer > 0.0 else self.base_speed * self.speed_multiplier
+        if self.freeze_timer > 0.0:
+            self.speed = 0.0
+            return
+        slow_multiplier = min(
+            (effect["multiplier"] for effect in self.slow_effects.values()),
+            default=1.0,
+        )
+        self.speed = self.base_speed * self.speed_multiplier * slow_multiplier
+
+    def apply_slow(self, multiplier: float, duration: float, source: object | None = None) -> None:
+        """Apply a reusable timed slow keyed by source."""
+        if self.cc_immune or duration <= 0.0:
+            return
+        slow_source = source if source is not None else self
+        self.slow_effects[slow_source] = {
+            "multiplier": max(0.0, min(1.0, multiplier)),
+            "remaining": duration,
+        }
+        self._refresh_speed()
+
+    def remove_slow(self, source: object) -> None:
+        """Remove a source-keyed slow effect without touching other control sources."""
+        if source in self.slow_effects:
+            del self.slow_effects[source]
+            self._refresh_speed()
 
     def _tick_status_timers(self, dt: float) -> None:
         """Update transient enemy status timers before movement is evaluated."""
         if self.cc_immune:
             self.freeze_timer = 0.0
+            self.slow_effects.clear()
             self._refresh_speed()
             return
         if self.freeze_timer > 0.0:
             self.freeze_timer = max(0.0, self.freeze_timer - dt)
+        for source in list(self.slow_effects.keys()):
+            effect = self.slow_effects[source]
+            effect["remaining"] = max(0.0, effect["remaining"] - dt)
+            if effect["remaining"] <= 0.0:
+                del self.slow_effects[source]
         self._refresh_speed()
 
     def _compute_velocity(self, target: pygame.sprite.Sprite | None) -> Vector2:
