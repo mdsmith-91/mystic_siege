@@ -540,7 +540,7 @@ These rules apply to all multiplayer-related changes.
 
 2. **Prefer collections over named players.** Multiplayer systems should pass
    `list[PlayerSlot]`. The central abstraction is **`PlayerSlot`** (defined in
-   MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
+   docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
    Do not invent alternatives.
 
 3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
@@ -560,7 +560,7 @@ These rules apply to all multiplayer-related changes.
 
 > For concrete data structures (`PlayerSlot`, `input_config`), per-phase file lists,
 > HUD layout, camera, revive mechanics, and the full verification checklist, see
-> **MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
+> **docs/MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
 > Phases 10–14. CLAUDE.md carries the principles; V2 carries the implementation detail.
 
 ---
@@ -741,7 +741,7 @@ For audit/planning tasks, prefer this output order:
 - Don't claim manual testing happened unless it actually happened
 - Don't change save-data shape casually or without noting compatibility impact
 - Don't implement `PlayerSlot` or `input_config` differently from the shape defined in
-  MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
+  docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
 
 ---
 
@@ -760,7 +760,7 @@ Track progress here as phases are completed:
 - [x] Phase 9 — Polish & meta (save system, settings menu)
 
 ### Planned Multiplayer Phases
-*(See MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
+*(See docs/MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
 
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)
