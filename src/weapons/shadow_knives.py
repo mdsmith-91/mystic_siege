@@ -54,6 +54,7 @@ class ShadowKnifeProjectile(Projectile):
         self.catch_radius_sq = SHADOW_KNIVES_RETURN_CATCH_RADIUS * SHADOW_KNIVES_RETURN_CATCH_RADIUS
         self._trail = deque(maxlen=SHADOW_KNIVES_RETURN_TRAIL_LENGTH)
         self._trail_timer = 0.0
+        self._damage_exhausted = False
         super().__init__(
             pos=pos,
             direction=direction,
@@ -141,7 +142,7 @@ class ShadowKnifeProjectile(Projectile):
         super().update(dt)
 
     def on_hit(self, enemy, effect_group=None):
-        if enemy.sprite_id in self.enemies_hit:
+        if self._damage_exhausted or enemy.sprite_id in self.enemies_hit:
             return
 
         self.enemies_hit.add(enemy.sprite_id)
@@ -162,7 +163,8 @@ class ShadowKnifeProjectile(Projectile):
             HitSpark(enemy.pos, (255, 200, 50), [effect_group])
 
         if self.pierce <= 0:
-            self.kill()
+            self._damage_exhausted = True
+            self._begin_return()
         else:
             self.pierce -= 1
 
