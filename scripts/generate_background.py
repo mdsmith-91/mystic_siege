@@ -33,7 +33,7 @@ if not API_KEY:
 MODEL_NAME = "imagen-4.0-generate-001"
 OUTPUT_DIR = "assets/backgrounds"
 BASE_NAME = "game_bg"
-NUM_IMAGES = 1
+NUM_IMAGES = 4
 
 # Keep the prompt short and explicit. Long prompts sometimes increase the chance
 # of unexpected text or layout-like generations.
@@ -46,6 +46,20 @@ PROMPT = (
     "no border, no frame, no corners, no shadows, no objects, no rocks, no characters, no buildings."
 )
 
+##PROMPT = (
+##    "Single square image of a seamless tileable top-down orthographic 2D fantasy arena floor texture "
+##    "for a stylized medieval survivor game. "
+##    "Hand-painted game texture look, slightly pixel-art-inspired, simple readable shapes, limited color palette, "
+##    "and intentionally non-photoreal. "
+##    "Dark desaturated brown-gray earth with muted olive moss patches, soft stylized cracks, worn dirt bands, "
+##    "and subtle fantasy ground variation. "
+##    "Chunky visual forms, clean readability at gameplay scale, low fine-detail noise, no realistic photography, "
+##    "no hyper-detailed surface, no gritty realism. "
+##    "Perfectly flat surface, zero perspective, zero depth, zero elevation. "
+##    "Repeat cleanly on all four edges. Texture only, full frame, edge to edge. "
+##    "No text, no letters, no words, no numbers, no symbols, no runes, no watermark, no logo, no UI, "
+##    "no border, no frame, no shadows, no objects, no rocks, no props, no characters, no buildings."
+##)
 
 def save_and_report(generated, path: str) -> None:
     generated.save(path)
