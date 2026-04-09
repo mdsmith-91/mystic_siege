@@ -68,32 +68,18 @@ DEFAULT_MODEL = "gpt-image-1"
 DEFAULT_SIZE = "1024x1024"
 DEFAULT_QUALITY = "high"
 DEFAULT_FRAME_SIZE = 32
+DEFAULT_STYLE = (
+    "stylized 2D painted game art, chunky pixel-art influenced, less realistic and more game-like, "
+    "bold simple shapes, slightly simplified details, bright vivid colors, well-lit, high contrast, "
+    "strong silhouette readability, readable at small size"
+)
 
 # Ordered columns in a 4-direction spritesheet: col 0=down, 1=left, 2=right, 3=up
 DIRECTION_ORDER = ["down", "left", "right", "up"]
 
-_DIRECTION_FACING: dict[str, str] = {
-    "down":  (
-        "facing directly toward the viewer, full front view, "
-        "weapon and shield visible on correct sides, neutral stance"
-    ),
-    "left":  (
-        "facing directly to the left, strict side profile, "
-        "character walking left, weapon arm leading"
-    ),
-    "right": (
-        "facing directly to the right, strict side profile, "
-        "character walking right, weapon arm leading"
-    ),
-    "up":    (
-        "facing directly away from the viewer, full back view, "
-        "back of armor/cape visible, no face shown"
-    ),
-}
-
 _GAME_CONTEXT = (
     "top-down medieval fantasy survivor game in the style of Vampire Survivors and Brotato, "
-    "stylized 2D painted game art, chunky pixel-art influenced. "
+    "stylized 2D painted game art, chunky pixel-art influenced, less realistic and more game-like. "
     "The game background is a dark stone dungeon floor, so sprites must use bright, "
     "saturated, high-contrast colors to stand out clearly — no dark or muddy tones"
 )
@@ -105,20 +91,29 @@ _NEGATIVE = (
     "no text, no letters, no numbers, no watermark, no border, no frame, "
     "no UI mockup, no multiple subjects, "
     "no dark color palette, no muddy browns or blacks as dominant colors, "
-    "no underexposed or shadowy rendering."
+    "no underexposed or shadowy rendering, "
+    "no photorealism, no realistic rendering, no cinematic realism."
 )
+
+
+def normalize_style(style: str | None) -> str:
+    """Return a non-empty style string, falling back to the project's default."""
+    if style is None:
+        return DEFAULT_STYLE
+    stripped = style.strip()
+    return stripped if stripped else DEFAULT_STYLE
 
 
 def build_prompt(category: str, subject: str, style: str | None) -> str:
     category_guidance: dict[str, str] = {
         "heroes": (
             "single playable character sprite, centered, full body, "
-            "chunky readable silhouette, front-facing or slight 3/4 overhead view, "
+            "chunky readable silhouette, clear top-down or slight 3/4 overhead readability, "
             "neutral idle stance, fully inside canvas with clear padding"
         ),
         "enemies": (
             "single enemy sprite, centered, full body, "
-            "chunky readable silhouette, front-facing or slight 3/4 overhead view, "
+            "chunky readable silhouette, clear top-down or slight 3/4 overhead readability, "
             "clearly identifiable enemy type, fully inside canvas with clear padding"
         ),
         "projectiles": (
@@ -135,10 +130,7 @@ def build_prompt(category: str, subject: str, style: str | None) -> str:
         ),
     }[category]
 
-    style_text = style.strip() if style else (
-        "stylized 2D painted game art, chunky pixel-art influenced, "
-        "bright vivid colors, well-lit, high contrast"
-    )
+    style_text = normalize_style(style)
 
     return (
         f"Create one {category_guidance} of {subject}. "
@@ -157,10 +149,7 @@ def build_directions_prompt(category: str, subject: str, style: str | None) -> s
         top-left  = front (down)  |  top-right = left profile
         bot-left  = right profile |  bot-right = back (up)
     """
-    style_text = style.strip() if style else (
-        "stylized 2D painted game art, chunky pixel-art influenced, "
-        "bright vivid colors, well-lit, high contrast"
-    )
+    style_text = normalize_style(style)
     return (
         f"Create a 2x2 character reference sheet showing a {subject} "
         f"for a {_GAME_CONTEXT}. "
@@ -168,17 +157,18 @@ def build_directions_prompt(category: str, subject: str, style: str | None) -> s
         "with NO borders, gaps, labels, or dividers between panels. "
         "Panel positions: "
         "TOP-LEFT panel: character facing directly toward the viewer, full front view, "
-        "weapon held visibly in hand in front of the body; "
+        "signature weapon or gear held visibly and clearly readable; "
         "TOP-RIGHT panel: character facing directly to their left, strict side profile facing left, "
-        "weapon extended forward; "
+        "signature weapon or gear clearly visible; "
         "BOTTOM-LEFT panel: character facing directly to their right, strict side profile facing right, "
-        "weapon extended forward; "
+        "signature weapon or gear clearly visible; "
         "BOTTOM-RIGHT panel: character facing directly away from the viewer, full back view, "
-        "weapon visible held at side or over shoulder. "
-        "All 4 panels show the EXACT SAME character design — identical weapon, colors, proportions, and style. "
-        "The weapon must appear in ALL 4 panels. "
+        "signature weapon or gear still identifiable from behind or at side. "
+        "All 4 panels show the EXACT SAME character design — identical colors, proportions, style, "
+        "and signature weapon or gear. "
+        "The signature weapon or gear must appear in ALL 4 panels. "
         "Each character is fully inside its panel, centered, with padding on all sides — "
-        "no limbs or weapons clipped by panel edges. "
+        "no limbs or signature gear clipped by panel edges. "
         f"Visual style: {style_text}. "
         "Completely transparent background — no ground, no floor, no environment, no color fill behind the character. "
         f"{_NEGATIVE} "
@@ -194,9 +184,15 @@ def remove_background(img: PILImage.Image, tolerance: int = 40) -> PILImage.Imag
     removes pixels connected to the image edges.
     """
     from PIL import ImageDraw
+
     img = img.convert("RGBA")
     marker = (1, 2, 3, 255)  # sentinel value unlikely to appear in sprite art
-    for seed in [(0, 0), (img.width - 1, 0), (0, img.height - 1), (img.width - 1, img.height - 1)]:
+    for seed in [
+        (0, 0),
+        (img.width - 1, 0),
+        (0, img.height - 1),
+        (img.width - 1, img.height - 1),
+    ]:
         ImageDraw.floodfill(img, seed, marker, thresh=tolerance)
     arr = np.array(img)
     mask = np.all(arr == [1, 2, 3, 255], axis=2)
@@ -226,10 +222,10 @@ def slice_2x2_into_frames(sheet: PILImage.Image, frame_size: int) -> list[PILIma
     half_w = sheet.width // 2
     half_h = sheet.height // 2
     quadrants = [
-        (0,      0,      half_w,       half_h),        # top-left  → down
-        (half_w, 0,      sheet.width,  half_h),        # top-right → left
-        (0,      half_h, half_w,       sheet.height),  # bot-left  → right
-        (half_w, half_h, sheet.width,  sheet.height),  # bot-right → up
+        (0, 0, half_w, half_h),                  # top-left  → down
+        (half_w, 0, sheet.width, half_h),        # top-right → left
+        (0, half_h, half_w, sheet.height),       # bot-left  → right
+        (half_w, half_h, sheet.width, sheet.height),  # bot-right → up
     ]
     frames = []
     for box in quadrants:
@@ -270,7 +266,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subject", required=True, help="Short description of the sprite subject")
     parser.add_argument(
         "--style",
-        default="stylized 2D painted game art, chunky pixel-art influenced",
+        default=DEFAULT_STYLE,
         help="Visual style guidance appended to the prompt",
     )
     parser.add_argument(

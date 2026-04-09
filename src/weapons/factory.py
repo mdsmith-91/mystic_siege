@@ -4,6 +4,7 @@ from src.weapons.frost_ring import FrostRing
 from src.weapons.holy_nova import HolyNova
 from src.weapons.lightning_chain import LightningChain
 from src.weapons.longbow import Longbow
+from src.weapons.shadow_knives import ShadowKnives
 from src.weapons.spectral_blade import SpectralBlade
 from src.weapons.throwing_axes import ThrowingAxes
 
@@ -16,6 +17,7 @@ WEAPON_CLASS_REGISTRY = {
     "FrostRing": FrostRing,
     "LightningChain": LightningChain,
     "Longbow": Longbow,
+    "ShadowKnives": ShadowKnives,
     "ThrowingAxes": ThrowingAxes,
 }
 

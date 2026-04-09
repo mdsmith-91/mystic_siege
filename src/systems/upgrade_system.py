@@ -92,6 +92,7 @@ WEAPON_CLASSES = [
     "FrostRing",
     "LightningChain",
     "Longbow",
+    "ShadowKnives",
     "ThrowingAxes",
 ]
 
@@ -144,6 +145,13 @@ WEAPON_META = {
         "upgrade_description": "L2 +8 damage. L3 -0.15s cooldown. L4 +1 pierce. L5 +2 arrows and +10% crit bonus.",
         "icon_color": (170, 120, 60),
         "symbol": "LB",
+    },
+    "ShadowKnives": {
+        "name": "Shadow Knives",
+        "new_description": "Throws fast knives at the nearest enemy, then calls them back to the wielder.",
+        "upgrade_description": "L2 +6 damage. L3 +1 knife. L4 -0.10s cooldown and +5% crit bonus. L5 +1 pierce and +8 damage.",
+        "icon_color": (105, 105, 135),
+        "symbol": "SK",
     },
     "ThrowingAxes": {
         "name": "Throwing Axes",
