@@ -37,6 +37,7 @@ class Player(BaseEntity):
         self.hp = self.max_hp
         self.speed = hero_class_data["speed"]
         self.base_speed = self.speed
+        self.base_armor: float = float(hero_class_data["armor"])
         self.armor = hero_class_data["armor"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
@@ -75,6 +76,7 @@ class Player(BaseEntity):
         self.physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
         self.arrow_pierce_bonus = 0
+        self.armor_bonus_pct = 0.0
         self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
         self.area_size_bonus_pct = 0.0
@@ -207,6 +209,15 @@ class Player(BaseEntity):
         max_hp_delta = self._recalculate_max_hp()
         self.hp = min(self.max_hp, self.hp + max_hp_delta)
 
+    def _recalculate_armor(self) -> None:
+        """Recompute effective armor from base value and any percent bonus."""
+        self.armor = self.base_armor * (1.0 + self.armor_bonus_pct)
+
+    def add_flat_armor(self, value: float) -> None:
+        """Increase base armor so percent bonuses keep scaling with flat upgrades."""
+        self.base_armor += value
+        self._recalculate_armor()
+
     def _apply_hero_passives(self) -> None:
         """Apply declarative passive bonuses from the hero config."""
         passives = self.hero_data.get("passives", {})
@@ -219,6 +230,9 @@ class Player(BaseEntity):
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
+        self.armor_bonus_pct += passives.get("armor_bonus_pct", 0.0)
+        if self.armor_bonus_pct:
+            self._recalculate_armor()
         self.max_hp_bonus_pct += passives.get("max_hp_bonus_pct", 0.0)
         max_hp_bonus = passives.get("max_hp_bonus", 0.0)
         if self.max_hp_bonus_pct:

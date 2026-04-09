@@ -281,7 +281,7 @@ class UpgradeSystem:
         elif stat == "pickup_radius_pct":
             player.add_flat_percent_bonus(stat, value)
         elif stat == "armor":
-            player.armor += value
+            player.add_flat_armor(value)
         elif stat == "regen_rate":
             player.regen_rate += value
         elif stat == "xp_multiplier_pct":

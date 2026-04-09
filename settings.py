@@ -88,6 +88,7 @@ CRIT_CHANCE_BASE = 0.05              # fraction; 0.05 = 5% baseline crit chance 
 CRIT_MULTIPLIER = 2.0                # damage multiplier; higher values make crits hit harder
 WIZARD_CRIT_CHANCE_BONUS = 0.10      # fraction added by Wizard passive
 WIZARD_SPELL_DAMAGE_BONUS = 0.20     # fraction added to spell damage by Wizard passive
+KNIGHT_ARMOR_BONUS_PCT = 0.10                # fraction added to effective armor by Knight passive
 BARBARIAN_PHYSICAL_DAMAGE_BONUS = 0.20   # fraction added to physical damage by Barbarian passive
 BARBARIAN_MAX_HP_BONUS_PCT = 0.10        # fraction added to max HP by Barbarian passive
 RANGER_CRIT_CHANCE_BONUS = 0.10      # fraction added by Ranger passive
@@ -843,13 +844,12 @@ HERO_CLASSES = [
         "hp": 150,
         "speed": 180,
         "armor": 15,
-        "passive_desc": "-15% damage taken.\nImmune to knockback.",
+        "passive_desc": "+10% armor bonus.\nScales with armor upgrades.",
         "starting_weapon": "SpectralBlade",
         "color": (180, 140, 60),
         "sprite": "assets/sprites/heroes/knight.png",
         "passives": {
-            "damage_taken_multiplier": 0.85,
-            "knockback_immune": True,
+            "armor_bonus_pct": KNIGHT_ARMOR_BONUS_PCT,
         },
     },
     {

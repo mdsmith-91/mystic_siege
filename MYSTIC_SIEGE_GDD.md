@@ -158,7 +158,7 @@ mystic_siege/
 
 ### Knight
 - **HP:** 150 | **Speed:** Medium | **Armor:** High
-- **Passive:** Takes 15% less damage, knockback immune
+- **Passive:** +10% armor bonus (scales with armor upgrades)
 - **Starting Weapon:** Spectral Blade (orbiting swords)
 - **Playstyle:** Tank — survives by being a wall
 
