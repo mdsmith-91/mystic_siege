@@ -24,6 +24,8 @@ _ARROW_HALF = 8
 _WEAPON_ICON_NAMES = {
     "ArcaneBolt": "arcane",
     "BrambleSeeds": "bramble",
+    "Caltrops": "caltrops",
+    "ChainFlail": "flail",
     "HolyNova": "nova",
     "SpectralBlade": "blade",
     "FlameBlast": "fire",

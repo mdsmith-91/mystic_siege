@@ -673,6 +673,88 @@ SHADOW_KNIVES_RETURN_TRAIL_LENGTH = 4       # samples retained for the return tr
 SHADOW_KNIVES_RETURN_TRAIL_INTERVAL = 0.025 # seconds between trail samples
 
 
+# Caltrops -------------------------------------------------------------------
+# Gameplay role: physical ground-control trap that litters a lane with hazards,
+# dealing repeated light damage, slowing enemies, and applying a small bleed.
+# Gameplay
+CALTROPS_BASE_DAMAGE = 6.0              # damage per trap tick before bleed
+CALTROPS_BASE_COOLDOWN = 1.8            # seconds between throws
+CALTROPS_TARGETING_RANGE = 380          # pixels; acquisition distance for the throw lane
+CALTROPS_THROW_SPEED = 540              # pixels/second; flight speed of thrown caltrops
+CALTROPS_PROJECTILE_LIFETIME = 0.35     # seconds before caltrops settle into hazards
+CALTROPS_BASE_PROJECTILE_COUNT = 3      # caltrops thrown per cast at level 1
+CALTROPS_SPREAD = 18                    # degrees across the thrown fan
+CALTROPS_PATCH_RADIUS = 22              # pixels; small personal hazard footprint
+CALTROPS_PATCH_DURATION = 4.0           # seconds each hazard remains active
+CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
+CALTROPS_SLOW_MULTIPLIER = 0.75         # enemy speed multiplier while in the hazard
+CALTROPS_SLOW_DURATION = 0.6            # seconds; refresh duration of the slow
+CALTROPS_BLEED_DAMAGE = 2.0             # damage per second from bleed
+CALTROPS_BLEED_DURATION = 1.5           # seconds bleed remains after each refresh
+CALTROPS_HITBOX_SIZE = (10, 10)         # pixels; thrown-caltrop collision rect
+
+# Upgrade Levels
+# Levels 2-5: +trap damage, +1 caltrop, longer hazard life with stronger bleed,
+# then faster cooldown and larger trap radius.
+CALTROPS_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 2.0},
+    {"projectile_count": 1},
+    {"patch_duration": 1.0, "bleed_damage": 1.0},
+    {"base_cooldown": -0.3, "patch_radius": 6},
+]
+
+# Visual
+# Ground hazard styling only. These do not change damage, slow, or bleed logic.
+CALTROPS_PROJECTILE_SIZE = (12, 12)          # pixels; thrown-caltrop sprite size
+CALTROPS_PROJECTILE_COLOR = (130, 130, 140)  # RGB dark steel tint
+CALTROPS_PROJECTILE_EDGE_COLOR = (210, 215, 220)  # RGB spike highlight tint
+CALTROPS_PROJECTILE_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
+CALTROPS_PATCH_FILL_COLOR = (95, 95, 105)    # RGB translucent hazard tint
+CALTROPS_PATCH_ALPHA = 60                    # alpha 0-255 for hazard fill
+CALTROPS_PATCH_RING_COLOR = (180, 60, 60)    # RGB warning ring tint
+CALTROPS_PATCH_RING_ALPHA = 150              # alpha 0-255 for hazard ring
+CALTROPS_PATCH_RING_WIDTH = 2                # pixels; hazard ring stroke width
+CALTROPS_SPIKE_COUNT = 4                     # number of visible spikes per hazard
+CALTROPS_BLEED_COLOR = (185, 55, 55)         # RGB bleed hit-feedback tint
+
+
+# Chain Flail ----------------------------------------------------------------
+# Gameplay role: physical tethered sweep with burst windows, reach, and lane
+# disruption rather than continuous orbit uptime.
+# Gameplay
+CHAIN_FLAIL_BASE_DAMAGE = 26.0          # damage per enemy hit during a swing
+CHAIN_FLAIL_BASE_COOLDOWN = 1.6         # seconds between swings
+CHAIN_FLAIL_CHAIN_LENGTH = 110          # pixels; max reach of the flail head from the player
+CHAIN_FLAIL_HEAD_RADIUS = 18            # pixels; damaging footprint of the flail head
+CHAIN_FLAIL_SWEEP_ANGLE = 120           # degrees traversed during the swing phase
+CHAIN_FLAIL_EXTEND_DURATION = 0.14      # seconds from hand to full extension
+CHAIN_FLAIL_SWEEP_DURATION = 0.18       # seconds spent traversing the arc
+CHAIN_FLAIL_RETRACT_DURATION = 0.12     # seconds from full extension back to the player
+CHAIN_FLAIL_KNOCKBACK_FORCE = 230       # pixels/second impulse applied on hit
+CHAIN_FLAIL_CHAIN_SAMPLE_COUNT = 5      # points along the chain used for light body collision checks
+
+# Upgrade Levels
+# Levels 2-5: +damage, longer reach, wider sweep, then faster cooldown with a
+# slightly larger head for consistency.
+CHAIN_FLAIL_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 8.0},
+    {"chain_length": 24},
+    {"sweep_angle": 28},
+    {"base_cooldown": -0.2, "head_radius": 4},
+]
+
+# Visual
+# Chain and flail-head styling only. These do not change sweep timing or damage.
+CHAIN_FLAIL_CHAIN_COLOR = (120, 120, 130)      # RGB chain tint
+CHAIN_FLAIL_CHAIN_WIDTH = 3                    # pixels; rendered chain thickness
+CHAIN_FLAIL_HEAD_COLOR = (150, 150, 160)       # RGB flail head tint
+CHAIN_FLAIL_HEAD_HIGHLIGHT_COLOR = (220, 220, 230)  # RGB metallic highlight tint
+CHAIN_FLAIL_HEAD_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
+CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
+
+
 # ============================================================================
 # Enemies
 # ============================================================================

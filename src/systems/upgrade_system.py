@@ -87,6 +87,8 @@ PASSIVE_UPGRADES = [
 WEAPON_CLASSES = [
     "ArcaneBolt",
     "BrambleSeeds",
+    "Caltrops",
+    "ChainFlail",
     "HolyNova",
     "SpectralBlade",
     "FlameBlast",
@@ -112,6 +114,20 @@ WEAPON_META = {
         "upgrade_description": "L2 larger patches. L3 stronger tick damage. L4 longer patches. L5 faster cooldown and +1 seed.",
         "icon_color": (82, 190, 95),
         "symbol": "BS",
+    },
+    "Caltrops": {
+        "name": "Caltrops",
+        "new_description": "Scatters physical traps that slow enemies and apply a small bleed over time.",
+        "upgrade_description": "L2 +damage. L3 +1 caltrop. L4 longer duration and stronger bleed. L5 faster cooldown and larger radius.",
+        "icon_color": (150, 150, 160),
+        "symbol": "CT",
+    },
+    "ChainFlail": {
+        "name": "Chain Flail",
+        "new_description": "Extends a tethered flail, sweeps through an arc, then retracts.",
+        "upgrade_description": "L2 +damage. L3 longer reach. L4 wider sweep. L5 faster cooldown and larger head.",
+        "icon_color": (180, 170, 130),
+        "symbol": "CF",
     },
     "HolyNova": {
         "name": "Holy Nova",

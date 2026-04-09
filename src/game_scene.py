@@ -94,6 +94,8 @@ class GameScene:
         _am.load_sfx(AudioManager.LEVEL_UP,      "assets/audio/sfx/level_up.wav")
         _am.load_sfx(AudioManager.WEAPON_ARCANE, "assets/audio/sfx/arcane_bolt.wav")
         _am.load_sfx(AudioManager.WEAPON_BRAMBLE_SEEDS, "assets/audio/sfx/bramble_seeds.wav")
+        _am.load_sfx(AudioManager.WEAPON_CALTROPS, "assets/audio/sfx/caltrops.wav")
+        _am.load_sfx(AudioManager.WEAPON_CHAIN_FLAIL, "assets/audio/sfx/chain_flail.wav")
         _am.load_sfx(AudioManager.WEAPON_HEX_ORB, "assets/audio/sfx/hex_orb.wav")
         _am.load_sfx(AudioManager.WEAPON_NOVA,   "assets/audio/sfx/holy_nova.wav")
         _am.load_sfx(AudioManager.WEAPON_FLAME_BLAST, "assets/audio/sfx/flame_blast.wav")

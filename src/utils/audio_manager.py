@@ -14,6 +14,8 @@ class AudioManager:
     LEVEL_UP = "level_up"
     WEAPON_ARCANE = "arcane_bolt"
     WEAPON_BRAMBLE_SEEDS = "bramble_seeds"
+    WEAPON_CALTROPS = "caltrops"
+    WEAPON_CHAIN_FLAIL = "chain_flail"
     WEAPON_HEX_ORB = "hex_orb"
     WEAPON_NOVA = "holy_nova"
     WEAPON_FLAME_BLAST = "flame_blast"
