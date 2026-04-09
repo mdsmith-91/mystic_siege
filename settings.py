@@ -93,6 +93,8 @@ BARBARIAN_PHYSICAL_DAMAGE_BONUS = 0.20   # fraction added to physical damage by 
 BARBARIAN_MAX_HP_BONUS_PCT = 0.10        # fraction added to max HP by Barbarian passive
 RANGER_CRIT_CHANCE_BONUS = 0.10      # fraction added by Ranger passive
 RANGER_ARROW_PIERCE_BONUS = 1        # extra enemies pierced by Ranger arrows
+ROGUE_CRIT_CHANCE_BONUS = 0.15       # fraction added by Rogue passive
+ROGUE_PHYSICAL_DAMAGE_BONUS = 0.10   # fraction added to physical damage by Rogue passive
 
 BASE_XP_REQUIRED = 50                # XP needed for the first level-up; higher values slow early progression
 XP_SCALE_FACTOR = 1.12               # exponential growth factor per level; higher values steepen later leveling
@@ -523,6 +525,46 @@ THROWING_AXES_GUARD_COLOR = (75, 75, 85)          # RGB bolster tint
 THROWING_AXES_OUTLINE_COLOR = (45, 45, 55)        # RGB silhouette outline tint
 THROWING_AXES_OUTLINE_WIDTH = 1                   # pixels at 18x18 reference size; scales with projectile size
 THROWING_AXES_EDGE_HIGHLIGHT_WIDTH = 2            # pixels at 18x18 reference size; bevel highlight thickness
+
+
+# ShadowKnives --------------------------------------------------------------
+# Gameplay role: short-to-mid-range rogue burst with fast knives that return to
+# the owner after a brief outward travel.
+# Gameplay
+SHADOW_KNIVES_BASE_DAMAGE = 18.0       # damage per knife hit
+SHADOW_KNIVES_BASE_COOLDOWN = 0.65     # seconds between volleys; lower values increase burst cadence
+SHADOW_KNIVES_TARGETING_RANGE = 360    # pixels; shorter than Longbow by design
+SHADOW_KNIVES_PROJECTILE_SPEED = 760   # pixels/second during outward travel
+SHADOW_KNIVES_RETURN_SPEED = 920       # pixels/second while the knife returns to the owner
+SHADOW_KNIVES_PROJECTILE_LIFETIME = 1.1   # seconds before forced despawn
+SHADOW_KNIVES_OUTWARD_DURATION = 0.22  # seconds before the knife turns back toward the owner
+SHADOW_KNIVES_RETURN_CATCH_RADIUS = 18 # pixels from owner center to count as caught
+SHADOW_KNIVES_BASE_PIERCE = 0          # enemies pierced per knife before upgrades/passives
+SHADOW_KNIVES_BASE_PROJECTILE_COUNT = 2   # knives per volley at level 1
+SHADOW_KNIVES_SPREAD = 9               # degrees between knives in a volley
+SHADOW_KNIVES_BASE_CRIT_BONUS = 0.10   # additive crit chance from the weapon itself
+
+# Upgrade Levels
+# Levels 2-5: +damage, +1 knife, faster cooldown with more crit, then +1 pierce with +damage.
+SHADOW_KNIVES_UPGRADE_LEVELS = [
+    {},
+    {"base_damage": 6.0},
+    {"projectile_count": 1},
+    {"base_cooldown": -0.10, "crit_bonus": 0.05},
+    {"pierce": 1, "base_damage": 8.0},
+]
+
+# Visual
+# Knife silhouette and return-trail tuning only. These do not change targeting,
+# travel phases, or damage.
+SHADOW_KNIVES_PROJECTILE_SIZE = (18, 8)      # pixels; compact knife footprint
+SHADOW_KNIVES_PROJECTILE_COLOR = (170, 170, 180)   # RGB blade body tint
+SHADOW_KNIVES_PROJECTILE_EDGE_COLOR = (220, 225, 235)  # RGB cutting-edge highlight tint
+SHADOW_KNIVES_PROJECTILE_HILT_COLOR = (70, 55, 65)     # RGB handle tint
+SHADOW_KNIVES_PROJECTILE_OUTLINE_COLOR = (40, 35, 45)  # RGB silhouette outline tint
+SHADOW_KNIVES_RETURN_TRAIL_COLOR = (110, 110, 140)     # RGB trail tint while returning
+SHADOW_KNIVES_RETURN_TRAIL_LENGTH = 4       # samples retained for the return trail
+SHADOW_KNIVES_RETURN_TRAIL_INTERVAL = 0.025 # seconds between trail samples
 
 
 # ============================================================================
@@ -1043,6 +1085,20 @@ HERO_CLASSES = [
         "passives": {
             "physical_damage_bonus_pct": BARBARIAN_PHYSICAL_DAMAGE_BONUS,
             "max_hp_bonus_pct": BARBARIAN_MAX_HP_BONUS_PCT,
+        },
+    },
+    {
+        "name": "Rogue",
+        "hp": 85,
+        "speed": 250,
+        "armor": 2,
+        "passive_desc": "+15% crit chance.\n+10% physical damage.",
+        "starting_weapon": "ShadowKnives",
+        "color": (95, 95, 125),
+        "sprite": "assets/sprites/heroes/rogue.png",
+        "passives": {
+            "crit_chance_bonus": ROGUE_CRIT_CHANCE_BONUS,
+            "physical_damage_bonus_pct": ROGUE_PHYSICAL_DAMAGE_BONUS,
         },
     },
 ]

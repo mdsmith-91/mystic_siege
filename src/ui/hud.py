@@ -29,6 +29,7 @@ _WEAPON_ICON_NAMES = {
     "FrostRing": "frost",
     "LightningChain": "lightning",
     "Longbow": "longbow",
+    "ShadowKnives": "knife",
     "ThrowingAxes": "axe",
 }
 _BUFF_STAT_LABELS = {

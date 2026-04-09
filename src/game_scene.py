@@ -99,6 +99,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_CHAIN,  "assets/audio/sfx/lightning_chain.wav")
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
         _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
+        _am.load_sfx(AudioManager.WEAPON_SHADOW_KNIVES, "assets/audio/sfx/shadow_knives.wav")
         _am.load_sfx(AudioManager.WEAPON_THROWING_AXES, "assets/audio/sfx/throwing_axes.wav")
         _am.load_sfx(AudioManager.PICKUP_COLLECT, "assets/audio/sfx/pickup_collect.wav")
 

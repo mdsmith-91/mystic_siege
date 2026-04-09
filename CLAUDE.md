@@ -149,12 +149,14 @@ mystic_siege/
 | Friar | 110 | 210 | 5 | HolyNova |
 | Ranger | 95 | 225 | 3 | Longbow |
 | Barbarian | 120 | 205 | 8 | ThrowingAxes |
+| Rogue | 85 | 250 | 2 | ShadowKnives |
 
 Knight passive: +10% armor bonus (scales with armor upgrades), immune to knockback  
 Wizard passive: +20% spell damage, +10% crit chance  
 Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`), +20% area effect size
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
 Barbarian passive: +20% physical damage, +10% max HP
+Rogue passive: +15% crit chance, +10% physical damage
 
 Current hero architecture rules:
 
@@ -180,6 +182,7 @@ Current hero architecture rules:
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
+- ShadowKnives — fast physical returning knives with strong crit identity
 - ThrowingAxes (`Throwing Axes`) — spinning thrown axes with shorter range and heavier hits
 
 The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
@@ -252,7 +255,7 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 - Solo and local co-op use the same scene flow. A single joined slot preserves the
   solo runtime path for movement and death behavior, but the in-run HUD uses the
   same slot-panel renderer and weapon-slot treatment as local co-op.
-- The runtime party cap remains 4 local players. The hero roster now has 5 heroes,
+- The runtime party cap remains 4 local players. The hero roster now has 6 heroes,
   and duplicate hero picks are still blocked. The class-select grid is designed for
   up to 8 heroes in a 4-wide layout (rows of 4+4); `CLASS_SELECT_MAX_COLUMNS = 4`
   and `CLASS_SELECT_CARD_HEIGHT = 210` are sized to accommodate that full layout

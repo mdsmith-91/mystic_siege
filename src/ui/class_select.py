@@ -34,6 +34,7 @@ _WEAPON_DISPLAY_NAMES = {
     "FrostRing": "Frost Ring",
     "LightningChain": "Lightning Chain",
     "Longbow": "Longbow",
+    "ShadowKnives": "Shadow Knives",
     "ThrowingAxes": "Throwing Axes",
 }
 
