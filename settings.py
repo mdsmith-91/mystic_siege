@@ -95,6 +95,8 @@ RANGER_CRIT_CHANCE_BONUS = 0.10      # fraction added by Ranger passive
 RANGER_ARROW_PIERCE_BONUS = 1        # extra enemies pierced by Ranger arrows
 ROGUE_CRIT_CHANCE_BONUS = 0.15       # fraction added by Rogue passive
 ROGUE_PHYSICAL_DAMAGE_BONUS = 0.10   # fraction added to physical damage by Rogue passive
+WARLOCK_DOT_DAMAGE_BONUS = 0.20      # fraction added to damage-over-time effects by Warlock passive
+WARLOCK_SPELL_DAMAGE_BONUS = 0.10    # fraction added to spell damage by Warlock passive
 
 BASE_XP_REQUIRED = 50                # XP needed for the first level-up; higher values slow early progression
 XP_SCALE_FACTOR = 1.12               # exponential growth factor per level; higher values steepen later leveling
@@ -382,6 +384,55 @@ FLAME_BLAST_PARTICLE_SPEED_MIN = 80           # pixels/second; minimum starting 
 FLAME_BLAST_PARTICLE_SPEED_MAX = 430          # pixels/second; maximum starting particle speed
 FLAME_BLAST_PARTICLE_RADIUS_MAX = 6           # pixels; max particle size
 FLAME_BLAST_PARTICLE_FADE_THRESHOLD = 0.4    # fraction of lifetime remaining when particle fade-out begins
+
+
+# Hex Orb --------------------------------------------------------------------
+# Gameplay role: slow curse projectile with modest direct hit damage and a
+# longer damage-over-time payoff.
+# Gameplay
+HEX_ORB_BASE_DAMAGE = 14.0            # direct hit damage per orb
+HEX_ORB_BASE_COOLDOWN = 1.4           # seconds between casts; lower values increase curse uptime
+HEX_ORB_TARGETING_RANGE = 420         # pixels; larger values acquire targets farther away
+HEX_ORB_PROJECTILE_SPEED = 260        # pixels/second; intentionally slower than Arcane Bolt
+HEX_ORB_PROJECTILE_LIFETIME = 2.2     # seconds before despawn
+HEX_ORB_BASE_PROJECTILE_COUNT = 1     # orbs per cast at level 1
+HEX_ORB_BASE_PIERCE = 0               # enemies pierced per orb before upgrades/passives
+HEX_ORB_SPREAD = 12                   # degrees between multiple orbs
+HEX_ORB_CURSE_DAMAGE = 6.0            # damage per second while cursed
+HEX_ORB_CURSE_DURATION = 3.0          # seconds curse remains after application/refresh
+HEX_ORB_CURSE_RADIUS = 0              # pixels; 0 keeps curse single-target until upgraded
+
+# Upgrade Levels
+# Levels 2-5: stronger curse, longer curse, extra orb, then direct damage plus
+# curse splash application.
+HEX_ORB_UPGRADE_LEVELS = [
+    {},
+    {"curse_damage": 4.0},
+    {"curse_duration": 1.5},
+    {"projectile_count": 1},
+    {"base_damage": 8.0, "curse_radius": 70},
+]
+
+# Visual
+# Projectile and curse presentation only. Collision is driven by hitbox size.
+HEX_ORB_PROJECTILE_COLOR = (95, 35, 145)      # RGB dark-orb body tint
+HEX_ORB_PROJECTILE_SIZE = (24, 24)            # pixels; visual surface bounds
+HEX_ORB_HITBOX_SIZE = (14, 14)                # pixels; gameplay collision rect
+HEX_ORB_OUTER_GLOW_RADIUS = 11                # pixels; soft outer bloom
+HEX_ORB_OUTER_GLOW_COLOR = (35, 10, 70)       # RGB outer bloom tint
+HEX_ORB_OUTER_GLOW_ALPHA = 90                 # alpha 0-255 for outer bloom
+HEX_ORB_MID_GLOW_RADIUS = 8                   # pixels; saturated orb halo
+HEX_ORB_MID_GLOW_COLOR = (95, 35, 145)        # RGB mid glow tint
+HEX_ORB_MID_GLOW_ALPHA = 190                  # alpha 0-255 for mid glow
+HEX_ORB_CORE_RADIUS = 4                       # pixels; bright curse core
+HEX_ORB_CORE_COLOR = (150, 255, 120)          # RGB core tint
+HEX_ORB_TRAIL_LENGTH = 6                      # samples retained for orb trail
+HEX_ORB_TRAIL_RECORD_INTERVAL = 0.025         # seconds between trail samples
+HEX_ORB_TRAIL_COLOR = (80, 220, 120)          # RGB curse trail tint
+HEX_ORB_TRAIL_MAX_ALPHA = 120                 # alpha 0-255 of newest trail segment
+HEX_ORB_TRAIL_MAX_RADIUS = 4                  # pixels; radius of newest trail segment
+HEX_ORB_HIT_SPARK_COLOR = (120, 255, 100)     # RGB direct-hit feedback tint
+HEX_ORB_CURSE_TICK_COLOR = (110, 220, 95)     # RGB curse tick feedback tint
 
 
 # Frost Ring -----------------------------------------------------------------
@@ -1099,6 +1150,20 @@ HERO_CLASSES = [
         "passives": {
             "crit_chance_bonus": ROGUE_CRIT_CHANCE_BONUS,
             "physical_damage_bonus_pct": ROGUE_PHYSICAL_DAMAGE_BONUS,
+        },
+    },
+    {
+        "name": "Warlock",
+        "hp": 90,
+        "speed": 215,
+        "armor": 2,
+        "passive_desc": "+20% damage over time.\n+10% spell damage.",
+        "starting_weapon": "HexOrb",
+        "color": (100, 45, 140),
+        "sprite": "assets/sprites/heroes/warlock.png",
+        "passives": {
+            "dot_damage_bonus_pct": WARLOCK_DOT_DAMAGE_BONUS,
+            "spell_damage_bonus_pct": WARLOCK_SPELL_DAMAGE_BONUS,
         },
     },
 ]

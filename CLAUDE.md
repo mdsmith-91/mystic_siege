@@ -150,6 +150,7 @@ mystic_siege/
 | Ranger | 95 | 225 | 3 | Longbow |
 | Barbarian | 120 | 205 | 8 | ThrowingAxes |
 | Rogue | 85 | 250 | 2 | ShadowKnives |
+| Warlock | 90 | 215 | 2 | HexOrb |
 
 Knight passive: +10% armor bonus (scales with armor upgrades), immune to knockback  
 Wizard passive: +20% spell damage, +10% crit chance  
@@ -157,6 +158,7 @@ Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settin
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
 Barbarian passive: +20% physical damage, +10% max HP
 Rogue passive: +15% crit chance, +10% physical damage
+Warlock passive: +20% damage over time, +10% spell damage
 
 Current hero architecture rules:
 
@@ -168,7 +170,7 @@ Current hero architecture rules:
   Current passive keys include `armor_bonus_pct`, `damage_taken_multiplier`,
   `knockback_immune`, `crit_chance_bonus`, `spell_damage_bonus_pct`,
   `physical_damage_bonus_pct`, `projectile_pierce_bonus`, `arrow_pierce_bonus`,
-  `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
+  `dot_damage_bonus_pct`, `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.
@@ -179,6 +181,7 @@ Current hero architecture rules:
 - HolyNova — expanding damage ring, no projectile object
 - SpectralBlade — orbiting swords, continuous collision
 - FlameBlast (`Flame Blast`) — directional cone, burn DOT
+- HexOrb (`Hex Orb`) — slow curse projectile with damage over time
 - FrostRing — expanding freeze ring, immobilizes
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
@@ -199,8 +202,9 @@ Current weapon architecture rules:
   resolution, `src/systems/upgrade_system.py` owns player-facing card metadata (`WEAPON_META`,
   `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
 - Weapon ids are stable strings: `ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`,
-  `FrostRing`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`. `FlameBlast`
-  displays as `Flame Blast` in UI, and `ThrowingAxes` displays as `Throwing Axes`.
+  `FrostRing`, `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`.
+  `FlameBlast` displays as `Flame Blast`, `HexOrb` displays as `Hex Orb`, and
+  `ThrowingAxes` displays as `Throwing Axes`.
 - HUD chrome tied to weapon slots is also settings-driven: `HUD_EMPTY_SLOT_BG_COLOR` drives
   both empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment border tracker
   (fills clockwise from top as levels 2–5 are earned; unearned segments use the empty-slot gray).
@@ -255,7 +259,7 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
 - Solo and local co-op use the same scene flow. A single joined slot preserves the
   solo runtime path for movement and death behavior, but the in-run HUD uses the
   same slot-panel renderer and weapon-slot treatment as local co-op.
-- The runtime party cap remains 4 local players. The hero roster now has 6 heroes,
+- The runtime party cap remains 4 local players. The hero roster now has 7 heroes,
   and duplicate hero picks are still blocked. The class-select grid is designed for
   up to 8 heroes in a 4-wide layout (rows of 4+4); `CLASS_SELECT_MAX_COLUMNS = 4`
   and `CLASS_SELECT_CARD_HEIGHT = 210` are sized to accommodate that full layout
@@ -765,7 +769,7 @@ Track progress here as phases are completed:
 
 - [x] Phase 1 — Project scaffold (settings, main, utils)
 - [x] Phase 2 — Core entities (player, enemy, projectile, xp orb)
-- [x] Phase 3 — Weapons (all 7)
+- [x] Phase 3 — Weapons (original roster)
 - [x] Phase 4 — Systems (waves, xp, upgrades, camera, collision)
 - [x] Phase 5 — UI (hud, menus, upgrade cards)
 - [x] Phase 6 — Integration (game scene, scene wiring, run_check)

@@ -89,6 +89,8 @@ class Player(BaseEntity):
         self.base_physical_damage_multiplier = 1.0
         self.physical_damage_bonus_pct = 0.0
         self.temp_physical_damage_bonus_pct = 0.0
+        self.dot_damage_bonus_pct = 0.0
+        self.dot_damage_multiplier = 1.0
         self.projectile_pierce_bonus = 0
         self.arrow_pierce_bonus = 0
         self.armor_bonus_pct = 0.0
@@ -227,6 +229,7 @@ class Player(BaseEntity):
         self.physical_damage_multiplier = self.base_physical_damage_multiplier * (
             1.0 + self.physical_damage_bonus_pct + self.temp_physical_damage_bonus_pct
         )
+        self.dot_damage_multiplier = 1.0 + self.dot_damage_bonus_pct
 
     def _rebuild_combat_modifiers(self) -> None:
         """Recompute effective combat modifiers from persistent and temporary sources."""
@@ -261,6 +264,7 @@ class Player(BaseEntity):
         self.crit_chance += passives.get("crit_chance_bonus", 0.0)
         self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
         self.physical_damage_bonus_pct += passives.get("physical_damage_bonus_pct", 0.0)
+        self.dot_damage_bonus_pct += passives.get("dot_damage_bonus_pct", 0.0)
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
         self.arrow_pierce_bonus += passives.get("arrow_pierce_bonus", 0)
         self.area_size_bonus_pct += passives.get("area_size_bonus_pct", 0.0)
