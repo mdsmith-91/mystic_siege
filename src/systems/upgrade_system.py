@@ -189,7 +189,7 @@ WEAPON_META = {
     "Spear": {
         "name": "Spear",
         "new_description": "Thrusts a spear forward in a narrow lane, piercing through enemies in line.",
-        "upgrade_description": "L2 +10 damage. L3 longer reach and faster cooldown. L4 +1 pierce. L5 double thrust.",
+        "upgrade_description": "L2 +10 damage. L3 longer reach and faster cooldown. L4 +1 pierce. L5 double thrust and +8% crit.",
         "icon_color": (185, 190, 200),
         "symbol": "SP",
     },

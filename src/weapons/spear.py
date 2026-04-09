@@ -25,6 +25,7 @@ from settings import (
     SPEAR_SHAFT_COLOR,
     SPEAR_SHAFT_HALF_WIDTH,
     SPEAR_SHAFT_OUTLINE_COLOR,
+    SPEAR_HAND_OFFSET,
     SPEAR_TARGETING_RANGE,
     SPEAR_THRUST_LENGTH,
     SPEAR_UPGRADE_LEVELS,
@@ -41,6 +42,7 @@ class Spear(BaseWeapon):
     thrust_length = SPEAR_THRUST_LENGTH
     pierce = SPEAR_BASE_PIERCE
     double_thrust_count = 0  # incremented to 1 at L5 by the upgrade system
+    crit_bonus = 0.0          # additive crit chance added at L5
     IS_SPELL = False
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
@@ -53,7 +55,7 @@ class Spear(BaseWeapon):
     def _effective_thrust_length(self) -> float:
         return self.thrust_length * self.owner.area_size_multiplier
 
-    def _get_target_direction(self) -> Vector2:
+    def _get_target_direction(self) -> Vector2 | None:
         nearest_enemy = None
         nearest_dist_sq = float("inf")
         max_range_sq = SPEAR_TARGETING_RANGE * SPEAR_TARGETING_RANGE
@@ -64,31 +66,32 @@ class Spear(BaseWeapon):
                 nearest_dist_sq = dist_sq
                 nearest_enemy = enemy
 
-        if nearest_enemy is not None:
-            diff = nearest_enemy.pos - self.owner.pos
-            if diff.length_squared() > 0:
-                return diff.normalize()
-
-        facing = self.owner.facing
-        if facing.length_squared() > 0:
-            return facing.normalize()
-        return Vector2(1, 0)
+        if nearest_enemy is None:
+            return None
+        diff = nearest_enemy.pos - self.owner.pos
+        return diff.normalize() if diff.length_squared() > 0 else None
 
     def _spawn_thrust(self, direction: Vector2) -> None:
         total = SPEAR_EXTEND_DURATION + SPEAR_HOLD_DURATION + SPEAR_RETRACT_DURATION
         self.active_thrusts.append({
             "timer": 0.0,
             "direction": Vector2(direction),
-            "origin_pos": Vector2(self.owner.pos),
             "hit_enemies": set(),
             "total_duration": total,
         })
 
     def fire(self) -> None:
         direction = self._get_target_direction()
+        if direction is None:
+            return
         AudioManager.instance().play_sfx(AudioManager.WEAPON_SPEAR)
         self._spawn_thrust(direction)
         if self.double_thrust_count > 0:
+            if self._pending_second_thrust is not None:
+                # Cooldown fired before the prior second stab could execute — fire it now
+                _, prev_dir = self._pending_second_thrust
+                self._spawn_thrust(prev_dir)
+                AudioManager.instance().play_sfx(AudioManager.WEAPON_SPEAR)
             self._pending_second_thrust = (SPEAR_L5_SECOND_DELAY, Vector2(direction))
 
     def update(self, dt: float) -> None:
@@ -123,10 +126,12 @@ class Spear(BaseWeapon):
         """Return (tip world position, is_active_phase).
 
         Active phase is extend + hold; retract is visual-only.
+        Origin tracks the player's current right-hand position each frame.
         """
         timer = thrust["timer"]
         direction = thrust["direction"]
-        origin = thrust["origin_pos"]
+        perp = direction.rotate(90)
+        origin = self.owner.pos + perp * SPEAR_HAND_OFFSET
         length = self._effective_thrust_length
 
         extend_end = SPEAR_EXTEND_DURATION
@@ -147,7 +152,8 @@ class Spear(BaseWeapon):
         if not is_active:
             return
 
-        origin = thrust["origin_pos"]
+        direction = thrust["direction"]
+        origin = self.owner.pos + direction.rotate(90) * SPEAR_HAND_OFFSET
 
         for enemy in self.enemy_group:
             if len(thrust["hit_enemies"]) > self.pierce:
@@ -166,7 +172,7 @@ class Spear(BaseWeapon):
             if not hit:
                 continue
 
-            is_crit = random.random() < self.owner.crit_chance
+            is_crit = random.random() < min(1.0, self.owner.crit_chance + self.crit_bonus)
             damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
             diff = self.owner.pos - enemy.pos
             hit_dir = diff.normalize() if diff.length_squared() > 0 else Vector2(1, 0)
@@ -192,11 +198,11 @@ class Spear(BaseWeapon):
             tip, _ = self._tip_pos(thrust)
             direction = thrust["direction"]
             perp = direction.rotate(90)
-            length = self._effective_thrust_length
 
-            # Screen-space tip and origin
+            # Screen-space tip and hand position (tracks player each frame)
+            hand_pos = self.owner.pos + perp * SPEAR_HAND_OFFSET
             tip_s = tip - camera_offset
-            origin_s = thrust["origin_pos"] - camera_offset
+            origin_s = hand_pos - camera_offset
 
             # Shaft: from butt (slightly behind origin) to socket (where head begins)
             # Socket is at tip - direction * HEAD_LENGTH
@@ -213,7 +219,7 @@ class Spear(BaseWeapon):
             pygame.draw.polygon(surface, SPEAR_SHAFT_COLOR, shaft_pts)
             pygame.draw.polygon(surface, SPEAR_SHAFT_OUTLINE_COLOR, shaft_pts, 1)
 
-            # Spearhead: a lozenge shape — wide at socket, tapers to tip
+            # Spearhead: isoceles triangle — base at socket, apex at tip
             hhw = SPEAR_HEAD_HALF_WIDTH
             head_pts = [
                 tip_s.xy,

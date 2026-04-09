@@ -688,7 +688,7 @@ CALTROPS_PATCH_RADIUS = 28              # pixels; catch zone for enemies steppin
 CALTROPS_PATCH_DURATION = 6.0           # seconds each hazard remains active
 CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
 CALTROPS_SLOW_MULTIPLIER = 0.75         # enemy speed multiplier while in the hazard
-CALTROPS_SLOW_DURATION = 0.6            # seconds; refresh duration of the slow
+CALTROPS_SLOW_DURATION = 0.6            # seconds slow lingers after enemy exits the patch; refreshed every frame while inside
 CALTROPS_BLEED_DAMAGE = 2.0             # damage per second from bleed
 CALTROPS_BLEED_DURATION = 1.5           # seconds bleed remains after each refresh
 CALTROPS_HITBOX_SIZE = (10, 10)         # pixels; thrown-caltrop collision rect
@@ -760,8 +760,8 @@ CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
 SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
 SPEAR_TARGETING_RANGE    = 380           # pixels; comparable to ThrowingAxes range
-SPEAR_THRUST_LENGTH      = 130           # pixels from player center to spear tip
-SPEAR_THRUST_WIDTH       = 16            # pixel width of the narrow hit lane
+SPEAR_THRUST_LENGTH      = 100           # pixels from hand position to spear tip
+SPEAR_HAND_OFFSET        = 8            # px perpendicular right of thrust direction — right-hand grip position
 SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
 SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
 
@@ -771,14 +771,14 @@ SPEAR_HOLD_DURATION      = 0.06          # seconds held at full extension
 SPEAR_RETRACT_DURATION   = 0.09          # seconds to pull the spear back
 
 # L5 double-thrust: a follow-up stab fires this many seconds after the first
-SPEAR_L5_SECOND_DELAY    = 0.18          # seconds after primary fire before follow-up
+SPEAR_L5_SECOND_DELAY    = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
 
 SPEAR_UPGRADE_LEVELS = [
     {},                                               # L1 baseline
     {"base_damage": 10.0},                            # L2 +10 damage
     {"thrust_length": 24, "base_cooldown": -0.15},    # L3 longer reach + faster cooldown
     {"pierce": 1},                                    # L4 +1 pierce
-    {"double_thrust_count": 1},                       # L5 double thrust
+    {"double_thrust_count": 1, "crit_bonus": 0.08},    # L5 double thrust + crit bonus
 ]
 
 # Visual

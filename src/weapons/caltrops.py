@@ -233,13 +233,6 @@ class Caltrops(BaseWeapon):
                     DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])
                     HitSpark(enemy.pos, CALTROPS_BLEED_COLOR, [self.effect_group])
 
-            if enemy.alive() and hasattr(enemy, "apply_slow"):
-                enemy.apply_slow(
-                    CALTROPS_SLOW_MULTIPLIER,
-                    CALTROPS_SLOW_DURATION,
-                    source=self,
-                )
-
     def _tick_patches(self, dt: float) -> None:
         for enemy_id in list(self._enemy_hit_cooldowns.keys()):
             remaining = self._enemy_hit_cooldowns[enemy_id] - dt
@@ -257,6 +250,15 @@ class Caltrops(BaseWeapon):
             patch = self.patches[i]
             patch["remaining"] -= dt
             patch["tick_timer"] -= dt
+
+            # Per-frame: keep enemies slowed while inside the patch
+            if patch["remaining"] > 0.0:
+                radius_sq = patch["radius"] * patch["radius"]
+                center = patch["center"]
+                for enemy in self.enemy_group:
+                    if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
+                        if hasattr(enemy, "apply_slow"):
+                            enemy.apply_slow(CALTROPS_SLOW_MULTIPLIER, CALTROPS_SLOW_DURATION, source=self)
 
             if patch["tick_timer"] <= 0.0 and patch["remaining"] > 0.0:
                 self._damage_patch_enemies(patch)
