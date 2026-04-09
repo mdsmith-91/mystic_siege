@@ -30,6 +30,7 @@ class ArcaneBolt(BaseWeapon):
     homing = True
     projectile_color = ARCANE_BOLT_PROJECTILE_COLOR
     IS_SPELL = True
+    USES_PROJECTILE_PIERCE_BONUS = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -49,7 +50,7 @@ class ArcaneBolt(BaseWeapon):
             damage=damage,
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
-            pierce=self.pierce,
+            pierce=self._get_effective_projectile_pierce(),
             homing=self.homing,
             color=self.projectile_color,
             target_enemy=target,

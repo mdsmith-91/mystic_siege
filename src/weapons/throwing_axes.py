@@ -29,6 +29,7 @@ class ThrowingAxes(BaseWeapon):
     pierce = THROWING_AXES_BASE_PIERCE
     crit_bonus = THROWING_AXES_BASE_CRIT_BONUS
     IS_SPELL = False
+    USES_PROJECTILE_PIERCE_BONUS = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -42,7 +43,7 @@ class ThrowingAxes(BaseWeapon):
             damage=self._scaled_damage(self.base_damage),
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
-            pierce=self.pierce,
+            pierce=self._get_effective_projectile_pierce(),
             color=THROWING_AXES_PROJECTILE_COLOR,
             owner_crit_chance=min(1.0, self.owner.crit_chance + self.crit_bonus),
             owner=self.owner,

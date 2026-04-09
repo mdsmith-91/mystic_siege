@@ -56,7 +56,7 @@ WIZARD_SPELL_DAMAGE_BONUS = 0.20  # Wizard passive: spells deal 20% more damage
 BARBARIAN_PHYSICAL_DAMAGE_BONUS = 0.20
 BARBARIAN_MAX_HP_BONUS_PCT = 0.10
 RANGER_CRIT_CHANCE_BONUS = 0.10
-RANGER_PROJECTILE_PIERCE_BONUS = 1
+RANGER_ARROW_PIERCE_BONUS = 1
 
 # XP
 BASE_XP_REQUIRED = 50
@@ -671,7 +671,7 @@ HERO_CLASSES = [
         "sprite": "assets/sprites/heroes/ranger.png",
         "passives": {
             "crit_chance_bonus": RANGER_CRIT_CHANCE_BONUS,
-            "projectile_pierce_bonus": RANGER_PROJECTILE_PIERCE_BONUS,
+            "arrow_pierce_bonus": RANGER_ARROW_PIERCE_BONUS,
         },
     },
     {

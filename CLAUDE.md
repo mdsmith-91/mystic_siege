@@ -165,7 +165,8 @@ Current hero architecture rules:
 - Hero passive behavior is now declarative via each hero dict's `passives` mapping.
   Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
   `crit_chance_bonus`, `spell_damage_bonus_pct`, `physical_damage_bonus_pct`,
-  `projectile_pierce_bonus`, `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
+  `projectile_pierce_bonus`, `arrow_pierce_bonus`, `heal_per_xp`, `max_hp_bonus`,
+  and `max_hp_bonus_pct`.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.

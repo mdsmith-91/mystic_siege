@@ -73,6 +73,13 @@ PASSIVE_UPGRADES = [
         "stat": "physical_damage_multiplier_pct",
         "value": 0.10,
         "icon_color": (180, 120, 80)
+    },
+    {
+        "name": "+1 Projectile Pierce",
+        "description": "Increase pierce for all projectile weapons by 1",
+        "stat": "projectile_pierce_bonus",
+        "value": 1,
+        "icon_color": (150, 180, 255)
     }
 ]
 
@@ -287,3 +294,5 @@ class UpgradeSystem:
             player.add_flat_percent_bonus(stat, value)
         elif stat == "physical_damage_multiplier_pct":
             player.add_flat_percent_bonus(stat, value)
+        else:
+            player.apply_passive(stat, value)

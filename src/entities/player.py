@@ -74,6 +74,7 @@ class Player(BaseEntity):
         self.base_physical_damage_multiplier = 1.0
         self.physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
+        self.arrow_pierce_bonus = 0
         self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
         self.area_size_bonus_pct = 0.0
@@ -213,6 +214,7 @@ class Player(BaseEntity):
         self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
         self.physical_damage_bonus_pct += passives.get("physical_damage_bonus_pct", 0.0)
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
+        self.arrow_pierce_bonus += passives.get("arrow_pierce_bonus", 0)
         self.area_size_bonus_pct += passives.get("area_size_bonus_pct", 0.0)
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
