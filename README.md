@@ -13,8 +13,8 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 
 Mystic Siege is a playable survivor-style action game with:
 
-- 6 hero classes with unique passives and starting weapons
-- 9 weapon types with 5 upgrade levels each
+- 7 hero classes with unique passives and starting weapons
+- 10 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - settings-driven world pickups and temporary buffs
 - 30-minute wave progression with victory at 30:00
@@ -71,7 +71,7 @@ Not yet verified:
 
 ## Current Limitations
 
-- The design target remains 1-4 local players. The runtime player cap is still 4, the current hero roster has 6 heroes, and the class-select layout now scales cleanly toward 8 total hero cards while duplicate picks remain blocked.
+- The design target remains 1-4 local players. The runtime player cap is still 4, the current hero roster has 7 heroes, and the class-select layout now scales cleanly toward 8 total hero cards while duplicate picks remain blocked.
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
@@ -88,6 +88,7 @@ Not yet verified:
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
 | Barbarian | 120 | 205 | 8 | +20% physical damage, +10% max HP | Throwing Axes |
 | Rogue | 85 | 250 | 2 | +15% crit chance, +10% physical damage | Shadow Knives |
+| Warlock | 90 | 215 | 2 | +20% damage over time, +10% spell damage | Hex Orb |
 
 ## Hero Architecture
 
@@ -107,7 +108,7 @@ Not yet verified:
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - The intended ownership split is: `settings.py` for gameplay values, `src/weapons/factory.py` for id-to-class lookup, and `src/systems/upgrade_system.py` for player-facing card metadata.
 - `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
-- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`) because hero data and upgrade choices reference them directly.
+- Weapon ids remain string-based (`ArcaneBolt`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`) because hero data and upgrade choices reference them directly.
 - Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.

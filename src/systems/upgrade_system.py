@@ -90,6 +90,7 @@ WEAPON_CLASSES = [
     "SpectralBlade",
     "FlameBlast",
     "FrostRing",
+    "HexOrb",
     "LightningChain",
     "Longbow",
     "ShadowKnives",
@@ -131,6 +132,13 @@ WEAPON_META = {
         "upgrade_description": "L2 +0.5s freeze duration. L3 +10 damage. L4 faster ring speed. L5 -0.8s cooldown and +80 max radius.",
         "icon_color": (140, 210, 255),
         "symbol": "FR",
+    },
+    "HexOrb": {
+        "name": "Hex Orb",
+        "new_description": "Fires a slow dark orb that curses enemies and damages them over time.",
+        "upgrade_description": "L2 stronger curse. L3 longer curse duration. L4 +1 orb. L5 +8 direct damage and curse splash.",
+        "icon_color": (100, 45, 140),
+        "symbol": "HX",
     },
     "LightningChain": {
         "name": "Lightning Chain",

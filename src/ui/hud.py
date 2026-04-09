@@ -27,6 +27,7 @@ _WEAPON_ICON_NAMES = {
     "SpectralBlade": "blade",
     "FlameBlast": "fire",
     "FrostRing": "frost",
+    "HexOrb": "hex",
     "LightningChain": "lightning",
     "Longbow": "longbow",
     "ShadowKnives": "knife",
@@ -390,6 +391,9 @@ class HUD:
         if player.physical_damage_multiplier > 1.0:
             physical_pct = round((player.physical_damage_multiplier - 1.0) * 100)
             stat_lines.append((f"PHYS  +{physical_pct}%", (215, 170, 120)))
+        if getattr(player, "dot_damage_multiplier", 1.0) > 1.0:
+            dot_pct = round((player.dot_damage_multiplier - 1.0) * 100)
+            stat_lines.append((f"DOT  +{dot_pct}%", (150, 230, 130)))
         if player.projectile_pierce_bonus > 0:
             stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", (150, 180, 255)))
         if player.xp_multiplier > 1.0:

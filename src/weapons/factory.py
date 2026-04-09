@@ -1,6 +1,7 @@
 from src.weapons.arcane_bolt import ArcaneBolt
 from src.weapons.flame_blast import FlameBlast
 from src.weapons.frost_ring import FrostRing
+from src.weapons.hex_orb import HexOrb
 from src.weapons.holy_nova import HolyNova
 from src.weapons.lightning_chain import LightningChain
 from src.weapons.longbow import Longbow
@@ -15,6 +16,7 @@ WEAPON_CLASS_REGISTRY = {
     "SpectralBlade": SpectralBlade,
     "FlameBlast": FlameBlast,
     "FrostRing": FrostRing,
+    "HexOrb": HexOrb,
     "LightningChain": LightningChain,
     "Longbow": Longbow,
     "ShadowKnives": ShadowKnives,

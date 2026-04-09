@@ -32,6 +32,7 @@ _WEAPON_DISPLAY_NAMES = {
     "SpectralBlade": "Spectral Blade",
     "FlameBlast": "Flame Blast",
     "FrostRing": "Frost Ring",
+    "HexOrb": "Hex Orb",
     "LightningChain": "Lightning Chain",
     "Longbow": "Longbow",
     "ShadowKnives": "Shadow Knives",

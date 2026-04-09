@@ -258,6 +258,23 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
     elif weapon_key == "fire":
         pygame.draw.polygon(surface, detail, [(16, 6), (21, 14), (18, 25), (12, 22), (10, 14)])
         pygame.draw.polygon(surface, shadow, [(16, 11), (18, 16), (16, 22), (13, 18)])
+    elif weapon_key == "hex":
+        core = (150, 255, 120)
+        outline = (24, 8, 46)
+        highlight = _shade(color, 85)
+        pygame.draw.circle(surface, outline, (16, 16), 10)
+        pygame.draw.circle(surface, shadow, (16, 16), 9)
+        pygame.draw.circle(surface, color, (16, 16), 7)
+        pygame.draw.circle(surface, highlight, (13, 12), 2)
+        pygame.draw.circle(surface, core, (16, 16), 4)
+        pygame.draw.circle(surface, (55, 120, 70), (16, 16), 4, 1)
+        rune_color = (115, 235, 105)
+        pygame.draw.line(surface, rune_color, (8, 11), (11, 9), 2)
+        pygame.draw.line(surface, rune_color, (8, 11), (10, 14), 2)
+        pygame.draw.line(surface, rune_color, (21, 8), (24, 11), 2)
+        pygame.draw.line(surface, rune_color, (24, 11), (21, 13), 2)
+        pygame.draw.line(surface, rune_color, (11, 23), (16, 25), 2)
+        pygame.draw.line(surface, rune_color, (16, 25), (21, 23), 2)
     elif weapon_key == "frost":
         pygame.draw.line(surface, detail, (16, 7), (16, 25), 2)
         pygame.draw.line(surface, detail, (8, 16), (24, 16), 2)
@@ -455,6 +472,7 @@ def generate_weapon_icon_assets():
         ("arcane.png", (160, 80, 255)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
+        ("hex.png", (95, 35, 145)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
         ("blade.png", (100, 150, 255)),  # Spectral blade color
@@ -565,6 +583,7 @@ def generate_audio_placeholders():
     maybe_write_sine("xp_pickup.wav",       freq_hz=1320, duration_s=0.05)
     maybe_write_chord("level_up.wav",       freqs=[330, 440, 550], duration_s=0.35)
     maybe_write_sine("arcane_bolt.wav",     freq_hz=880,  duration_s=0.07)
+    maybe_write_sweep("hex_orb.wav",        freq_start=260, freq_end=90, duration_s=0.18)
     maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
     maybe_write_sine("flame_blast.wav",     freq_hz=330,  duration_s=0.10)
     maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)

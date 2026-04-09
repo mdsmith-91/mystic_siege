@@ -153,7 +153,7 @@ class FlameBlast(BaseWeapon):
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                self.burn_damage * dt,
+                self._scaled_dot_damage(self.burn_damage) * dt,
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
