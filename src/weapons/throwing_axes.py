@@ -42,7 +42,7 @@ class ThrowingAxes(BaseWeapon):
             damage=self._scaled_damage(self.base_damage),
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
-            pierce=self.pierce + getattr(self.owner, "projectile_pierce_bonus", 0),
+            pierce=self.pierce,
             color=THROWING_AXES_PROJECTILE_COLOR,
             owner_crit_chance=min(1.0, self.owner.crit_chance + self.crit_bonus),
             owner=self.owner,
