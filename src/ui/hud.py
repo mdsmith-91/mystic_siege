@@ -34,6 +34,7 @@ _WEAPON_ICON_NAMES = {
     "LightningChain": "lightning",
     "Longbow": "longbow",
     "ShadowKnives": "knife",
+    "Spear": "spear",
     "ThrowingAxes": "axe",
 }
 _BUFF_STAT_LABELS = {

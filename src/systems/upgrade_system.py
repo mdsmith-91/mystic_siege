@@ -97,6 +97,7 @@ WEAPON_CLASSES = [
     "LightningChain",
     "Longbow",
     "ShadowKnives",
+    "Spear",
     "ThrowingAxes",
 ]
 
@@ -184,6 +185,13 @@ WEAPON_META = {
         "upgrade_description": "L2 +6 damage. L3 +1 knife. L4 -0.10s cooldown and +5% crit bonus. L5 +1 pierce and +8 damage.",
         "icon_color": (105, 105, 135),
         "symbol": "SK",
+    },
+    "Spear": {
+        "name": "Spear",
+        "new_description": "Thrusts a spear forward in a narrow lane, piercing through enemies in line.",
+        "upgrade_description": "L2 +10 damage. L3 longer reach and faster cooldown. L4 +1 pierce. L5 double thrust.",
+        "icon_color": (185, 190, 200),
+        "symbol": "SP",
     },
     "ThrowingAxes": {
         "name": "Throwing Axes",

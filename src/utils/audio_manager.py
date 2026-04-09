@@ -24,6 +24,7 @@ class AudioManager:
     WEAPON_FROST = "frost_ring"
     WEAPON_LONGBOW = "longbow"
     WEAPON_SHADOW_KNIVES = "shadow_knives"
+    WEAPON_SPEAR = "spear"
     WEAPON_THROWING_AXES = "throwing_axes"
     PICKUP_COLLECT = "pickup_collect"
 

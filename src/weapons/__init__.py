@@ -9,6 +9,7 @@ from src.weapons.holy_nova import HolyNova
 from src.weapons.lightning_chain import LightningChain
 from src.weapons.longbow import Longbow
 from src.weapons.shadow_knives import ShadowKnives
+from src.weapons.spear import Spear
 from src.weapons.spectral_blade import SpectralBlade
 from src.weapons.throwing_axes import ThrowingAxes
 from src.weapons.factory import WEAPON_CLASS_REGISTRY, create_weapon
@@ -25,6 +26,7 @@ __all__ = [
     "LightningChain",
     "Longbow",
     "ShadowKnives",
+    "Spear",
     "SpectralBlade",
     "ThrowingAxes",
     "WEAPON_CLASS_REGISTRY",

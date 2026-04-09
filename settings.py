@@ -752,6 +752,49 @@ CHAIN_FLAIL_HEAD_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
 CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 
 
+# Spear -----------------------------------------------------------------------
+# Gameplay role: disciplined lane-control melee with a narrow forward thrust and
+# strong pierce identity. Heavier per-hit than Longbow, slower cadence, tighter
+# coverage than ChainFlail.
+# Gameplay
+SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
+SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
+SPEAR_TARGETING_RANGE    = 380           # pixels; comparable to ThrowingAxes range
+SPEAR_THRUST_LENGTH      = 130           # pixels from player center to spear tip
+SPEAR_THRUST_WIDTH       = 16            # pixel width of the narrow hit lane
+SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
+SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
+
+# Thrust timing phases (extend → hold → retract)
+SPEAR_EXTEND_DURATION    = 0.10          # seconds to push the spear to full extension
+SPEAR_HOLD_DURATION      = 0.06          # seconds held at full extension
+SPEAR_RETRACT_DURATION   = 0.09          # seconds to pull the spear back
+
+# L5 double-thrust: a follow-up stab fires this many seconds after the first
+SPEAR_L5_SECOND_DELAY    = 0.18          # seconds after primary fire before follow-up
+
+SPEAR_UPGRADE_LEVELS = [
+    {},                                               # L1 baseline
+    {"base_damage": 10.0},                            # L2 +10 damage
+    {"thrust_length": 24, "base_cooldown": -0.15},    # L3 longer reach + faster cooldown
+    {"pierce": 1},                                    # L4 +1 pierce
+    {"double_thrust_count": 1},                       # L5 double thrust
+]
+
+# Visual
+SPEAR_HEAD_COLOR         = (190, 195, 205)   # RGB steel blue-grey
+SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)      # RGB silhouette outline
+SPEAR_HIGHLIGHT_COLOR    = (235, 240, 250)   # RGB blade edge highlight
+SPEAR_SHAFT_COLOR        = (110, 75, 40)     # RGB wooden shaft brown
+SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)     # RGB shaft silhouette
+SPEAR_BUTT_COLOR         = (155, 158, 168)   # RGB metal butt cap
+SPEAR_HEAD_LENGTH        = 28                # px length from socket to tip
+SPEAR_HEAD_HALF_WIDTH    = 5                 # px half-width at the widest point of the head
+SPEAR_SHAFT_HALF_WIDTH   = 3                 # px half-width of the shaft
+SPEAR_HIT_SPARK_COLOR    = (220, 200, 120)   # RGB hit-feedback spark tint
+SPEAR_SAMPLE_COUNT       = 6                 # sample points along shaft for collision checks
+
+
 # ============================================================================
 # Enemies
 # ============================================================================
