@@ -164,6 +164,9 @@ class HexOrb(BaseWeapon):
         self.cursed_enemies: dict[object, float] = {}
 
     def apply_curse(self, enemy, effect_group=None) -> None:
+        if not enemy.alive():
+            return
+
         self.cursed_enemies[enemy] = self.curse_duration
         if effect_group is not None:
             from src.entities.effects import HitSpark
@@ -175,6 +178,8 @@ class HexOrb(BaseWeapon):
         radius_sq = self.curse_radius * self.curse_radius
         for nearby_enemy in self.enemy_group:
             if nearby_enemy is enemy:
+                continue
+            if not nearby_enemy.alive():
                 continue
             if (nearby_enemy.pos - enemy.pos).length_squared() <= radius_sq:
                 self.cursed_enemies[nearby_enemy] = self.curse_duration
@@ -196,6 +201,8 @@ class HexOrb(BaseWeapon):
                 attacker=self.owner,
                 knockback_force=0,
             )
+            if not enemy.alive():
+                self.cursed_enemies.pop(enemy, None)
 
     def _spawn_orb(self, direction: Vector2) -> None:
         HexOrbProjectile(
@@ -234,7 +241,7 @@ class HexOrb(BaseWeapon):
                 return
             base_direction = self.owner.facing
 
-        AudioManager.instance().play_sfx(AudioManager.WEAPON_ARCANE)
+        AudioManager.instance().play_sfx(AudioManager.WEAPON_HEX_ORB)
         base_direction = base_direction.normalize()
 
         for index in range(self.projectile_count):

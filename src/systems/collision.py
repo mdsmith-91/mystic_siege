@@ -45,6 +45,8 @@ class CollisionSystem:
             if projectile.is_enemy_projectile:
                 continue
             for enemy in enemy_list:
+                if not projectile.alive():
+                    break
                 projectile.on_hit(enemy, effect_group)
 
     def check_enemy_projectiles_player(self, projectile_group, players, effect_group=None):

@@ -27,6 +27,7 @@ _WEAPON_ICON_NAMES = {
     "SpectralBlade": "blade",
     "FlameBlast": "fire",
     "FrostRing": "frost",
+    "HexOrb": "hex",
     "LightningChain": "lightning",
     "Longbow": "longbow",
     "ShadowKnives": "knife",
