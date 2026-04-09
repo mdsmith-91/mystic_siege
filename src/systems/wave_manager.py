@@ -185,6 +185,7 @@ class WaveManager:
             self.spawn_rate = WAVE_ELITE_SPAWN_RATE
             self.warning_text = WAVE_ELITE_WARNING_TEXT
             self.warning_timer = ENEMY_WARNING_DURATION
+            self._apply_elite_scaling_to_existing_enemies()
             self.triggered_events.add(WAVE_ELITE_MODE_TIME)
 
         # 1200s: switch to the final-assault spawn cadence and warning
@@ -278,13 +279,23 @@ class WaveManager:
                 projectile_group=self.projectile_group,
             )
 
-            # If elite_mode: multiply hp and damage by 1.5
             if self.elite_mode:
-                enemy.max_hp = int(enemy.max_hp * ENEMY_ELITE_HP_MULTIPLIER)
-                enemy.hp = enemy.max_hp
-                enemy.damage = int(enemy.damage * ENEMY_ELITE_DAMAGE_MULTIPLIER)
-                if hasattr(enemy, "projectile_damage"):
-                    enemy.projectile_damage = int(enemy.projectile_damage * ENEMY_ELITE_DAMAGE_MULTIPLIER)
+                self._apply_elite_scaling(enemy, preserve_hp_ratio=False)
+
+    def _apply_elite_scaling(self, enemy, preserve_hp_ratio: bool) -> None:
+        """Scale an enemy into elite stats exactly once."""
+        if enemy is None or not hasattr(enemy, "apply_elite_scaling"):
+            return
+        enemy.apply_elite_scaling(
+            ENEMY_ELITE_HP_MULTIPLIER,
+            ENEMY_ELITE_DAMAGE_MULTIPLIER,
+            preserve_hp_ratio=preserve_hp_ratio,
+        )
+
+    def _apply_elite_scaling_to_existing_enemies(self) -> None:
+        """Scale enemies already alive when elite mode activates."""
+        for enemy in self.enemy_group:
+            self._apply_elite_scaling(enemy, preserve_hp_ratio=True)
 
     def _get_enemy_id(self, enemy_data: dict) -> str:
         """Resolve the registry id for the provided settings-backed enemy data."""

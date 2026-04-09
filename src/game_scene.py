@@ -13,8 +13,8 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        PAUSE_CONFIRM_BUTTON_Y_OFFSET,
                        PAUSE_CONFIRM_BUTTON_INSET, PAUSE_CONFIRM_MESSAGE_Y_OFFSET,
                        SPAWN_OFFSETS, STATE_GAMEOVER,
-                       REVIVE_RADIUS, REVIVE_DURATION, REVIVE_HEALTH_FRACTION,
-                       REVIVE_IFRAME_DURATION,
+                       REVIVE_RADIUS, REVIVE_DURATION,
+                       REVIVE_IFRAME_DURATION, REVIVE_MIN_RESCUER_HP,
                        CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
                        CAMERA_ZOOM_MIN)
 from src.core.player_slot import PlayerSlot
@@ -324,8 +324,10 @@ class GameScene:
             self._scaled_world_surface = pygame.Surface(size).convert()
         return self._scaled_world_surface
 
-    def _revive_player(self, player: Player) -> None:
-        player.hp = max(1.0, player.max_hp * REVIVE_HEALTH_FRACTION)
+    def _revive_player(self, player: Player, rescuer: Player) -> None:
+        shared_hp = max(1.0, rescuer.hp * 0.5)
+        rescuer.hp = shared_hp
+        player.hp = shared_hp
         player.is_downed = False
         player.revive_timer = 0.0
         player.iframes = REVIVE_IFRAME_DURATION
@@ -346,6 +348,7 @@ class GameScene:
             rescuer = next(
                 (
                     player for player in alive_players
+                    if player.hp >= REVIVE_MIN_RESCUER_HP
                     if (player.pos - downed_player.pos).length_squared() <= revive_radius_sq
                 ),
                 None,
@@ -360,7 +363,7 @@ class GameScene:
                 downed_player.revive_timer + dt,
             )
             if downed_player.revive_timer >= REVIVE_DURATION:
-                self._revive_player(downed_player)
+                self._revive_player(downed_player, rescuer)
 
         if downed_players and not alive_players:
             self._trigger_gameover(victory=False)

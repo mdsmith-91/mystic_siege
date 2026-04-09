@@ -49,6 +49,9 @@ class Enemy(BaseEntity):
         self.damage = enemy_data["damage"]
         self.xp_value = enemy_data["xp_value"]
         self.behavior = enemy_data["behavior"]
+        self.cc_immune = enemy_data.get("cc_immune", False)
+        self.knockback_immune = enemy_data.get("knockback_immune", False)
+        self.is_elite = False
 
         # Placeholder image: 32x32 surface filled with RED, first letter of name centered in WHITE
         self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
@@ -77,6 +80,33 @@ class Enemy(BaseEntity):
         self.hp = enemy_data["hp"]
         self.max_hp = enemy_data["hp"]
         self._refresh_target()
+
+    def apply_elite_scaling(
+        self,
+        hp_multiplier: float,
+        damage_multiplier: float,
+        preserve_hp_ratio: bool = True,
+    ) -> None:
+        """Apply elite stat scaling once to this enemy instance."""
+        if self.is_elite:
+            return
+
+        previous_max_hp = max(1.0, float(self.max_hp))
+        current_hp_ratio = max(0.0, min(1.0, self.hp / previous_max_hp))
+
+        self.max_hp = max(1, int(self.max_hp * hp_multiplier))
+        if preserve_hp_ratio:
+            self.hp = self.max_hp * current_hp_ratio
+        else:
+            self.hp = self.max_hp
+
+        self.damage = max(1, int(self.damage * damage_multiplier))
+        if hasattr(self, "projectile_damage"):
+            self.projectile_damage = max(1, int(self.projectile_damage * damage_multiplier))
+        if hasattr(self, "shockwave_damage"):
+            self.shockwave_damage = max(1, int(self.shockwave_damage * damage_multiplier))
+
+        self.is_elite = True
 
     @property
     def target(self):
@@ -107,10 +137,17 @@ class Enemy(BaseEntity):
 
     def _refresh_speed(self) -> None:
         """Rebuild effective move speed from persistent enemy state."""
+        if self.cc_immune:
+            self.speed = self.base_speed * self.speed_multiplier
+            return
         self.speed = 0.0 if self.freeze_timer > 0.0 else self.base_speed * self.speed_multiplier
 
     def _tick_status_timers(self, dt: float) -> None:
         """Update transient enemy status timers before movement is evaluated."""
+        if self.cc_immune:
+            self.freeze_timer = 0.0
+            self._refresh_speed()
+            return
         if self.freeze_timer > 0.0:
             self.freeze_timer = max(0.0, self.freeze_timer - dt)
         self._refresh_speed()
@@ -177,6 +214,8 @@ class Enemy(BaseEntity):
 
     def apply_knockback(self, direction: Vector2, force: float):
         """Apply knockback to the enemy."""
+        if self.knockback_immune:
+            return
         self.knockback_vel = direction * force
 
     def on_death(self, xp_orb_group):

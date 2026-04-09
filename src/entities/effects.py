@@ -241,3 +241,48 @@ class PickupText(pygame.sprite.Sprite):
 
         alpha = int(255 * (self.lifetime / self._initial_lifetime))
         self.image.set_alpha(max(0, min(255, alpha)))
+
+
+class ExpandingRingEffect(pygame.sprite.Sprite):
+    def __init__(
+        self,
+        pos,
+        radius: float,
+        color: tuple[int, int, int],
+        groups,
+        lifetime: float,
+        ring_width: int,
+        start_radius: float = 0.0,
+        alpha: int = 160,
+    ):
+        super().__init__(groups)
+        diameter = max(2, int(radius * 2) + ring_width * 4)
+        self.image = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(center=pos)
+        self.pos = Vector2(pos)
+        self.start_radius = max(0.0, start_radius)
+        self.target_radius = max(self.start_radius, radius)
+        self.color = color
+        self.ring_width = max(1, ring_width)
+        self.lifetime = lifetime
+        self._initial_lifetime = max(0.001, lifetime)
+        self.alpha = max(0, min(255, alpha))
+
+    def update(self, dt):
+        self.lifetime -= dt
+        if self.lifetime <= 0:
+            self.kill()
+            return
+
+        progress = 1.0 - (self.lifetime / self._initial_lifetime)
+        radius = self.start_radius + ((self.target_radius - self.start_radius) * progress)
+        current_alpha = int(self.alpha * (self.lifetime / self._initial_lifetime))
+        self.image.fill((0, 0, 0, 0))
+        pygame.draw.circle(
+            self.image,
+            (*self.color, max(0, min(255, current_alpha))),
+            (self.rect.width // 2, self.rect.height // 2),
+            max(1, int(radius)),
+            self.ring_width,
+        )
+        self.rect.center = self.pos
