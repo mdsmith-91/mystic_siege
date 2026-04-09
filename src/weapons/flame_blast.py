@@ -49,6 +49,10 @@ class FlameBlast(BaseWeapon):
         # Live explosion particles — each dict holds pos, vel, life, max_life, radius, color
         self.effect_particles: list[dict] = []
 
+    @property
+    def effective_cone_range(self) -> float:
+        return self.cone_range * self.owner.area_size_multiplier
+
     def fire(self):
         """Lash a cone of fire toward the nearest enemy."""
         if not self.enemy_group:
@@ -57,7 +61,8 @@ class FlameBlast(BaseWeapon):
         # Find nearest enemy to aim the cone at
         nearest_enemy = None
         nearest_distance_sq = float("inf")
-        cone_range_sq = self.cone_range * self.cone_range
+        cone_range = self.effective_cone_range
+        cone_range_sq = cone_range * cone_range
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()
             if distance_sq < nearest_distance_sq and distance_sq <= cone_range_sq:
@@ -163,7 +168,7 @@ class FlameBlast(BaseWeapon):
 
         center_sx = self.owner.pos.x - camera_offset.x
         center_sy = self.owner.pos.y - camera_offset.y
-        size = int(self.cone_range * 2 + 20)
+        size = int(self.effective_cone_range * 2 + 20)
         half = size // 2
         origin_x = int(center_sx - half)
         origin_y = int(center_sy - half)

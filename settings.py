@@ -62,6 +62,7 @@ RANGER_PROJECTILE_PIERCE_BONUS = 1
 BASE_XP_REQUIRED = 50
 XP_SCALE_FACTOR = 1.12
 FRIAR_HEAL_PER_XP = 0.1  # HP healed per XP point collected
+FRIAR_AREA_SIZE_BONUS_PCT = 0.20
 
 # WEAPONS
 MAX_WEAPON_SLOTS = 6
@@ -650,12 +651,13 @@ HERO_CLASSES = [
         "hp": 110,
         "speed": 210,
         "armor": 5,
-        "passive_desc": "Heals 1 HP per 10 XP gained.",
+        "passive_desc": "Heals 1 HP per 10 XP gained. +20% area size.",
         "starting_weapon": "HolyNova",
         "color": (200, 180, 120),
         "sprite": "assets/sprites/heroes/friar.png",
         "passives": {
             "heal_per_xp": FRIAR_HEAL_PER_XP,
+            "area_size_bonus_pct": FRIAR_AREA_SIZE_BONUS_PCT,
         },
     },
     {

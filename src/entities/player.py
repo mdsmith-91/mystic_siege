@@ -76,6 +76,7 @@ class Player(BaseEntity):
         self.projectile_pierce_bonus = 0
         self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
+        self.area_size_bonus_pct = 0.0
         self.damage_taken_multiplier = 1.0
         self.knockback_immune = False
         self.heal_per_xp = 0.0
@@ -180,6 +181,11 @@ class Player(BaseEntity):
         """Whether the player can currently collect XP and queue upgrades."""
         return self.alive() and not self.is_downed and not self.dying
 
+    @property
+    def area_size_multiplier(self) -> float:
+        """Shared multiplier for explicit AoE-size weapon stats."""
+        return 1.0 + self.area_size_bonus_pct
+
     def _recalculate_pct_stats(self) -> None:
         """Recompute effective percent-based stats from their base values."""
         self.speed = self.base_speed * (1.0 + self.speed_bonus_pct)
@@ -207,6 +213,7 @@ class Player(BaseEntity):
         self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
         self.physical_damage_bonus_pct += passives.get("physical_damage_bonus_pct", 0.0)
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
+        self.area_size_bonus_pct += passives.get("area_size_bonus_pct", 0.0)
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
