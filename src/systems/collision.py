@@ -78,8 +78,7 @@ class CollisionSystem:
 
     def check_weapon_hits(self, players, enemy_group):
         """Check for weapon collisions."""
-        # For orbit weapons (SpectralBlade): handled internally in weapon.update()
-        # For area weapons (HolyNova, FrostRing): handled internally in weapon.update()
+        # Timed melee and area weapons handle their own hit windows in weapon.update().
         # This method is a hook for any weapon that needs external collision checking
         pass  # Implementation handled in individual weapon classes
 

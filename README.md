@@ -14,7 +14,7 @@ A top-down medieval fantasy survivor game built with Python and pygame-ce, inspi
 Mystic Siege is a playable survivor-style action game with:
 
 - 8 hero classes with unique passives and starting weapons
-- 13 weapon types with 5 upgrade levels each
+- 14 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
 - settings-driven world pickups and temporary buffs
 - 30-minute wave progression with victory at 30:00
@@ -82,7 +82,7 @@ Not yet verified:
 
 | Hero | HP | Speed | Armor | Passive | Starting Weapon |
 |------|----|-------|-------|---------|-----------------|
-| Knight | 150 | 180 | 15 | +10% armor bonus, knockback immune | Spectral Blade |
+| Knight | 150 | 180 | 15 | +10% armor bonus, knockback immune | Sword |
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | 0.1 HP per XP gained, +20% area effect size | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
@@ -109,7 +109,7 @@ Not yet verified:
 - `src/systems/upgrade_system.py` owns upgrade-card metadata in `WEAPON_META` and the unlockable weapon-id list in `WEAPON_CLASSES`, while `settings.py` remains the source of truth for gameplay tunables.
 - The intended ownership split is: `settings.py` for gameplay values, `src/weapons/factory.py` for id-to-class lookup, and `src/systems/upgrade_system.py` for player-facing card metadata.
 - `GameScene` and `UpgradeSystem` should not grow new weapon-specific `if/elif` constructor chains. Register the weapon once in the factory and keep callers on the shared lookup path.
-- Weapon ids remain string-based (`ArcaneBolt`, `BrambleSeeds`, `Caltrops`, `ChainFlail`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`, `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`) because hero data and upgrade choices reference them directly.
+- Weapon ids remain string-based (`ArcaneBolt`, `BrambleSeeds`, `Caltrops`, `ChainFlail`, `HolyNova`, `Sword`, `FlameBlast`, `FrostRing`, `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `Spear`, `ThrowingAxes`) because hero data and upgrade choices reference them directly.
 - Player-facing weapon names can differ from internal ids; for example, `FlameBlast` is shown in-game as `Flame Blast`.
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.

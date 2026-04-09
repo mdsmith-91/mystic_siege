@@ -73,7 +73,7 @@ mystic_siege/
 │   │   ├── factory.py             # Shared weapon registry + constructor helper used by gameplay systems
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
-│   │   ├── spectral_blade.py      # Orbiting swords, continuous collision
+│   │   ├── sword.py               # Timed melee sword sweeps with active hit windows
 │   │   ├── flame_blast.py         # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   ├── lightning_chain.py     # Chains between enemies, jagged arc visual
@@ -144,7 +144,7 @@ mystic_siege/
 
 | Hero | HP | Speed | Armor | Starting Weapon |
 |---|---:|---:|---:|---|
-| Knight | 150 | 180 | 15 | SpectralBlade |
+| Knight | 150 | 180 | 15 | Sword |
 | Wizard | 80 | 240 | 0 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
 | Ranger | 95 | 225 | 3 | Longbow |
@@ -181,7 +181,7 @@ Current hero architecture rules:
 
 - ArcaneBolt — homing projectiles, 1→3 bolts
 - HolyNova — expanding damage ring, no projectile object
-- SpectralBlade — orbiting swords, continuous collision
+- Sword — broad melee sweeps with deliberate active hit windows
 - Caltrops — scattered physical traps with slow and bleed
 - ChainFlail — tethered flail swing with extend/sweep/retract timing
 - FlameBlast (`Flame Blast`) — directional cone, burn DOT
@@ -207,8 +207,8 @@ Current weapon architecture rules:
   resolution, `src/systems/upgrade_system.py` owns player-facing card metadata (`WEAPON_META`,
   `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
 - Weapon ids are stable strings: `ArcaneBolt`, `BrambleSeeds`, `Caltrops`,
-  `ChainFlail`, `HolyNova`, `SpectralBlade`, `FlameBlast`, `FrostRing`,
-  `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `ThrowingAxes`.
+  `ChainFlail`, `HolyNova`, `Sword`, `FlameBlast`, `FrostRing`,
+  `HexOrb`, `LightningChain`, `Longbow`, `ShadowKnives`, `Spear`, `ThrowingAxes`.
   `BrambleSeeds` displays as `Bramble Seeds`, `FlameBlast` displays as
   `Flame Blast`, `HexOrb` displays as `Hex Orb`, and `ThrowingAxes` displays as
   `Throwing Axes`.
@@ -318,7 +318,7 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 
 - Player contact damage: 0.5s iframes after each hit
 - Projectiles: use `enemies_hit` set to track pierce
-- SpectralBlade: per-enemy 0.5s hit cooldown dict
+- Sword: one hit per enemy per swing instance
 - HolyNova/FrostRing: `damage_done` set per ring instance
 - `enemy.take_damage(amount, hit_direction=None, attacker=None)` — all weapons and projectiles pass
   `hit_direction` (Vector2 from enemy back toward the attacker) so CursedKnight's

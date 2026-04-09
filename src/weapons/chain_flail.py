@@ -30,7 +30,7 @@ from src.weapons.base_weapon import BaseWeapon
 
 class ChainFlail(BaseWeapon):
     name = "Chain Flail"
-    description = "Extends a tethered flail, sweeps through an arc, then retracts."
+    description = "Extends a tethered flail, spins once around the wielder, then retracts."
     base_damage = CHAIN_FLAIL_BASE_DAMAGE
     base_cooldown = CHAIN_FLAIL_BASE_COOLDOWN
     chain_length = CHAIN_FLAIL_CHAIN_LENGTH

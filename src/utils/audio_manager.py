@@ -19,7 +19,7 @@ class AudioManager:
     WEAPON_HEX_ORB = "hex_orb"
     WEAPON_NOVA = "holy_nova"
     WEAPON_FLAME_BLAST = "flame_blast"
-    WEAPON_BLADE = "spectral_blade"
+    WEAPON_SWORD = "sword"
     WEAPON_CHAIN = "lightning_chain"
     WEAPON_FROST = "frost_ring"
     WEAPON_LONGBOW = "longbow"

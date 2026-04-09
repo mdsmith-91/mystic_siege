@@ -556,7 +556,7 @@ def generate_weapon_icon_assets():
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
-        ("blade.png", (100, 150, 255)),  # Spectral blade color
+        ("blade.png", (190, 195, 202)),  # Sword placeholder icon color
         ("longbow.png", (170, 120, 60)),
         ("knife.png", (105, 105, 135)),   # Shadow knives — muted rogue steel
         ("spear.png", (185, 190, 200)),   # Spear — cool steel
@@ -669,7 +669,7 @@ def generate_audio_placeholders():
     maybe_write_sweep("hex_orb.wav",        freq_start=260, freq_end=90, duration_s=0.18)
     maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
     maybe_write_sine("flame_blast.wav",     freq_hz=330,  duration_s=0.10)
-    maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
+    maybe_write_sweep("sword.wav",          freq_start=620, freq_end=280, duration_s=0.09)
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
