@@ -11,6 +11,7 @@ from settings import (
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
     HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE, HUD_PANEL_WEAPON_SLOT_WIDTH,
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_PANEL_CORNER_RADIUS, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
+    HUD_WARNING_COLOR, HUD_REVIVE_RING_BG_COLOR, HUD_DOWNED_HP_BAR_COLOR,
     HUD_PANEL_TUPLES,
 )
 from src.utils.resource_loader import ResourceLoader
@@ -243,7 +244,7 @@ class HUD:
 
         warning = wave_manager.get_warning()
         if warning:
-            warning_surface = self._render_text(self.font_48, warning, (255, 100, 0))
+            warning_surface = self._render_text(self.font_48, warning, HUD_WARNING_COLOR)
             warning_shadow = self._render_text(self.font_48, warning, BLACK)
             wx = SCREEN_WIDTH // 2 - warning_surface.get_width() // 2
             screen.blit(warning_shadow, (wx + 3, 203))
@@ -343,7 +344,7 @@ class HUD:
         center = camera.world_to_screen(player.pos)
         ring_rect = pygame.Rect(0, 0, HUD_REVIVE_RING_RADIUS * 2, HUD_REVIVE_RING_RADIUS * 2)
         ring_rect.center = (int(center.x), int(center.y))
-        pygame.draw.circle(screen, (50, 50, 50), ring_rect.center, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH)
+        pygame.draw.circle(screen, HUD_REVIVE_RING_BG_COLOR, ring_rect.center, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH)
 
         if REVIVE_DURATION > 0 and player.revive_timer > 0:
             progress = max(0.0, min(1.0, player.revive_timer / REVIVE_DURATION))
@@ -440,7 +441,7 @@ class HUD:
         hp_rect = pygame.Rect(inner_x, hp_y, inner_width, HUD_PANEL_BAR_HEIGHT)
         hp_ratio = max(0.0, player.hp / player.max_hp) if player.max_hp else 0.0
         if player.is_downed:
-            hp_color = (110, 110, 110)
+            hp_color = HUD_DOWNED_HP_BAR_COLOR
         elif hp_ratio > 0.5:
             hp_color = HP_COLOR
         elif hp_ratio > 0.25:

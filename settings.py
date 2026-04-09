@@ -263,6 +263,7 @@ FLAME_BLAST_PARTICLE_LIFETIME = 0.55          # seconds; longer values leave par
 FLAME_BLAST_PARTICLE_SPEED_MIN = 80           # pixels/second; minimum starting particle speed
 FLAME_BLAST_PARTICLE_SPEED_MAX = 430          # pixels/second; maximum starting particle speed
 FLAME_BLAST_PARTICLE_RADIUS_MAX = 6           # pixels; max particle size
+FLAME_BLAST_PARTICLE_FADE_THRESHOLD = 0.4    # fraction of lifetime remaining when particle fade-out begins
 
 
 # Frost Ring -----------------------------------------------------------------
@@ -539,6 +540,7 @@ STONE_GOLEM_ENEMY_DATA = {
     "damage": 40,
     "xp_value": 80,
     "behavior": "chase",
+    "sprite_scale": (64, 64),
 }
 
 # Shared lookup used by the enemy registry/spawner. Keep ids stable because wave
@@ -649,6 +651,9 @@ HUD_PANEL_WEAPON_SLOT_GAP = 4       # pixels between weapon slots
 HUD_PANEL_CORNER_RADIUS = 6         # pixels; rounded panel corners
 HUD_REVIVE_RING_RADIUS = 28         # pixels; on-screen revive progress ring size
 HUD_REVIVE_RING_WIDTH = 4           # pixels; on-screen revive ring stroke width
+HUD_WARNING_COLOR = (255, 100, 0)         # RGB wave/event warning text tint
+HUD_REVIVE_RING_BG_COLOR = (50, 50, 50)   # RGB fill behind the revive arc ring
+HUD_DOWNED_HP_BAR_COLOR = (110, 110, 110) # RGB HP bar fill when player is downed
 
 # Settings menu controls (UI-only). Slider step sizes here should stay readable
 # with the FPS cap steps defined earlier in the file.
