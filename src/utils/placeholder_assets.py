@@ -3,6 +3,7 @@
 
 import os
 import wave
+import math
 import pygame
 
 
@@ -64,6 +65,12 @@ def _hero_palettes() -> dict[str, dict[str, tuple[int, int, int]]]:
             "secondary": (128, 88, 52),
             "accent": (224, 210, 156),
             "skin": (225, 192, 150),
+        },
+        "druid": {
+            "primary": (76, 140, 72),
+            "secondary": (86, 74, 46),
+            "accent": (176, 220, 110),
+            "skin": (218, 184, 140),
         },
     }
 
@@ -158,6 +165,9 @@ def _draw_hero_frame(hero_key: str, direction: str, palette: dict[str, tuple[int
         pygame.draw.ellipse(frame, accent, (8, 10, 16, 4))
     elif hero_key == "friar":
         pygame.draw.ellipse(frame, secondary, (10, 5, 12, 10))
+    elif hero_key == "druid":
+        pygame.draw.polygon(frame, secondary, [(9, 13), (16, 5), (23, 13)])
+        pygame.draw.ellipse(frame, skin, head_rect)
     else:
         pygame.draw.ellipse(frame, skin if hero_key == "knight" else secondary, head_rect)
 
@@ -176,6 +186,11 @@ def _draw_hero_frame(hero_key: str, direction: str, palette: dict[str, tuple[int
         pygame.draw.rect(frame, accent, (14, 13, 4, 6), border_radius=1)
         pygame.draw.line(frame, accent, (16, 12), (16, 20), 1)
         pygame.draw.line(frame, accent, (13, 16), (19, 16), 1)
+    elif hero_key == "druid":
+        pygame.draw.polygon(frame, primary, [(8, 24), (12, 11), (20, 11), (24, 24)])
+        pygame.draw.rect(frame, secondary, (11, 8, 10, 6), border_radius=2)
+        pygame.draw.line(frame, accent, (11, 16), (21, 20), 1)
+        pygame.draw.line(frame, accent, (12, 20), (22, 15), 1)
     else:
         pygame.draw.polygon(frame, primary, [(8, 24), (12, 11), (20, 11), (24, 24)])
         pygame.draw.rect(frame, secondary, (11, 8, 10, 6), border_radius=2)
@@ -192,6 +207,8 @@ def _draw_hero_frame(hero_key: str, direction: str, palette: dict[str, tuple[int
         _draw_staff(frame, direction, palette)
     elif hero_key == "friar":
         _draw_book(frame, direction, palette)
+    elif hero_key == "druid":
+        _draw_staff(frame, direction, palette)
     else:
         _draw_bow(frame, direction, palette)
 
@@ -275,6 +292,17 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, rune_color, (24, 11), (21, 13), 2)
         pygame.draw.line(surface, rune_color, (11, 23), (16, 25), 2)
         pygame.draw.line(surface, rune_color, (16, 25), (21, 23), 2)
+    elif weapon_key == "bramble":
+        pygame.draw.circle(surface, shadow, (16, 16), 10)
+        pygame.draw.circle(surface, color, (16, 16), 8)
+        pygame.draw.circle(surface, detail, (16, 16), 4)
+        for angle_deg in range(0, 360, 60):
+            angle = math.radians(angle_deg)
+            x0 = int(16 + math.cos(angle) * 7)
+            y0 = int(16 + math.sin(angle) * 7)
+            x1 = int(16 + math.cos(angle) * 13)
+            y1 = int(16 + math.sin(angle) * 13)
+            pygame.draw.line(surface, detail, (x0, y0), (x1, y1), 2)
     elif weapon_key == "frost":
         pygame.draw.line(surface, detail, (16, 7), (16, 25), 2)
         pygame.draw.line(surface, detail, (8, 16), (24, 16), 2)
@@ -354,6 +382,11 @@ def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int,
         pygame.draw.rect(surface, shadow, (1, 6, 9, 4), border_radius=1)
         pygame.draw.polygon(surface, detail, [(15, 8), (9, 3), (9, 13)])
         pygame.draw.polygon(surface, (240, 230, 210), [(0, 8), (3, 4), (3, 12)])
+    elif weapon_key == "bramble":
+        pygame.draw.circle(surface, shadow, (8, 8), 5)
+        pygame.draw.circle(surface, detail, (8, 8), 3)
+        pygame.draw.line(surface, detail, (8, 8), (13, 5), 1)
+        pygame.draw.line(surface, detail, (8, 8), (12, 12), 1)
 
 def generate_hero_assets():
     """Generate hero placeholder assets."""
@@ -430,6 +463,7 @@ def generate_projectile_assets():
         ("arcane.png", (160, 80, 255)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
+        ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
         ("longbow.png", (170, 120, 60)),
@@ -473,6 +507,7 @@ def generate_weapon_icon_assets():
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
         ("hex.png", (95, 35, 145)),
+        ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
         ("blade.png", (100, 150, 255)),  # Spectral blade color
@@ -583,6 +618,7 @@ def generate_audio_placeholders():
     maybe_write_sine("xp_pickup.wav",       freq_hz=1320, duration_s=0.05)
     maybe_write_chord("level_up.wav",       freqs=[330, 440, 550], duration_s=0.35)
     maybe_write_sine("arcane_bolt.wav",     freq_hz=880,  duration_s=0.07)
+    maybe_write_sweep("bramble_seeds.wav",  freq_start=540, freq_end=180, duration_s=0.16)
     maybe_write_sweep("hex_orb.wav",        freq_start=260, freq_end=90, duration_s=0.18)
     maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
     maybe_write_sine("flame_blast.wav",     freq_hz=330,  duration_s=0.10)

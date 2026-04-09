@@ -86,6 +86,7 @@ PASSIVE_UPGRADES = [
 # Define WEAPON_CLASSES as module-level list of weapon class names (strings)
 WEAPON_CLASSES = [
     "ArcaneBolt",
+    "BrambleSeeds",
     "HolyNova",
     "SpectralBlade",
     "FlameBlast",
@@ -104,6 +105,13 @@ WEAPON_META = {
         "upgrade_description": "L2 +10 damage. L3 +1 bolt. L4 +1 pierce. L5 +1 bolt and +15 damage.",
         "icon_color": (120, 80, 220),
         "symbol": "AB",
+    },
+    "BrambleSeeds": {
+        "name": "Bramble Seeds",
+        "new_description": "Throws seeds that grow thorn patches, damaging and slowing enemies inside.",
+        "upgrade_description": "L2 larger patches. L3 stronger tick damage. L4 longer patches. L5 faster cooldown and +1 seed.",
+        "icon_color": (82, 190, 95),
+        "symbol": "BS",
     },
     "HolyNova": {
         "name": "Holy Nova",
