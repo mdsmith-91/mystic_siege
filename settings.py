@@ -646,7 +646,7 @@ THROWING_AXES_EDGE_HIGHLIGHT_WIDTH = 2            # pixels at 18x18 reference si
 # Gameplay
 SHADOW_KNIVES_BASE_DAMAGE = 18.0       # damage per knife hit
 SHADOW_KNIVES_BASE_COOLDOWN = 0.65     # seconds between volleys; lower values increase burst cadence
-SHADOW_KNIVES_TARGETING_RANGE = 360    # pixels; shorter than Longbow by design
+SHADOW_KNIVES_TARGETING_RANGE = 300    # pixels; shorter acquisition range keeps volleys from starting too early
 SHADOW_KNIVES_PROJECTILE_SPEED = 760   # pixels/second during outward travel
 SHADOW_KNIVES_RETURN_SPEED = 920       # pixels/second while the knife returns to the owner
 SHADOW_KNIVES_PROJECTILE_LIFETIME = 1.1   # seconds before forced despawn
@@ -729,6 +729,7 @@ CALTROPS_BLEED_COLOR = (185, 55, 55)         # RGB bleed hit-feedback tint
 # Gameplay
 CHAIN_FLAIL_BASE_DAMAGE = 26.0          # damage per enemy hit during a swing
 CHAIN_FLAIL_BASE_COOLDOWN = 1.8         # seconds between swings; slightly slower to support a readable full spin
+CHAIN_FLAIL_TARGETING_RANGE = 180       # pixels; only nearby enemies should trigger a flail spin
 CHAIN_FLAIL_CHAIN_LENGTH = 110          # pixels; max reach of the flail head from the player
 CHAIN_FLAIL_HEAD_RADIUS = 11            # pixels; damaging footprint of the flail head
 CHAIN_FLAIL_SWEEP_ANGLE = 360           # degrees traversed during the swing phase

@@ -21,6 +21,7 @@ from settings import (
     CHAIN_FLAIL_RETRACT_DURATION,
     CHAIN_FLAIL_SWEEP_ANGLE,
     CHAIN_FLAIL_SWEEP_DURATION,
+    CHAIN_FLAIL_TARGETING_RANGE,
     CHAIN_FLAIL_UPGRADE_LEVELS,
     CRIT_MULTIPLIER,
 )
@@ -50,30 +51,36 @@ class ChainFlail(BaseWeapon):
     def effective_chain_length(self) -> float:
         return self.chain_length * self.owner.area_size_multiplier
 
-    def _get_target_direction(self) -> Vector2:
+    @property
+    def effective_targeting_range(self) -> float:
+        return CHAIN_FLAIL_TARGETING_RANGE * self.owner.area_size_multiplier
+
+    def _get_target_direction(self) -> Vector2 | None:
         nearest_enemy = None
         nearest_distance_sq = float("inf")
+        max_range_sq = self.effective_targeting_range * self.effective_targeting_range
 
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()
-            if distance_sq < nearest_distance_sq:
+            if distance_sq < nearest_distance_sq and distance_sq <= max_range_sq:
                 nearest_distance_sq = distance_sq
                 nearest_enemy = enemy
 
-        if nearest_enemy is not None:
-            target_direction = nearest_enemy.pos - self.owner.pos
-            if target_direction.length_squared() > 0:
-                return target_direction.normalize()
+        if nearest_enemy is None:
+            return None
 
-        if self.owner.facing.length_squared() > 0:
-            return self.owner.facing.normalize()
-        return Vector2(1, 0)
+        target_direction = nearest_enemy.pos - self.owner.pos
+        if target_direction.length_squared() > 0:
+            return target_direction.normalize()
+        return None
 
-    def fire(self) -> None:
+    def fire(self) -> bool:
         if self.active_swings or not self.enemy_group:
-            return
+            return False
 
         facing = self._get_target_direction()
+        if facing is None:
+            return False
         facing_angle = math.degrees(math.atan2(facing.y, facing.x))
         half_sweep = self.sweep_angle / 2
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN_FLAIL)
@@ -86,12 +93,13 @@ class ChainFlail(BaseWeapon):
             "head_pos": Vector2(self.owner.pos),
             "previous_head_pos": Vector2(self.owner.pos),
         })
+        return True
 
     def update(self, dt: float) -> None:
         self.cooldown_timer -= dt
         if self.cooldown_timer <= 0.0 and not self.active_swings:
-            self.fire()
-            self.cooldown_timer = self._get_effective_cooldown()
+            if self.fire():
+                self.cooldown_timer = self._get_effective_cooldown()
 
         i = 0
         while i < len(self.active_swings):

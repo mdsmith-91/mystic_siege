@@ -80,10 +80,10 @@ class Spear(BaseWeapon):
             "total_duration": total,
         })
 
-    def fire(self) -> None:
+    def fire(self) -> bool:
         direction = self._get_target_direction()
         if direction is None:
-            return
+            return False
         AudioManager.instance().play_sfx(AudioManager.WEAPON_SPEAR)
         self._spawn_thrust(direction)
         if self.double_thrust_count > 0:
@@ -93,12 +93,13 @@ class Spear(BaseWeapon):
                 self._spawn_thrust(prev_dir)
                 AudioManager.instance().play_sfx(AudioManager.WEAPON_SPEAR)
             self._pending_second_thrust = (SPEAR_L5_SECOND_DELAY, Vector2(direction))
+        return True
 
     def update(self, dt: float) -> None:
         self.cooldown_timer -= dt
         if self.cooldown_timer <= 0.0:
-            self.fire()
-            self.cooldown_timer = self._get_effective_cooldown()
+            if self.fire():
+                self.cooldown_timer = self._get_effective_cooldown()
 
         # Tick the L5 follow-up thrust
         if self._pending_second_thrust is not None:
