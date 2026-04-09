@@ -48,14 +48,19 @@ class CursedKnight(Enemy):
             return self._frames[_DIR_RIGHT] if self.vel.x > 0 else self._frames[_DIR_LEFT]
         return self._frames[_DIR_DOWN] if self.vel.y > 0 else self._frames[_DIR_UP]
 
-    def take_damage(self, amount, hit_direction=None, attacker=None):
+    def take_damage(self, amount, hit_direction=None, attacker=None, knockback_force=None):
         """Apply damage with frontal shield mechanic — 80% reduction when hit from the front."""
         if hit_direction is not None and hasattr(self, 'shield_facing'):
             angle = self.shield_facing.angle_to(hit_direction)
             if abs(angle) < self.shield_block_angle:
                 amount = amount * self.shield_damage_multiplier
 
-        super().take_damage(amount, hit_direction=hit_direction, attacker=attacker)
+        super().take_damage(
+            amount,
+            hit_direction=hit_direction,
+            attacker=attacker,
+            knockback_force=knockback_force,
+        )
 
     def update(self, dt):
         # Keep shield facing toward player

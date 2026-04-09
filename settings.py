@@ -657,6 +657,20 @@ STONE_GOLEM_ENEMY_DATA = {
     "xp_value": 80,
     "behavior": "chase",
     "sprite_scale": (64, 64),
+    "cc_immune": True,
+    "knockback_immune": True,
+    "shockwave_cooldown": 6.0,
+    "shockwave_windup": 1.1,
+    "shockwave_trigger_range": 220,
+    "shockwave_radius": 170,
+    "shockwave_damage": 32,
+    "shockwave_ring_width": 8,
+    "shockwave_telegraph_color": (210, 120, 70),
+    "shockwave_blast_color": (185, 110, 70),
+    "shockwave_telegraph_alpha": 120,
+    "shockwave_blast_alpha": 170,
+    "shockwave_telegraph_lifetime": 1.1,
+    "shockwave_blast_lifetime": 0.45,
 }
 
 # Shared lookup used by the enemy registry/spawner. Keep ids stable because wave
@@ -925,8 +939,8 @@ CAMERA_PLAYER_MARGIN = 200  # pixels of padding around tracked players; larger v
 # and HUD systems, but solo still shares parts of the visual path.
 REVIVE_RADIUS = 96             # pixels; teammate must stay within this range to revive
 REVIVE_DURATION = 2.0          # seconds required to complete a revive
-REVIVE_HEALTH_FRACTION = 0.5   # fraction of max HP restored on revive
 REVIVE_IFRAME_DURATION = 2.0   # seconds of safety after revive; longer values reduce chain-downs
+REVIVE_MIN_RESCUER_HP = 2.0    # HP required to finish a revive; preserves a minimum 1 HP split for each player
 DOWNED_ALPHA = 100             # alpha 0-255 for downed player rendering; visual-only feedback
 
 

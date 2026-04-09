@@ -4,7 +4,12 @@ import random
 import math
 from src.entities.enemy import Enemy
 from src.utils.spritesheet import Spritesheet
-from settings import MINI_BAT_ENEMY_DATA, PLAGUE_BAT_ENEMY_DATA
+from settings import (
+    ENEMY_ELITE_DAMAGE_MULTIPLIER,
+    ENEMY_ELITE_HP_MULTIPLIER,
+    MINI_BAT_ENEMY_DATA,
+    PLAGUE_BAT_ENEMY_DATA,
+)
 
 # Column indices matching direction order in bat_meta.json
 _DIR_DOWN  = 0
@@ -88,7 +93,13 @@ class PlagueBat(Enemy):
 
         if random.random() < self.split_chance and not self.is_mini:
             for _ in range(self.split_count):
-                MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
+                mini_bat = MiniBat(self.pos, self.player_list, self.all_groups, xp_orb_group, self.effect_group)
+                if self.is_elite:
+                    mini_bat.apply_elite_scaling(
+                        ENEMY_ELITE_HP_MULTIPLIER,
+                        ENEMY_ELITE_DAMAGE_MULTIPLIER,
+                        preserve_hp_ratio=False,
+                    )
 
 class MiniBat(PlagueBat):
     """Mini bat spawned on PlagueBat death."""
@@ -118,6 +129,7 @@ class MiniBat(PlagueBat):
         self.name = MINI_BAT_ENEMY_DATA["name"]
         self.max_hp = MINI_BAT_ENEMY_DATA["hp"]
         self.hp = MINI_BAT_ENEMY_DATA["hp"]
+        self.base_speed = MINI_BAT_ENEMY_DATA["speed"]
         self.speed = MINI_BAT_ENEMY_DATA["speed"]
         self.damage = MINI_BAT_ENEMY_DATA["damage"]
         self.xp_value = MINI_BAT_ENEMY_DATA["xp_value"]
