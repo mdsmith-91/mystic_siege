@@ -1,9 +1,11 @@
 from collections import deque
+import random
 
 import pygame
 from pygame.math import Vector2
 
 from settings import (
+    CRIT_MULTIPLIER,
     SHADOW_KNIVES_BASE_COOLDOWN,
     SHADOW_KNIVES_BASE_CRIT_BONUS,
     SHADOW_KNIVES_BASE_DAMAGE,
@@ -138,11 +140,36 @@ class ShadowKnifeProjectile(Projectile):
 
         super().update(dt)
 
-    def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+    def on_hit(self, enemy, effect_group=None):
+        if enemy.sprite_id in self.enemies_hit:
+            return
+
+        self.enemies_hit.add(enemy.sprite_id)
+
+        is_crit = random.random() < self.owner_crit_chance
+        actual_damage = self.damage * (CRIT_MULTIPLIER if is_crit else 1.0)
+
+        if self.owner is not None:
+            to_attacker = self.owner.pos - enemy.pos
+            hit_direction = to_attacker.normalize() if to_attacker.length_squared() > 0 else -self.direction
+        else:
+            hit_direction = -self.direction
+        enemy.take_damage(actual_damage, hit_direction=hit_direction, attacker=self.owner)
+
+        if effect_group is not None:
+            from src.entities.effects import DamageNumber, HitSpark
+            DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [effect_group], is_crit=is_crit)
+            HitSpark(enemy.pos, (255, 200, 50), [effect_group])
+
+        if self.pierce <= 0:
+            self.kill()
+        else:
+            self.pierce -= 1
+
+    def draw_trail(self, trail_surface: pygame.Surface, camera_offset: Vector2) -> None:
         if not self.is_returning or not self._trail:
             return
 
-        trail_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         for index, trail_pos in enumerate(self._trail):
             fraction = (index + 1) / len(self._trail)
             alpha = int(110 * fraction)
@@ -154,7 +181,6 @@ class ShadowKnifeProjectile(Projectile):
                 (int(screen_pos.x), int(screen_pos.y)),
                 radius,
             )
-        surface.blit(trail_surface, (0, 0))
 
 
 class ShadowKnives(BaseWeapon):
@@ -219,7 +245,18 @@ class ShadowKnives(BaseWeapon):
                 direction = base_direction.rotate(angle_offset)
             self._spawn_knife(direction)
 
+    def on_owner_inactive(self):
+        for projectile in list(self.projectile_group):
+            if isinstance(projectile, ShadowKnifeProjectile) and projectile.owner is self.owner:
+                projectile.kill()
+
     def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+        trail_surface = None
         for projectile in self.projectile_group:
             if isinstance(projectile, ShadowKnifeProjectile) and projectile.owner is self.owner:
-                projectile.draw_under(surface, camera_offset)
+                if projectile.is_returning and projectile._trail:
+                    if trail_surface is None:
+                        trail_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+                    projectile.draw_trail(trail_surface, camera_offset)
+        if trail_surface is not None:
+            surface.blit(trail_surface, (0, 0))

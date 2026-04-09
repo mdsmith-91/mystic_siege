@@ -276,6 +276,22 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
     elif weapon_key == "axe":
         _draw_throwing_hatchet_icon(surface)
+    elif weapon_key == "knife":
+        blade_outline = (42, 40, 52)
+        blade_fill = (188, 192, 205)
+        blade_highlight = (238, 240, 248)
+        guard = _shade(color, 35)
+        handle = shadow
+        pommel = _shade(color, -35)
+
+        # Slim, pointy blade and compact grip stay clear of the rounded icon border.
+        pygame.draw.polygon(surface, blade_outline, [(16, 5), (20, 15), (18, 21), (14, 21), (12, 15)])
+        pygame.draw.polygon(surface, blade_fill, [(16, 7), (18, 15), (17, 19), (15, 19), (14, 15)])
+        pygame.draw.line(surface, blade_highlight, (16, 8), (17, 17), 1)
+
+        pygame.draw.line(surface, guard, (12, 22), (20, 22), 3)
+        pygame.draw.rect(surface, handle, pygame.Rect(14, 23, 4, 4), border_radius=1)
+        pygame.draw.circle(surface, pommel, (16, 27), 2)
 
 
 def _draw_pickup_icon(surface: pygame.Surface, pickup_key: str, color: tuple[int, int, int]) -> None:
@@ -443,6 +459,7 @@ def generate_weapon_icon_assets():
         ("lightning.png", (255, 240, 60)),
         ("blade.png", (100, 150, 255)),  # Spectral blade color
         ("longbow.png", (170, 120, 60)),
+        ("knife.png", (105, 105, 135)),   # Shadow knives — muted rogue steel
         ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
@@ -554,6 +571,7 @@ def generate_audio_placeholders():
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
+    maybe_write_sine("shadow_knives.wav",   freq_hz=660,  duration_s=0.07)
     maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
     maybe_write_chord("pickup_collect.wav", freqs=[520, 780, 1040], duration_s=0.18)
 
