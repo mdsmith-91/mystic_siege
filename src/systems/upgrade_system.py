@@ -66,6 +66,20 @@ PASSIVE_UPGRADES = [
         "stat": "spell_damage_multiplier_pct",
         "value": 0.10,
         "icon_color": (160, 80, 255)
+    },
+    {
+        "name": "+10% Physical Damage",
+        "description": "Increase damage dealt by all physical weapons by 10%",
+        "stat": "physical_damage_multiplier_pct",
+        "value": 0.10,
+        "icon_color": (180, 120, 80)
+    },
+    {
+        "name": "+1 Projectile Pierce",
+        "description": "Increase pierce for all projectile weapons by 1",
+        "stat": "projectile_pierce_bonus",
+        "value": 1,
+        "icon_color": (150, 180, 255)
     }
 ]
 
@@ -85,56 +99,56 @@ WEAPON_META = {
     "ArcaneBolt": {
         "name": "Arcane Bolt",
         "new_description": "Fires homing bolts that seek out nearby enemies.",
-        "upgrade_description": "More damage, +1 bolt at L3 and L5 (up to 3), pierce at L4.",
+        "upgrade_description": "L2 +10 damage. L3 +1 bolt. L4 +1 pierce. L5 +1 bolt and +15 damage.",
         "icon_color": (120, 80, 220),
         "symbol": "AB",
     },
     "HolyNova": {
         "name": "Holy Nova",
         "new_description": "Emits an expanding ring of holy energy that damages all enemies it passes through.",
-        "upgrade_description": "More damage at L2 and L5, wider ring at L3, faster cooldown at L4.",
+        "upgrade_description": "L2 +15 damage. L3 +40 radius. L4 -0.4s cooldown. L5 +20 damage and narrower ring width.",
         "icon_color": (255, 220, 80),
         "symbol": "HN",
     },
     "SpectralBlade": {
         "name": "Spectral Blade",
         "new_description": "Orbiting swords that continuously slash surrounding foes.",
-        "upgrade_description": "Adds a blade at L2 and L5 (up to 4), faster spin at L3, wider orbit at L4.",
+        "upgrade_description": "L2 +1 blade. L3 faster orbit speed. L4 wider orbit radius. L5 +1 blade and +12 damage.",
         "icon_color": (80, 220, 200),
         "symbol": "SB",
     },
     "FlameBlast": {
         "name": "Flame Blast",
         "new_description": "Blasts a cone of fire toward the nearest enemy, applying burn over time.",
-        "upgrade_description": "More damage at L2 and L5, longer range at L3, longer burn duration at L4, wider cone at L5.",
+        "upgrade_description": "L2 +15 damage. L3 +40 range. L4 +1.5s burn duration. L5 +30 cone angle and +20 damage.",
         "icon_color": (240, 100, 30),
         "symbol": "FW",
     },
     "FrostRing": {
         "name": "Frost Ring",
         "new_description": "Expands a freezing ring outward, immobilizing and damaging enemies it touches.",
-        "upgrade_description": "Longer freeze at L2, more damage at L3, faster ring expansion at L4, shorter cooldown and wider reach at L5.",
+        "upgrade_description": "L2 +0.5s freeze duration. L3 +10 damage. L4 faster ring speed. L5 -0.8s cooldown and +80 max radius.",
         "icon_color": (140, 210, 255),
         "symbol": "FR",
     },
     "LightningChain": {
         "name": "Lightning Chain",
         "new_description": "Strikes the nearest enemy with lightning that chains to nearby foes.",
-        "upgrade_description": "More damage at L2, chains to 5 enemies at L3, longer chain range at L4, 6 chains and stun chance at L5.",
+        "upgrade_description": "L2 +15 damage. L3 +2 chain count. L4 +50 chain range. L5 +1 chain count and 25% stun chance.",
         "icon_color": (255, 255, 100),
         "symbol": "LC",
     },
     "Longbow": {
         "name": "Longbow",
         "new_description": "Fires fast, precise arrows in straight lines at nearby enemies.",
-        "upgrade_description": "More damage at L2, faster shots at L3, pierce at L4, and an extra arrow plus higher crit at L5.",
+        "upgrade_description": "L2 +8 damage. L3 -0.15s cooldown. L4 +1 pierce. L5 +2 arrows and +10% crit bonus.",
         "icon_color": (170, 120, 60),
         "symbol": "LB",
     },
     "ThrowingAxes": {
         "name": "Throwing Axes",
         "new_description": "Hurls a spinning axe at the nearest enemy. Shorter range than a bow but hits harder.",
-        "upgrade_description": "More damage at L2, faster throws at L3, cleave through targets at L4, twin axes plus higher crit at L5.",
+        "upgrade_description": "L2 +12 damage. L3 -0.20s cooldown. L4 +1 pierce. L5 +2 axes and +10% crit bonus.",
         "icon_color": (160, 160, 170),
         "symbol": "TA",
     },
@@ -261,14 +275,13 @@ class UpgradeSystem:
 
         # Handle each stat type:
         if stat == "max_hp":
-            player.max_hp += value
-            player.hp += value
+            player.add_flat_max_hp(value)
         elif stat == "speed_pct":
             player.add_flat_percent_bonus(stat, value)
         elif stat == "pickup_radius_pct":
             player.add_flat_percent_bonus(stat, value)
         elif stat == "armor":
-            player.armor += value
+            player.add_flat_armor(value)
         elif stat == "regen_rate":
             player.regen_rate += value
         elif stat == "xp_multiplier_pct":
@@ -279,3 +292,7 @@ class UpgradeSystem:
             player.crit_chance += value
         elif stat == "spell_damage_multiplier_pct":
             player.add_flat_percent_bonus(stat, value)
+        elif stat == "physical_damage_multiplier_pct":
+            player.add_flat_percent_bonus(stat, value)
+        else:
+            player.apply_passive(stat, value)

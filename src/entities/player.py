@@ -32,10 +32,12 @@ class Player(BaseEntity):
         self.hero_class = hero_class_data.get("name", "")
 
         # Read hp, speed, armor from hero_class_data
-        self.max_hp = hero_class_data["hp"]
+        self.base_max_hp = hero_class_data["hp"]
+        self.max_hp = self.base_max_hp
         self.hp = self.max_hp
         self.speed = hero_class_data["speed"]
         self.base_speed = self.speed
+        self.base_armor: float = float(hero_class_data["armor"])
         self.armor = hero_class_data["armor"]
 
         # Load 4-direction spritesheet: cols = [down, left, right, up]
@@ -69,8 +71,15 @@ class Player(BaseEntity):
         self.spell_damage_multiplier = 1.0
         self.base_spell_damage_multiplier = 1.0
         self.spell_damage_bonus_pct = 0.0
+        self.physical_damage_multiplier = 1.0
+        self.base_physical_damage_multiplier = 1.0
+        self.physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
+        self.arrow_pierce_bonus = 0
+        self.armor_bonus_pct = 0.0
+        self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
+        self.area_size_bonus_pct = 0.0
         self.damage_taken_multiplier = 1.0
         self.knockback_immune = False
         self.heal_per_xp = 0.0
@@ -175,22 +184,62 @@ class Player(BaseEntity):
         """Whether the player can currently collect XP and queue upgrades."""
         return self.alive() and not self.is_downed and not self.dying
 
+    @property
+    def area_size_multiplier(self) -> float:
+        """Shared multiplier for explicit AoE-size weapon stats."""
+        return 1.0 + self.area_size_bonus_pct
+
     def _recalculate_pct_stats(self) -> None:
         """Recompute effective percent-based stats from their base values."""
         self.speed = self.base_speed * (1.0 + self.speed_bonus_pct)
         self.pickup_radius = self.base_pickup_radius * (1.0 + self.pickup_radius_bonus_pct)
         self.xp_multiplier = self.base_xp_multiplier * (1.0 + self.xp_multiplier_bonus_pct)
         self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
+        self.physical_damage_multiplier = self.base_physical_damage_multiplier * (1.0 + self.physical_damage_bonus_pct)
+
+    def _recalculate_max_hp(self) -> float:
+        """Recompute effective max HP and return how much it changed."""
+        previous_max_hp = self.max_hp
+        self.max_hp = self.base_max_hp * (1.0 + self.max_hp_bonus_pct)
+        return self.max_hp - previous_max_hp
+
+    def add_flat_max_hp(self, value: float) -> None:
+        """Increase base max HP so percent bonuses keep scaling with flat upgrades."""
+        self.base_max_hp += value
+        max_hp_delta = self._recalculate_max_hp()
+        self.hp = min(self.max_hp, self.hp + max_hp_delta)
+
+    def _recalculate_armor(self) -> None:
+        """Recompute effective armor from base value and any percent bonus."""
+        self.armor = self.base_armor * (1.0 + self.armor_bonus_pct)
+
+    def add_flat_armor(self, value: float) -> None:
+        """Increase base armor so percent bonuses keep scaling with flat upgrades."""
+        self.base_armor += value
+        self._recalculate_armor()
 
     def _apply_hero_passives(self) -> None:
         """Apply declarative passive bonuses from the hero config."""
         passives = self.hero_data.get("passives", {})
         self.crit_chance += passives.get("crit_chance_bonus", 0.0)
         self.spell_damage_bonus_pct += passives.get("spell_damage_bonus_pct", 0.0)
+        self.physical_damage_bonus_pct += passives.get("physical_damage_bonus_pct", 0.0)
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
+        self.arrow_pierce_bonus += passives.get("arrow_pierce_bonus", 0)
+        self.area_size_bonus_pct += passives.get("area_size_bonus_pct", 0.0)
         self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
+        self.armor_bonus_pct += passives.get("armor_bonus_pct", 0.0)
+        if self.armor_bonus_pct:
+            self._recalculate_armor()
+        self.max_hp_bonus_pct += passives.get("max_hp_bonus_pct", 0.0)
+        max_hp_bonus = passives.get("max_hp_bonus", 0.0)
+        if self.max_hp_bonus_pct:
+            max_hp_delta = self._recalculate_max_hp()
+            self.hp = min(self.max_hp, self.hp + max_hp_delta)
+        if max_hp_bonus:
+            self.add_flat_max_hp(max_hp_bonus)
 
     def add_flat_percent_bonus(self, stat: str, value: float) -> None:
         """Apply a percent bonus additively from the stat's base value."""
@@ -202,6 +251,8 @@ class Player(BaseEntity):
             self.xp_multiplier_bonus_pct += value
         elif stat == "spell_damage_multiplier_pct":
             self.spell_damage_bonus_pct += value
+        elif stat == "physical_damage_multiplier_pct":
+            self.physical_damage_bonus_pct += value
         else:
             return
         self._recalculate_pct_stats()

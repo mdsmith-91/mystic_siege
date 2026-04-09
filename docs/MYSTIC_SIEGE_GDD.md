@@ -21,8 +21,8 @@ Mystic Siege is a top-down auto-battler survivor game set in a collapsing mediev
 
 ### Phase 1 — Playable Core (MVP)
 - 1 map (castle courtyard)
-- 4 hero classes in the current shipped roster
-- 7 weapons/spells in the current shipped roster
+- 4 hero classes in the current shipped roster (current: 5)
+- 7 weapons/spells in the current shipped roster (current: 8)
 - 7 enemy types in the current shipped roster
 - Basic upgrade system (level-up choices)
 - Simple audio (placeholder/CC0)
@@ -158,7 +158,7 @@ mystic_siege/
 
 ### Knight
 - **HP:** 150 | **Speed:** Medium | **Armor:** High
-- **Passive:** Takes 15% less damage, knockback immune
+- **Passive:** +10% armor bonus (scales with armor upgrades)
 - **Starting Weapon:** Spectral Blade (orbiting swords)
 - **Playstyle:** Tank — survives by being a wall
 
@@ -269,9 +269,9 @@ Current implementation note:
 Current implementation note:
 
 - single-player is the stable baseline
-- local co-op is partially implemented and still in verification
-- practical current co-op cap is 4 because duplicate heroes are blocked and the
-  roster has 4 heroes
+- local co-op is fully implemented and runtime-verified for 1P–4P
+- practical current co-op cap is 4 because duplicate heroes are blocked; the
+  roster now has 5 heroes (Knight, Wizard, Friar, Ranger, Barbarian)
 
 ---
 

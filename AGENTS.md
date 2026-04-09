@@ -10,9 +10,10 @@ Codex-friendly entry point for repository rules and should stay aligned with
 ## Project Summary
 
 Mystic Siege is a top-down medieval fantasy survivor game built in Python 3.12.13
-with pygame-ce. The stable baseline is single-player. A local co-op migration is
-partially implemented for 1–4 players on one machine, but it is still in an
-incremental verification phase and must continue to preserve the solo experience.
+with pygame-ce. The stable baseline is single-player. Local co-op for 1–4 players
+on one machine is fully implemented and runtime-verified. The remaining open work is
+multiplayer balance tuning and spawn fairness, not core architecture. All changes
+must continue to preserve the solo experience.
 
 ## Core Rules
 
@@ -84,16 +85,14 @@ recomputing `self.vel` in a way that the parent class then overwrites.
 
 ## Current Multiplayer Clarifications
 
-1. The long-term target is that the lobby always emits a concrete `input_config`,
-   including in 1P.
-2. `input_config=None` is only a temporary migration shim for the old 1P path.
-3. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
-4. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
-5. The long-term player-count target remains 4, and the current hero roster now
+1. The lobby now emits a concrete `input_config`, including in 1P.
+2. `PlayerSlot` owns slot/session metadata such as index, input config, hero, and color.
+3. `Player` owns runtime state such as HP, downed state, revive progress, and weapons.
+4. The long-term player-count target remains 4, and the current hero roster now
    supports 4 unique simultaneous selections without duplicates.
-6. Save/progression is still machine-local and aggregated across runs, including
+5. Save/progression is still machine-local and aggregated across runs, including
    multiplayer runs; there is no per-person profile split yet.
-7. XP orb collection is currently a shared pool, and equal-distance ties resolve
+6. XP orb collection is currently a shared pool, and equal-distance ties resolve
    to the lowest slot index.
 
 ## Review guidelines

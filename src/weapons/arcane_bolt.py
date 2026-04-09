@@ -30,6 +30,7 @@ class ArcaneBolt(BaseWeapon):
     homing = True
     projectile_color = ARCANE_BOLT_PROJECTILE_COLOR
     IS_SPELL = True
+    USES_PROJECTILE_PIERCE_BONUS = True
 
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
@@ -41,7 +42,7 @@ class ArcaneBolt(BaseWeapon):
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
         """Spawn a single arcane bolt projectile in the given direction."""
-        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0)
+        damage = self._scaled_damage(self.base_damage)
         ArcaneBoltProjectile(
             pos=self.owner.pos,
             direction=direction,
@@ -49,7 +50,7 @@ class ArcaneBolt(BaseWeapon):
             damage=damage,
             groups=self.projectile_group,
             enemy_group_ref=self.enemy_group,
-            pierce=self.pierce,
+            pierce=self._get_effective_projectile_pierce(),
             homing=self.homing,
             color=self.projectile_color,
             target_enemy=target,

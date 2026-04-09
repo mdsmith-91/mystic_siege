@@ -10,16 +10,16 @@ escalating waves of enemies, collect XP orbs, level up, and pick upgrades — al
 Two developers, AI-assisted workflow, small scope first.
 
 **Current state:** the single-player baseline is playable, and the local co-op
-migration is partially implemented. New runs currently flow through a lobby and queued
-hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
-hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
-downed/revive runtime support, reconnect/reclaim handling, and controller-binding
-settings. Weapon creation is now also centralized through the shared
+migration is complete and runtime-verified for 1P–4P. New runs flow through a lobby
+and queued hero select, and the repo includes slot-based lobby join/leave,
+duplicate-locked hero select, multiplayer `GameScene` plumbing, multi-player
+HUD/camera support, downed/revive runtime support, reconnect/reclaim handling, and
+controller-binding settings. Weapon creation is centralized through the shared
 `src/weapons/factory.py` registry/helper path for both hero starting weapons and
-upgrade unlocks. The main remaining gap is runtime verification and hardening, not
-missing foundational architecture.
-**Planned direction:** finish the local co-op migration through phased, low-regression
-changes that continue to preserve the current single-player experience.
+upgrade unlocks. The remaining open items are multiplayer balance tuning and spawn
+fairness, not missing foundational architecture.
+**Planned direction:** add content (heroes, weapons, enemies) on the now-solid
+multiplayer foundation while continuing to preserve the single-player experience.
 
 ---
 
@@ -148,11 +148,13 @@ mystic_siege/
 | Wizard | 80 | 240 | 0 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
 | Ranger | 95 | 225 | 3 | Longbow |
+| Barbarian | 120 | 205 | 8 | ThrowingAxes |
 
-Knight passive: 15% damage reduction, knockback immune  
+Knight passive: +10% armor bonus (scales with armor upgrades), immune to knockback  
 Wizard passive: +20% spell damage, +10% crit chance  
-Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
+Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`), +20% area effect size
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
+Barbarian passive: +20% physical damage, +10% max HP
 
 Current hero architecture rules:
 
@@ -161,9 +163,10 @@ Current hero architecture rules:
 - Base stats, sprite path, starting weapon, passive text, and passive gameplay config
   should all be authored in the hero record first.
 - Hero passive behavior is now declarative via each hero dict's `passives` mapping.
-  Current passive keys include `damage_taken_multiplier`, `knockback_immune`,
-  `crit_chance_bonus`, `spell_damage_bonus_pct`, `projectile_pierce_bonus`, and
-  `heal_per_xp`.
+  Current passive keys include `armor_bonus_pct`, `damage_taken_multiplier`,
+  `knockback_immune`, `crit_chance_bonus`, `spell_damage_bonus_pct`,
+  `physical_damage_bonus_pct`, `projectile_pierce_bonus`, `arrow_pierce_bonus`,
+  `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.
@@ -231,24 +234,24 @@ Current enemy architecture rules:
 - 0s: Skeletons only
 - 60s: Add Goblins
 - 120s: Add Wraiths
-- 300s: Add Bats
-- 480s: Stone Golem (one-time mini-boss)
-- 600s: Add Knights + Liches
-- 900s: Elite mode (1.5x HP/damage)
+- 180s: Add Bats
+- 240s: Add Knights + Liches
+- 300s: Stone Golem event begins
+- 600s: Elite mode (1.5x HP/damage)
 - 1200s: Final assault
 - 1800s: Victory
 
 ### Game Loop
 
 ```text
-Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Menu
+Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Lobby or Menu
 ```
 
 - Solo and local co-op use the same scene flow. A single joined slot preserves the
   solo runtime path for movement and death behavior, but the in-run HUD uses the
   same slot-panel renderer and weapon-slot treatment as local co-op.
-- The practical current party cap is 4 unique players because there are 4 heroes and
-  duplicate hero picks are still blocked.
+- The runtime party cap remains 4 local players. The hero roster now has 5 heroes,
+  and duplicate hero picks are still blocked.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
   shared `saves/progress.json`, not per-person profiles.
 - XP orb collection is a shared pool. If two players are equally close, the lower
@@ -537,7 +540,7 @@ These rules apply to all multiplayer-related changes.
 
 2. **Prefer collections over named players.** Multiplayer systems should pass
    `list[PlayerSlot]`. The central abstraction is **`PlayerSlot`** (defined in
-   MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
+   docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
    Do not invent alternatives.
 
 3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
@@ -557,7 +560,7 @@ These rules apply to all multiplayer-related changes.
 
 > For concrete data structures (`PlayerSlot`, `input_config`), per-phase file lists,
 > HUD layout, camera, revive mechanics, and the full verification checklist, see
-> **MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
+> **docs/MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
 > Phases 10–14. CLAUDE.md carries the principles; V2 carries the implementation detail.
 
 ---
@@ -738,7 +741,7 @@ For audit/planning tasks, prefer this output order:
 - Don't claim manual testing happened unless it actually happened
 - Don't change save-data shape casually or without noting compatibility impact
 - Don't implement `PlayerSlot` or `input_config` differently from the shape defined in
-  MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
+  docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
 
 ---
 
@@ -757,7 +760,7 @@ Track progress here as phases are completed:
 - [x] Phase 9 — Polish & meta (save system, settings menu)
 
 ### Planned Multiplayer Phases
-*(See MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
+*(See docs/MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
 
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)

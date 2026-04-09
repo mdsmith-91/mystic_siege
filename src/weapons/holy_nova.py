@@ -56,6 +56,10 @@ class HolyNova(BaseWeapon):
             particles.append({"angle": angle, "r": 0.0, "speed": speed})
         return particles
 
+    @property
+    def effective_base_radius(self) -> float:
+        return self.base_radius * self.owner.area_size_multiplier
+
     def fire(self):
         """Emit a new ring of holy light."""
         AudioManager.instance().play_sfx(AudioManager.WEAPON_NOVA)
@@ -63,8 +67,8 @@ class HolyNova(BaseWeapon):
         flare_segment = _TWO_PI / HOLY_NOVA_FLARE_COUNT
         ring = {
             "radius": 0,
-            "max_radius": self.base_radius,
-            "damage": self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0),
+            "max_radius": self.effective_base_radius,
+            "damage": self._scaled_damage(self.base_damage),
             "enemies_hit": set(),
             "particles": self._spawn_particles(),
             "flare_offset": random.uniform(0, flare_segment),

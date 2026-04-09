@@ -128,25 +128,25 @@ class WaveManager:
 
     def _check_timeline(self):
         """Check wave timeline triggers."""
-        # 0s:    active_pool = ["Skeleton"], spawn_rate = 3.0
+        # 0s: initialize the starting pool and spawn cadence from settings.py
         if 0 not in self.triggered_events and self.elapsed >= 0:
             self.active_pool = list(WAVE_INITIAL_ACTIVE_POOL)
             self.spawn_rate = WAVE_INITIAL_SPAWN_RATE
             self.triggered_events.add(0)
 
-        # 60s:   add "Goblin", spawn_rate = 2.5
+        # 60s: add Goblins and move to the next settings-driven spawn cadence
         if WAVE_GOBLIN_UNLOCK_TIME not in self.triggered_events and self.elapsed >= WAVE_GOBLIN_UNLOCK_TIME:
             self.active_pool.append("Goblin")
             self.spawn_rate = WAVE_GOBLIN_SPAWN_RATE
             self.triggered_events.add(WAVE_GOBLIN_UNLOCK_TIME)
 
-        # 120s:  add "Wraith", spawn_rate = 2.0
+        # 120s: add Wraiths and move to the next settings-driven spawn cadence
         if WAVE_WRAITH_UNLOCK_TIME not in self.triggered_events and self.elapsed >= WAVE_WRAITH_UNLOCK_TIME:
             self.active_pool.append("Wraith")
             self.spawn_rate = WAVE_WRAITH_SPAWN_RATE
             self.triggered_events.add(WAVE_WRAITH_UNLOCK_TIME)
 
-        # 300s:  add "Bat", spawn_rate = 1.5,  show warning "BATS INCOMING!"
+        # 180s: add Bats and show the configured warning
         if WAVE_BAT_UNLOCK_TIME not in self.triggered_events and self.elapsed >= WAVE_BAT_UNLOCK_TIME:
             self.active_pool.append("Bat")
             self.spawn_rate = WAVE_BAT_SPAWN_RATE
@@ -154,7 +154,7 @@ class WaveManager:
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_BAT_UNLOCK_TIME)
 
-        # 480s:  spawn 1 Golem (one-time event), show warning "GOLEM APPROACHES!"
+        # 300s: enable the Golem boss pool and show the configured warning
         if WAVE_GOLEM_EVENT_TIME not in self.triggered_events and self.elapsed >= WAVE_GOLEM_EVENT_TIME:
             self.boss_active_pool.append("Golem")
             self.boss_spawn_rate = WAVE_INITIAL_BOSS_SPAWN_RATE
@@ -162,14 +162,14 @@ class WaveManager:
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_GOLEM_EVENT_TIME)
 
-        # 600s:  add "Knight", add "Lich", spawn_rate = 1.0
+        # 240s: add Knights and Liches, then move to the next spawn cadence
         if WAVE_KNIGHT_LICH_UNLOCK_TIME not in self.triggered_events and self.elapsed >= WAVE_KNIGHT_LICH_UNLOCK_TIME:
             self.active_pool.append("Knight")
             self.active_pool.append("Lich")
             self.spawn_rate = WAVE_KNIGHT_LICH_SPAWN_RATE
             self.triggered_events.add(WAVE_KNIGHT_LICH_UNLOCK_TIME)
 
-        # 900s:  elite_mode = True, spawn_rate = 0.7, warning "ELITE ENEMIES ARISE!"
+        # 600s: enable elite scaling and show the configured warning
         if WAVE_ELITE_MODE_TIME not in self.triggered_events and self.elapsed >= WAVE_ELITE_MODE_TIME:
             self.elite_mode = True
             self.spawn_rate = WAVE_ELITE_SPAWN_RATE
@@ -177,7 +177,7 @@ class WaveManager:
             self.warning_timer = ENEMY_WARNING_DURATION
             self.triggered_events.add(WAVE_ELITE_MODE_TIME)
 
-        # 1200s: spawn_rate = 0.5, show warning "FINAL ASSAULT!"
+        # 1200s: switch to the final-assault spawn cadence and warning
         if WAVE_FINAL_ASSAULT_TIME not in self.triggered_events and self.elapsed >= WAVE_FINAL_ASSAULT_TIME:
             self.spawn_rate = WAVE_FINAL_ASSAULT_SPAWN_RATE
             self.warning_text = WAVE_FINAL_ASSAULT_WARNING_TEXT

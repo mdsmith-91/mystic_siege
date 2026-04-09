@@ -50,6 +50,10 @@ class SpectralBlade(BaseWeapon):
         # Per-enemy hit cooldown dict: {enemy_id: timer} — prevents rapid re-hits on the same enemy
         self.enemy_cooldowns = {}
 
+    @property
+    def effective_orbit_radius(self) -> float:
+        return self.orbit_radius * self.owner.area_size_multiplier
+
     def fire(self):
         pass  # SpectralBlade deals damage via continuous orbital collision in update()
 
@@ -60,10 +64,11 @@ class SpectralBlade(BaseWeapon):
         for i in range(self.blade_count):
             angle = self.orbit_angle + (360 / self.blade_count * i)
             direction = Vector2(1, 0).rotate(angle)
+            orbit_radius = self.effective_orbit_radius
 
             # Sword extends from hilt (orbit_radius out) to tip (orbit_radius + blade_length out)
-            hilt = self.owner.pos + direction * self.orbit_radius
-            tip = self.owner.pos + direction * (self.orbit_radius + SPECTRAL_BLADE_BLADE_LENGTH)
+            hilt = self.owner.pos + direction * orbit_radius
+            tip = self.owner.pos + direction * (orbit_radius + SPECTRAL_BLADE_BLADE_LENGTH)
 
             for enemy in self.enemy_group:
                 if enemy.sprite_id in self.enemy_cooldowns:
@@ -79,7 +84,7 @@ class SpectralBlade(BaseWeapon):
 
                 if hit:
                     is_crit = random.random() < self.owner.crit_chance
-                    damage = self.base_damage * self.owner.damage_multiplier * (CRIT_MULTIPLIER if is_crit else 1.0)
+                    damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                     diff = self.owner.pos - enemy.pos
                     hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                     enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
@@ -117,10 +122,11 @@ class SpectralBlade(BaseWeapon):
             angle = self.orbit_angle + (360 / self.blade_count * i)
             direction = Vector2(1, 0).rotate(angle)
             perp = direction.rotate(90)
+            orbit_radius = self.effective_orbit_radius
 
-            hilt = self.owner.pos + direction * self.orbit_radius
+            hilt = self.owner.pos + direction * orbit_radius
             guard = hilt + direction * SPECTRAL_BLADE_GRIP_LENGTH
-            tip = self.owner.pos + direction * (self.orbit_radius + SPECTRAL_BLADE_BLADE_LENGTH)
+            tip = self.owner.pos + direction * (orbit_radius + SPECTRAL_BLADE_BLADE_LENGTH)
 
             # Taper point: where the parallel body ends and the tip taper begins
             blade_body_len = (SPECTRAL_BLADE_BLADE_LENGTH - SPECTRAL_BLADE_GRIP_LENGTH) * SPECTRAL_BLADE_TAPER_START

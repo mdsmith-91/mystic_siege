@@ -1,6 +1,18 @@
 import pygame
 import random
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GOLD, TITLE_FONT_SIZE, STATE_LOBBY
+from settings import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    GOLD,
+    TITLE_FONT_SIZE,
+    STATE_LOBBY,
+    MAIN_MENU_PARTICLE_INITIAL_COUNT,
+    MAIN_MENU_PARTICLE_FADE_RATE,
+    MAIN_MENU_PARTICLE_SPAWN_SIZE_MIN,
+    MAIN_MENU_PARTICLE_SPAWN_SIZE_MAX,
+    MAIN_MENU_PARTICLE_SPAWN_ALPHA_MIN,
+    MAIN_MENU_PARTICLE_SPAWN_ALPHA_MAX,
+)
 
 class MainMenu:
     def __init__(self):
@@ -14,11 +26,11 @@ class MainMenu:
         self.font_sub = pygame.font.SysFont("serif", 24)
 
         # Initialize particles
-        for _ in range(50):  # Start with some particles
+        for _ in range(MAIN_MENU_PARTICLE_INITIAL_COUNT):
             self.particles.append({
                 "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), random.randint(-SCREEN_HEIGHT, 0)),
                 "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 100)),
-                "size": random.randint(1, 3),
+                "size": random.randint(MAIN_MENU_PARTICLE_SPAWN_SIZE_MIN, MAIN_MENU_PARTICLE_SPAWN_SIZE_MAX),
                 "alpha": random.randint(50, 255),
                 "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50))  # Ember colors
             })
@@ -28,8 +40,8 @@ class MainMenu:
             self.particles.append({
                 "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), -10),
                 "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(50, 200)),
-                "size": random.randint(1, 2),
-                "alpha": random.randint(10, 100),
+                "size": random.randint(MAIN_MENU_PARTICLE_SPAWN_SIZE_MIN, MAIN_MENU_PARTICLE_SPAWN_SIZE_MAX),
+                "alpha": random.randint(MAIN_MENU_PARTICLE_SPAWN_ALPHA_MIN, MAIN_MENU_PARTICLE_SPAWN_ALPHA_MAX),
                 "color": (random.randint(200, 255), random.randint(50, 150), random.randint(0, 50)),
             })
             return
@@ -37,8 +49,8 @@ class MainMenu:
         self.particles.append({
             "pos": pygame.Vector2(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 10),
             "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-50, -200)),
-            "size": random.randint(1, 2),
-            "alpha": random.randint(10, 100),
+            "size": random.randint(MAIN_MENU_PARTICLE_SPAWN_SIZE_MIN, MAIN_MENU_PARTICLE_SPAWN_SIZE_MAX),
+            "alpha": random.randint(MAIN_MENU_PARTICLE_SPAWN_ALPHA_MIN, MAIN_MENU_PARTICLE_SPAWN_ALPHA_MAX),
             "color": (random.randint(0, 50), random.randint(50, 150), random.randint(200, 255)),
         })
 
@@ -103,7 +115,7 @@ class MainMenu:
             particle["pos"] += particle["vel"] * dt
 
             # Fade out (alpha decreases)
-            particle["alpha"] = max(0, particle["alpha"] - 100 * dt)
+            particle["alpha"] = max(0, particle["alpha"] - MAIN_MENU_PARTICLE_FADE_RATE * dt)
 
         self._spawn_particle(from_top=True)
         self._spawn_particle(from_top=False)
@@ -133,12 +145,7 @@ class MainMenu:
         screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2 + 3, 160))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 160))
 
-        # 4. Subtitle "A Medieval Survivor" smaller, gray, below title
-        subtitle = "A Medieval Survivor"
-        subtitle_surface = self.font_sub.render(subtitle, True, (150, 150, 150))
-        screen.blit(subtitle_surface, (SCREEN_WIDTH // 2 - subtitle_surface.get_width() // 2, 240))
-
-        # 5. Buttons centered horizontally:
+        # 4. Buttons centered horizontally:
         #    "NEW RUN" at y=380
         #    "QUIT"    at y=450
         #    Each button: dark rect 240x50, gold border, white text

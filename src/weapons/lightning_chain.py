@@ -128,7 +128,7 @@ class LightningChain(BaseWeapon):
             # Diminish damage by 10% per hop, then roll crit independently per enemy
             damage_multiplier = LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER ** i
             is_crit = random.random() < self.owner.crit_chance
-            damage = self.base_damage * damage_multiplier * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
+            damage = self._scaled_damage(self.base_damage * damage_multiplier) * (CRIT_MULTIPLIER if is_crit else 1.0)
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
             hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)

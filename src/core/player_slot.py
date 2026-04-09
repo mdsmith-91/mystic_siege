@@ -11,6 +11,6 @@ class PlayerSlot:
     """
 
     index: int              # 0–3, stable for the session; used for UI positioning
-    input_config: dict | None  # None is a temporary 1P migration shim only
+    input_config: dict | None  # current lobby path provides a concrete config, including 1P
     hero_data: dict | None = None  # filled during hero selection; None until locked
     color: tuple = (255, 255, 255)  # player color badge used in UI and HUD

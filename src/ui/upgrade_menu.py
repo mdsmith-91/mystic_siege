@@ -110,7 +110,7 @@ class UpgradeMenu:
 
         if cfg.get("scheme") == "wasd":
             if not getattr(self.player, "supports_revive", False):
-                return "A/D to choose  -  Enter confirms"
+                return "A/D to choose  -  Space or Enter confirms"
             return "A/D to choose  -  Space confirms"
 
         if cfg.get("scheme") == "arrows":
@@ -353,7 +353,8 @@ class UpgradeMenu:
                     "xp_multiplier_pct": "XP",
                     "cooldown_reduction": "CD",
                     "crit_chance": "CRIT",
-                    "spell_damage_multiplier_pct": "SPL"
+                    "spell_damage_multiplier_pct": "SPL",
+                    "physical_damage_multiplier_pct": "PHYS",
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 

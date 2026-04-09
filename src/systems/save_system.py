@@ -1,8 +1,12 @@
 import os
 import json
 from typing import Dict, Any
-from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT
+from settings import CONTROLLER_BINDINGS_SETTINGS_DEFAULT, HERO_CLASSES
 from src.utils.fps_cap import detect_refresh_rate
+
+
+def _current_unlocked_heroes() -> list[str]:
+    return [hero["name"] for hero in HERO_CLASSES]
 
 def _build_default_save() -> Dict[str, Any]:
     return {
@@ -11,7 +15,7 @@ def _build_default_save() -> Dict[str, Any]:
         "total_time_played": 0.0,
         "highest_level": 1,
         "best_time_survived": 0.0,
-        "unlocked_heroes": ["Knight", "Wizard", "Friar", "Ranger"],
+        "unlocked_heroes": _current_unlocked_heroes(),
         "settings": {
             "music_volume": 0.5,
             "sfx_volume": 0.8,
@@ -47,6 +51,23 @@ def _merge_save_data(defaults: Dict[str, Any], loaded: Any) -> Dict[str, Any]:
             merged[key] = _deep_copy(loaded_value)
     return merged
 
+
+def _normalize_save_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Backfill additive save fields that older saves could not have known about."""
+    normalized = _deep_copy(data)
+    unlocked = normalized.get("unlocked_heroes")
+    if not isinstance(unlocked, list):
+        normalized["unlocked_heroes"] = _current_unlocked_heroes()
+        return normalized
+
+    known_names = _current_unlocked_heroes()
+    existing_names = {name for name in unlocked if isinstance(name, str)}
+    normalized["unlocked_heroes"] = list(unlocked)
+    for hero_name in known_names:
+        if hero_name not in existing_names:
+            normalized["unlocked_heroes"].append(hero_name)
+    return normalized
+
 class SaveSystem:
     def __init__(self):
         self.save_path = "saves/progress.json"
@@ -68,7 +89,7 @@ class SaveSystem:
         except (FileNotFoundError, json.JSONDecodeError):
             loaded_data = {}
 
-        return _merge_save_data(defaults, loaded_data)
+        return _normalize_save_data(_merge_save_data(defaults, loaded_data))
 
     def save(self, data: Dict[str, Any]) -> None:
         """Write data to save file, creating directory if needed"""

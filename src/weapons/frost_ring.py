@@ -52,6 +52,10 @@ class FrostRing(BaseWeapon):
         # Active rings list: each ring is {radius, damage_done, center, motes, shard_offset}
         self.rings = []
 
+    @property
+    def effective_max_radius(self) -> float:
+        return self.max_radius * self.owner.area_size_multiplier
+
     def _spawn_motes(self) -> list[dict]:
         """Build the initial ice mote particle list for a new ring cast."""
         motes = []
@@ -113,7 +117,7 @@ class FrostRing(BaseWeapon):
                 if inner_radius_sq <= distance_sq <= outer_radius_sq:
                     if enemy.sprite_id not in ring["damage_done"]:
                         is_crit = random.random() < self.owner.crit_chance
-                        damage = self.base_damage * self.owner.damage_multiplier * (self.owner.spell_damage_multiplier if self.IS_SPELL else 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
+                        damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = ring["center"] - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
                         enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
@@ -130,7 +134,7 @@ class FrostRing(BaseWeapon):
 
                         ring["damage_done"].add(enemy.sprite_id)
 
-            if ring["radius"] > self.max_radius:
+            if ring["radius"] > self.effective_max_radius:
                 self.rings.pop(i)
             else:
                 i += 1
@@ -148,7 +152,7 @@ class FrostRing(BaseWeapon):
         tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
 
         # Fade constants depend on the current (possibly upgraded) max_radius
-        max_r = self.max_radius
+        max_r = self.effective_max_radius
         mote_fade_start = max_r * 0.7
         mote_fade_range = max_r * 0.3
 

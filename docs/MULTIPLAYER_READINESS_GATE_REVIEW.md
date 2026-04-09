@@ -58,12 +58,14 @@ Until runtime verification is completed, multiplayer cannot be considered fully 
 
 ### 1. Remove remaining legacy compatibility branches
 
-The long-term design says the lobby should emit a concrete `input_config` even for 1P, and `input_config=None` is only a temporary shim. That shim still exists in live code:
+**Resolved (2026-04-06):** The `input_config=None` compatibility shim was removed from `src/ui/class_select.py` and the defensive guards in `src/game_scene.py` were simplified. Confirmed in Phase 14 of CLAUDE.md.
 
-- [src/ui/class_select.py](/Users/michael/Claude/mystic_siege/src/ui/class_select.py#L141)
-- [src/game_scene.py](/Users/michael/Claude/mystic_siege/src/game_scene.py#L380)
+~~The long-term design says the lobby should emit a concrete `input_config` even for 1P, and `input_config=None` is only a temporary shim. That shim still exists in live code:~~
 
-These branches are not necessarily breaking current behavior, but they leave architectural ambiguity in input ownership and solo-path handling.
+~~- [src/ui/class_select.py](/Users/michael/Claude/mystic_siege/src/ui/class_select.py#L141)~~
+~~- [src/game_scene.py](/Users/michael/Claude/mystic_siege/src/game_scene.py#L380)~~
+
+~~These branches are not necessarily breaking current behavior, but they leave architectural ambiguity in input ownership and solo-path handling.~~
 
 ### 2. Recheck spawn fairness near map edges
 
@@ -91,28 +93,24 @@ The code is generalized enough that new enemies/weapons/classes can be added, bu
 
 ### 1. Synthetic controller event docs are stale
 
-The docs still describe synthetic controller events as lacking device identity:
+**Resolved:** `AGENTS.md` and `CLAUDE.md` now accurately document that synthetic controller events carry `synthetic_controller_event` and `source_instance_id` metadata. The safe rule (owned menus must still route/reject these deliberately) is preserved in both docs.
 
-- [AGENTS.md](/Users/michael/Claude/mystic_siege/AGENTS.md#L40)
-- [CLAUDE.md](/Users/michael/Claude/mystic_siege/CLAUDE.md#L315)
-- [CLAUDE.md](/Users/michael/Claude/mystic_siege/CLAUDE.md#L640)
+~~The docs still describe synthetic controller events as lacking device identity:~~
 
-But the implementation now includes metadata on synthetic events:
-
-- [src/utils/input_manager.py](/Users/michael/Claude/mystic_siege/src/utils/input_manager.py#L689)
-
-Practical note:
-- The safe rule is still not to trust synthetic events for owned menus unless the menu code handles them deliberately.
-- But the docs no longer accurately describe the event payload.
+~~- [AGENTS.md](/Users/michael/Claude/mystic_siege/AGENTS.md#L40)~~
+~~- [CLAUDE.md](/Users/michael/Claude/mystic_siege/CLAUDE.md#L315)~~
+~~- [CLAUDE.md](/Users/michael/Claude/mystic_siege/CLAUDE.md#L640)~~
 
 ### 2. `input_config=None` is documented as temporary, but still exists in code
 
-Docs:
-- [AGENTS.md](/Users/michael/Claude/mystic_siege/AGENTS.md#L53)
+**Resolved (2026-04-06):** Shim removed. See item 1 in "Should Improve" above.
 
-Code still using the compatibility path:
-- [src/ui/class_select.py](/Users/michael/Claude/mystic_siege/src/ui/class_select.py#L141)
-- [src/game_scene.py](/Users/michael/Claude/mystic_siege/src/game_scene.py#L380)
+~~Docs:~~
+~~- [AGENTS.md](/Users/michael/Claude/mystic_siege/AGENTS.md#L53)~~
+
+~~Code still using the compatibility path:~~
+~~- [src/ui/class_select.py](/Users/michael/Claude/mystic_siege/src/ui/class_select.py#L141)~~
+~~- [src/game_scene.py](/Users/michael/Claude/mystic_siege/src/game_scene.py#L380)~~
 
 ### 3. Current 3-player HUD layout differs from V2 document intent
 
@@ -123,13 +121,15 @@ The code places player 3 in the bottom-left, not in the V2 guide’s top-row arr
 
 ## What Content Addition Is Risky Right Now
 
-Adding more classes, weapons, enemies, passives, or other gameplay content now is risky because:
+**Updated (2026-04-06):** The readiness gate has been cleared. 1P–4P runtime verification is complete. Content additions (classes, weapons, enemies) are now safe to resume. The remaining open items are:
 
-- major multiplayer paths are still unverified in actual gameplay
-- unresolved balance-scaling decisions may force retuning of new content later
-- additional content will make remaining multiplayer regressions harder to isolate
+- Multiplayer balance/scaling is not yet tuned for 2–4 player parties — new content should be balanced with this in mind.
+- Spawn fairness under wide party spread still needs runtime validation.
 
-The architecture is close enough that future content probably will not require a large multiplayer rewrite. The current risk is not “wrong architecture,” but “unfinished verification and a few correctness gaps.” That is still enough to justify blocking new content for now.
+~~Adding more classes, weapons, enemies, passives, or other gameplay content now is risky because:~~
+~~- major multiplayer paths are still unverified in actual gameplay~~
+~~- unresolved balance-scaling decisions may force retuning of new content later~~
+~~- additional content will make remaining multiplayer regressions harder to isolate~~
 
 ## Recommended Remaining Work Order
 
@@ -149,7 +149,7 @@ The architecture is close enough that future content probably will not require a
 4. Remove remaining temporary compatibility branches once the unified lobby path is stable.
 5. Update the authoritative docs so they match the code.
 6. Only then resume content additions.
-7. Add a 4th hero before treating 4P as a practical gameplay target.
+7. ~~Add a 4th hero before treating 4P as a practical gameplay target.~~ **Resolved:** the roster now has 5 heroes (Knight, Wizard, Friar, Ranger, Barbarian). 4P is unblocked.
 
 ## Verification Appendix
 
