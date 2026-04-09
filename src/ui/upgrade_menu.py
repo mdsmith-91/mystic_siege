@@ -353,7 +353,8 @@ class UpgradeMenu:
                     "xp_multiplier_pct": "XP",
                     "cooldown_reduction": "CD",
                     "crit_chance": "CRIT",
-                    "spell_damage_multiplier_pct": "SPL"
+                    "spell_damage_multiplier_pct": "SPL",
+                    "physical_damage_multiplier_pct": "PHYS",
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 

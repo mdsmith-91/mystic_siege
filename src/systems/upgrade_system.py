@@ -66,6 +66,13 @@ PASSIVE_UPGRADES = [
         "stat": "spell_damage_multiplier_pct",
         "value": 0.10,
         "icon_color": (160, 80, 255)
+    },
+    {
+        "name": "+10% Physical Damage",
+        "description": "Increase damage dealt by all physical weapons by 10%",
+        "stat": "physical_damage_multiplier_pct",
+        "value": 0.10,
+        "icon_color": (180, 120, 80)
     }
 ]
 
@@ -277,4 +284,6 @@ class UpgradeSystem:
         elif stat == "crit_chance":
             player.crit_chance += value
         elif stat == "spell_damage_multiplier_pct":
+            player.add_flat_percent_bonus(stat, value)
+        elif stat == "physical_damage_multiplier_pct":
             player.add_flat_percent_bonus(stat, value)
