@@ -12,12 +12,10 @@ from settings import (
     CALTROPS_BLEED_DURATION,
     CALTROPS_HITBOX_SIZE,
     CALTROPS_PATCH_ALPHA,
+    CALTROPS_PATCH_CALTROP_ALPHA,
     CALTROPS_PATCH_DURATION,
     CALTROPS_PATCH_FILL_COLOR,
     CALTROPS_PATCH_RADIUS,
-    CALTROPS_PATCH_RING_ALPHA,
-    CALTROPS_PATCH_RING_COLOR,
-    CALTROPS_PATCH_RING_WIDTH,
     CALTROPS_PROJECTILE_COLOR,
     CALTROPS_PROJECTILE_EDGE_COLOR,
     CALTROPS_PROJECTILE_LIFETIME,
@@ -25,7 +23,6 @@ from settings import (
     CALTROPS_PROJECTILE_SIZE,
     CALTROPS_SLOW_DURATION,
     CALTROPS_SLOW_MULTIPLIER,
-    CALTROPS_SPIKE_COUNT,
     CALTROPS_SPREAD,
     CALTROPS_TARGETING_RANGE,
     CALTROPS_THROW_SPEED,
@@ -36,6 +33,17 @@ from settings import (
 )
 from src.utils.audio_manager import AudioManager
 from src.weapons.base_weapon import BaseWeapon
+
+
+# Fixed scatter positions as (x_frac, y_frac) fractions of patch radius.
+# Arranged to look like dropped caltrops, not a radial pattern.
+_CALTROP_SCATTER_OFFSETS: list[tuple[float, float]] = [
+    (0.0, -0.05),
+    (0.38, -0.28),
+    (-0.35, 0.30),
+    (0.15, 0.40),
+    (-0.42, -0.18),
+]
 
 
 class CaltropProjectile(pygame.sprite.Sprite):
@@ -314,32 +322,37 @@ class Caltrops(BaseWeapon):
                 continue
 
             progress = patch["remaining"] / patch["duration"] if patch["duration"] > 0 else 0.0
-            fill_alpha = int(CALTROPS_PATCH_ALPHA * min(1.0, progress * 2.0))
-            ring_alpha = int(CALTROPS_PATCH_RING_ALPHA * min(1.0, progress * 2.0))
+            fade = min(1.0, progress * 2.0)
+            fill_alpha = int(CALTROPS_PATCH_ALPHA * fade)
+            shape_alpha = int(CALTROPS_PATCH_CALTROP_ALPHA * fade)
 
+            # Subtle translucent area indicator
             pygame.draw.circle(temp, (*CALTROPS_PATCH_FILL_COLOR, fill_alpha), (cx, cy), radius)
-            pygame.draw.circle(
-                temp,
-                (*CALTROPS_PATCH_RING_COLOR, ring_alpha),
-                (cx, cy),
-                radius,
-                CALTROPS_PATCH_RING_WIDTH,
-            )
 
-            for index in range(CALTROPS_SPIKE_COUNT):
-                angle = (index / CALTROPS_SPIKE_COUNT) * math.tau
-                inner = radius * 0.25
-                outer = radius * 0.95
-                x0 = int(cx + math.cos(angle) * inner)
-                y0 = int(cy + math.sin(angle) * inner)
-                x1 = int(cx + math.cos(angle) * outer)
-                y1 = int(cy + math.sin(angle) * outer)
+            # Individual scattered caltrop shapes — look like dropped metal spikes
+            arm = max(3, radius // 5)
+            for ox, oy in _CALTROP_SCATTER_OFFSETS:
+                sx = int(cx + ox * radius)
+                sy = int(cy + oy * radius)
                 pygame.draw.line(
                     temp,
-                    (*CALTROPS_PROJECTILE_EDGE_COLOR, ring_alpha),
-                    (x0, y0),
-                    (x1, y1),
-                    2,
+                    (*CALTROPS_PROJECTILE_OUTLINE_COLOR, shape_alpha),
+                    (sx - arm, sy - arm), (sx + arm, sy + arm), 3,
+                )
+                pygame.draw.line(
+                    temp,
+                    (*CALTROPS_PROJECTILE_OUTLINE_COLOR, shape_alpha),
+                    (sx - arm, sy + arm), (sx + arm, sy - arm), 3,
+                )
+                pygame.draw.line(
+                    temp,
+                    (*CALTROPS_PROJECTILE_EDGE_COLOR, shape_alpha),
+                    (sx - arm, sy - arm), (sx + arm, sy + arm), 1,
+                )
+                pygame.draw.line(
+                    temp,
+                    (*CALTROPS_PROJECTILE_COLOR, shape_alpha),
+                    (sx - arm, sy + arm), (sx + arm, sy - arm), 1,
                 )
 
         surface.blit(temp, (0, 0))

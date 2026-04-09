@@ -685,7 +685,7 @@ CALTROPS_PROJECTILE_LIFETIME = 0.35     # seconds before caltrops settle into ha
 CALTROPS_BASE_PROJECTILE_COUNT = 3      # caltrops thrown per cast at level 1
 CALTROPS_SPREAD = 18                    # degrees across the thrown fan
 CALTROPS_PATCH_RADIUS = 22              # pixels; small personal hazard footprint
-CALTROPS_PATCH_DURATION = 4.0           # seconds each hazard remains active
+CALTROPS_PATCH_DURATION = 6.0           # seconds each hazard remains active
 CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
 CALTROPS_SLOW_MULTIPLIER = 0.75         # enemy speed multiplier while in the hazard
 CALTROPS_SLOW_DURATION = 0.6            # seconds; refresh duration of the slow
@@ -712,10 +712,7 @@ CALTROPS_PROJECTILE_EDGE_COLOR = (210, 215, 220)  # RGB spike highlight tint
 CALTROPS_PROJECTILE_OUTLINE_COLOR = (45, 45, 55)  # RGB silhouette outline tint
 CALTROPS_PATCH_FILL_COLOR = (95, 95, 105)    # RGB translucent hazard tint
 CALTROPS_PATCH_ALPHA = 60                    # alpha 0-255 for hazard fill
-CALTROPS_PATCH_RING_COLOR = (180, 60, 60)    # RGB warning ring tint
-CALTROPS_PATCH_RING_ALPHA = 150              # alpha 0-255 for hazard ring
-CALTROPS_PATCH_RING_WIDTH = 2                # pixels; hazard ring stroke width
-CALTROPS_SPIKE_COUNT = 4                     # number of visible spikes per hazard
+CALTROPS_PATCH_CALTROP_ALPHA = 150           # alpha 0-255 for scattered caltrop shapes
 CALTROPS_BLEED_COLOR = (185, 55, 55)         # RGB bleed hit-feedback tint
 
 
