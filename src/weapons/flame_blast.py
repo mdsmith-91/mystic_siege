@@ -17,6 +17,7 @@ from settings import (
     FLAME_BLAST_INNER_COLOR,
     FLAME_BLAST_PARTICLE_COUNT,
     FLAME_BLAST_PARTICLE_LIFETIME,
+    FLAME_BLAST_PARTICLE_FADE_THRESHOLD,
     FLAME_BLAST_PARTICLE_RADIUS_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MIN,
@@ -149,7 +150,9 @@ class FlameBlast(BaseWeapon):
                 del self.burning_enemies[enemy]
                 continue
             self.burning_enemies[enemy] = remaining
-            enemy.take_damage(self.burn_damage * dt, attacker=self.owner)
+            to_attacker = self.owner.pos - enemy.pos
+            hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
+            enemy.take_damage(self.burn_damage * dt, hit_direction=hit_dir, attacker=self.owner)
 
     def on_owner_inactive(self):
         self.burning_enemies.clear()
@@ -178,7 +181,7 @@ class FlameBlast(BaseWeapon):
         for p in self.effect_particles:
             # Hold full alpha for first 60% of lifetime; fade in the last 40%
             t = p['life'] / p['max_life']
-            alpha = int(255 * min(1.0, t / 0.4))
+            alpha = int(255 * min(1.0, t / FLAME_BLAST_PARTICLE_FADE_THRESHOLD))
             px = int(p['pos'].x - camera_offset.x) - origin_x
             py = int(p['pos'].y - camera_offset.y) - origin_y
             if 0 <= px < size and 0 <= py < size:

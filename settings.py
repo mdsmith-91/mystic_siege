@@ -263,6 +263,7 @@ FLAME_BLAST_PARTICLE_LIFETIME = 0.55          # seconds; longer values leave par
 FLAME_BLAST_PARTICLE_SPEED_MIN = 80           # pixels/second; minimum starting particle speed
 FLAME_BLAST_PARTICLE_SPEED_MAX = 430          # pixels/second; maximum starting particle speed
 FLAME_BLAST_PARTICLE_RADIUS_MAX = 6           # pixels; max particle size
+FLAME_BLAST_PARTICLE_FADE_THRESHOLD = 0.4    # fraction of lifetime remaining when particle fade-out begins
 
 
 # Frost Ring -----------------------------------------------------------------
@@ -539,6 +540,7 @@ STONE_GOLEM_ENEMY_DATA = {
     "damage": 40,
     "xp_value": 80,
     "behavior": "chase",
+    "sprite_scale": (64, 64),
 }
 
 # Shared lookup used by the enemy registry/spawner. Keep ids stable because wave
@@ -620,12 +622,13 @@ MAIN_MENU_PARTICLE_SPAWN_ALPHA_MAX = 120  # alpha 0-255; maximum ember opacity
 # Class select layout (UI-only). These tune card positioning and spacing.
 CLASS_SELECT_TITLE_Y = 28             # pixels from top; title anchor
 CLASS_SELECT_PROMPT_MARGIN_TOP = 2    # pixels; spacing above prompt text
-CLASS_SELECT_GRID_TOP_Y = 134         # pixels from top; first row of hero cards
+CLASS_SELECT_GRID_TOP_Y = 160         # pixels from top; first row of hero cards — must clear title + prompt on all platforms
+CLASS_SELECT_GRID_BOTTOM_MARGIN = 110 # pixels; gap reserved below card grid bottom for confirm/back buttons
 CLASS_SELECT_CARD_WIDTH = 220         # pixels; hero card width
-CLASS_SELECT_CARD_HEIGHT = 230        # pixels; hero card height
+CLASS_SELECT_CARD_HEIGHT = 210        # pixels; hero card height — reduced to fit 2 rows (4+4) within the available vertical space
 CLASS_SELECT_CARD_GAP_X = 24          # pixels between card columns
 CLASS_SELECT_CARD_GAP_Y = 26          # pixels between card rows
-CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping
+CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping — 4-wide grid gives a 4+4 layout for up to 8 heroes
 CLASS_SELECT_CARD_PADDING_X = 16      # pixels; inner horizontal card padding
 CLASS_SELECT_COLOR_BAND_HEIGHT = 32   # pixels; color accent band height on each card
 
@@ -648,6 +651,9 @@ HUD_PANEL_WEAPON_SLOT_GAP = 4       # pixels between weapon slots
 HUD_PANEL_CORNER_RADIUS = 6         # pixels; rounded panel corners
 HUD_REVIVE_RING_RADIUS = 28         # pixels; on-screen revive progress ring size
 HUD_REVIVE_RING_WIDTH = 4           # pixels; on-screen revive ring stroke width
+HUD_WARNING_COLOR = (255, 100, 0)         # RGB wave/event warning text tint
+HUD_REVIVE_RING_BG_COLOR = (50, 50, 50)   # RGB fill behind the revive arc ring
+HUD_DOWNED_HP_BAR_COLOR = (110, 110, 110) # RGB HP bar fill when player is downed
 
 # Settings menu controls (UI-only). Slider step sizes here should stay readable
 # with the FPS cap steps defined earlier in the file.

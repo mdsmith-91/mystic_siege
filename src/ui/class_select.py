@@ -7,6 +7,7 @@ from settings import (
     CLASS_SELECT_CARD_PADDING_X,
     CLASS_SELECT_CARD_WIDTH,
     CLASS_SELECT_COLOR_BAND_HEIGHT,
+    CLASS_SELECT_GRID_BOTTOM_MARGIN,
     CLASS_SELECT_GRID_TOP_Y,
     CLASS_SELECT_MAX_COLUMNS,
     CLASS_SELECT_PROMPT_MARGIN_TOP,
@@ -157,7 +158,7 @@ class ClassSelect:
         total_height = rows * CLASS_SELECT_CARD_HEIGHT + (rows - 1) * CLASS_SELECT_CARD_GAP_Y
         start_x = (SCREEN_WIDTH - total_width) // 2
         start_y = CLASS_SELECT_GRID_TOP_Y
-        start_y = min(start_y, SCREEN_HEIGHT - total_height - 110)
+        start_y = min(start_y, SCREEN_HEIGHT - total_height - CLASS_SELECT_GRID_BOTTOM_MARGIN)
 
         rects: list[pygame.Rect] = []
         for index in range(len(HERO_CLASSES)):
