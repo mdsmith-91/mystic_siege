@@ -229,7 +229,7 @@ class BrambleSeeds(BaseWeapon):
                     knockback_force=0,
                 )
                 self._enemy_hit_cooldowns[enemy.sprite_id] = BRAMBLE_SEEDS_TICK_INTERVAL
-            if hasattr(enemy, "apply_slow"):
+            if enemy.alive() and hasattr(enemy, "apply_slow"):
                 enemy.apply_slow(
                     BRAMBLE_SEEDS_SLOW_MULTIPLIER,
                     BRAMBLE_SEEDS_SLOW_DURATION,
@@ -258,9 +258,9 @@ class BrambleSeeds(BaseWeapon):
             patch["remaining"] -= dt
             patch["tick_timer"] -= dt
 
-            while patch["tick_timer"] <= 0.0 and patch["remaining"] > 0.0:
+            if patch["tick_timer"] <= 0.0 and patch["remaining"] > 0.0:
                 self._damage_patch_enemies(patch)
-                patch["tick_timer"] += BRAMBLE_SEEDS_TICK_INTERVAL
+                patch["tick_timer"] = BRAMBLE_SEEDS_TICK_INTERVAL
 
             if patch["remaining"] <= 0.0:
                 self.patches.pop(i)
