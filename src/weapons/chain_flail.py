@@ -50,12 +50,30 @@ class ChainFlail(BaseWeapon):
     def effective_chain_length(self) -> float:
         return self.chain_length * self.owner.area_size_multiplier
 
+    def _get_target_direction(self) -> Vector2:
+        nearest_enemy = None
+        nearest_distance_sq = float("inf")
+
+        for enemy in self.enemy_group:
+            distance_sq = (enemy.pos - self.owner.pos).length_squared()
+            if distance_sq < nearest_distance_sq:
+                nearest_distance_sq = distance_sq
+                nearest_enemy = enemy
+
+        if nearest_enemy is not None:
+            target_direction = nearest_enemy.pos - self.owner.pos
+            if target_direction.length_squared() > 0:
+                return target_direction.normalize()
+
+        if self.owner.facing.length_squared() > 0:
+            return self.owner.facing.normalize()
+        return Vector2(1, 0)
+
     def fire(self) -> None:
         if self.active_swings:
             return
 
-        facing = self.owner.facing if self.owner.facing.length_squared() > 0 else Vector2(1, 0)
-        facing = facing.normalize()
+        facing = self._get_target_direction()
         facing_angle = math.degrees(math.atan2(facing.y, facing.x))
         half_sweep = self.sweep_angle / 2
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CHAIN_FLAIL)

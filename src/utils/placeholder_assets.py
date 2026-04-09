@@ -269,6 +269,33 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.circle(surface, detail, (16, 16), 7)
         pygame.draw.circle(surface, shadow, (16, 16), 7, 2)
         pygame.draw.line(surface, detail, (21, 11), (26, 6), 2)
+    elif weapon_key == "caltrops":
+        outline = (44, 46, 54)
+        spike = (192, 196, 205)
+        highlight = (235, 238, 244)
+        pygame.draw.line(surface, outline, (8, 16), (24, 16), 4)
+        pygame.draw.line(surface, outline, (16, 8), (16, 24), 4)
+        pygame.draw.line(surface, outline, (10, 10), (22, 22), 4)
+        pygame.draw.line(surface, outline, (22, 10), (10, 22), 4)
+        pygame.draw.line(surface, spike, (8, 16), (24, 16), 2)
+        pygame.draw.line(surface, spike, (16, 8), (16, 24), 2)
+        pygame.draw.line(surface, spike, (10, 10), (22, 22), 2)
+        pygame.draw.line(surface, spike, (22, 10), (10, 22), 2)
+        pygame.draw.circle(surface, highlight, (16, 16), 2)
+    elif weapon_key == "flail":
+        chain_color = (86, 88, 96)
+        chain_highlight = (138, 140, 148)
+        head_outline = (46, 48, 56)
+        head_fill = (155, 158, 168)
+        head_highlight = (230, 232, 238)
+        pygame.draw.line(surface, chain_color, (11, 22), (20, 11), 3)
+        pygame.draw.line(surface, chain_highlight, (11, 22), (20, 11), 1)
+        for link_center in ((13, 20), (15, 17), (17, 14)):
+            pygame.draw.circle(surface, chain_color, link_center, 2, 1)
+        pygame.draw.circle(surface, head_outline, (22, 10), 6)
+        pygame.draw.circle(surface, head_fill, (22, 10), 5)
+        pygame.draw.circle(surface, head_highlight, (20, 8), 2)
+        pygame.draw.line(surface, head_outline, (10, 23), (7, 26), 2)
     elif weapon_key == "nova":
         pygame.draw.circle(surface, detail, (16, 16), 8, 3)
         pygame.draw.circle(surface, detail, (16, 16), 3)
@@ -504,8 +531,10 @@ def generate_weapon_icon_assets():
     # Weapon colors matching projectiles
     weapons = [
         ("arcane.png", (160, 80, 255)),
+        ("caltrops.png", (150, 150, 160)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
+        ("flail.png", (150, 150, 160)),
         ("hex.png", (95, 35, 145)),
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
