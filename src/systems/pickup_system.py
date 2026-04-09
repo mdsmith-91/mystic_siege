@@ -22,6 +22,8 @@ class PickupSystem:
             pickup_radius_sq = pickup.collect_radius * pickup.collect_radius
 
             for player in collectors:
+                if hasattr(pickup, "can_collect") and not pickup.can_collect(player):
+                    continue
                 diff = player.pos - pickup_center
                 dist_sq = diff.length_squared()
                 if dist_sq > pickup_radius_sq:

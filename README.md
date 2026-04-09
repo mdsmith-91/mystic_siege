@@ -75,7 +75,7 @@ Not yet verified:
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
-- World pickups are shared-world objects. The nearest eligible player collects them; timed buffs stay on the collector, while `Magnet` retargets current XP orbs toward the closest eligible player per orb without changing shared-pool XP semantics.
+- World pickups are shared-world objects. The nearest eligible player collects them; health potions require missing HP, timed buffs stay on the collector, and `Magnet` retargets current XP orbs toward the closest eligible player per orb without changing shared-pool XP semantics.
 - Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
@@ -208,7 +208,7 @@ Recommended manual verification for the current state:
 3. Trigger a multiplayer level-up and confirm only the owning slot can resolve its upgrade menu.
 4. Disconnect and reclaim a controller mid-run and confirm gameplay stays safely paused until the slot is recovered.
 5. Finish a multiplayer run and confirm the game-over screen shows party results while `saves/progress.json` updates aggregate run totals.
-6. Defeat several enemies, confirm pickups can drop and be collected in 1P/2P+, verify `Magnet` pulls each existing XP orb toward the closest eligible player without changing shared-pool XP ownership, and verify buff durations only appear in the optional stat-bonus readout with mirrored inward placement on right-side panels.
+6. Defeat several enemies, confirm pickups can drop and be collected in 1P/2P+, verify full-health players do not consume health potions, verify `Magnet` pulls each existing XP orb toward the closest eligible player without changing shared-pool XP ownership, and verify buff durations only appear in the optional stat-bonus readout with mirrored inward placement on right-side panels.
 
 ## Safe Next Work
 

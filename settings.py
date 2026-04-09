@@ -119,6 +119,10 @@ PICKUP_DISPLAY_NAMES = {
     PICKUP_HASTE: "Haste",
 }
 
+PICKUP_REQUIRES_MISSING_HP = {
+    PICKUP_HEALTH_POTION: True,
+}
+
 WORLD_PICKUP_RADIUS = 26              # pixels; pickup collection radius around the pickup itself
 PICKUP_BOB_SPEED = 3.5                # radians/second for pickup idle bob
 PICKUP_BOB_HEIGHT = 4                 # pixels of visual bob amplitude

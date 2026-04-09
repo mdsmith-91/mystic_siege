@@ -261,9 +261,10 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   shared `saves/progress.json`, not per-person profiles.
 - XP orb collection is a shared pool. If two players are equally close, the lower
   slot index wins the tie.
-- World pickups are shared-world objects. Timed buff pickups affect only the collector,
-  while `Magnet` retargets currently spawned XP orbs toward the closest eligible player
-  per orb without changing shared-pool XP semantics.
+- World pickups are shared-world objects. Health potions require missing HP,
+  timed buff pickups affect only the collector, and `Magnet` retargets currently
+  spawned XP orbs toward the closest eligible player per orb without changing
+  shared-pool XP semantics.
 - Owned multiplayer menu flows now enforce device identity:
   - lobby claims devices by slot and rejects duplicate controller claims
   - class select and upgrade menus route controller input by owned joystick instance

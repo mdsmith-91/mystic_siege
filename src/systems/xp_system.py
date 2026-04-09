@@ -35,7 +35,7 @@ class XPSystem:
             best_xp_system = None
             best_dist_sq = 0.0
             best_slot_order = 0
-            orb_center = orb.rect.center
+            orb_center = orb.pos
 
             for player, xp_system in collector_entries:
                 diff = player.pos - orb_center
@@ -72,7 +72,7 @@ class XPSystem:
                 continue
 
             # dist_sq = squared distance from player.pos to orb.rect.center
-            orb_center = orb.rect.center
+            orb_center = orb.pos
             dist_sq = (player.pos - orb_center).length_squared()
 
             chosen_collector = None

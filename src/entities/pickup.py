@@ -19,6 +19,7 @@ from settings import (
     PICKUP_MAGNET,
     PICKUP_OUTLINE_WIDTH,
     PICKUP_PULSE_SPEED,
+    PICKUP_REQUIRES_MISSING_HP,
     PICKUP_TEXT_LIFETIME,
     WORLD_PICKUP_RADIUS,
 )
@@ -107,6 +108,11 @@ class Pickup(pygame.sprite.Sprite):
         self.image.set_alpha(int(255 * alpha_scale))
         bob_y = math.sin(self.float_offset) * PICKUP_BOB_HEIGHT
         self.rect.center = (int(self.pos.x), int(self.pos.y + bob_y))
+
+    def can_collect(self, player) -> bool:
+        if PICKUP_REQUIRES_MISSING_HP.get(self.pickup_id, False):
+            return getattr(player, "hp", 0.0) < getattr(player, "max_hp", 0.0)
+        return True
 
     def collect(self, player, game_scene) -> None:
         self._apply_effect(player, game_scene)

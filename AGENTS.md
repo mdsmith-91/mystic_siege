@@ -96,8 +96,9 @@ recomputing `self.vel` in a way that the parent class then overwrites.
    multiplayer runs; there is no per-person profile split yet.
 6. XP orb collection is currently a shared pool, and equal-distance ties resolve
    to the lowest slot index.
-7. World pickups are shared-world objects. Timed buff pickups stay on the collector,
-   while `Magnet` retargets active XP orbs to the closest eligible player per orb.
+7. World pickups are shared-world objects. Health potions require missing HP,
+   timed buff pickups stay on the collector, and `Magnet` retargets active XP
+   orbs to the closest eligible player per orb.
 
 ## Review guidelines
 
