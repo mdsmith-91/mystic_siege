@@ -74,6 +74,10 @@ class Sword(BaseWeapon):
     def effective_blade_length(self) -> float:
         return self.blade_length * self.owner.area_size_multiplier
 
+    @property
+    def effective_grip_length(self) -> float:
+        return SWORD_GRIP_LENGTH * self.owner.area_size_multiplier
+
     def _get_target_direction(self) -> Vector2 | None:
         nearest_enemy = None
         nearest_dist_sq = float("inf")
@@ -105,7 +109,6 @@ class Sword(BaseWeapon):
         self.active_swings.append(
             {
                 "timer": 0.0,
-                "direction": Vector2(direction),
                 "start_angle": start_angle,
                 "end_angle": end_angle,
                 "current_angle": start_angle,
@@ -182,11 +185,12 @@ class Sword(BaseWeapon):
             swing["current_extension"] = self.effective_blade_length * max(0.35, 1.0 - progress)
             swing["is_active"] = False
 
-    def _segment_points(self, angle: float, extension: float) -> tuple[Vector2, Vector2]:
+    def _pose_points(self, angle: float, extension: float) -> tuple[Vector2, Vector2, Vector2]:
         direction = Vector2(1, 0).rotate(angle)
         hilt = self.owner.pos + direction * self.effective_hand_offset
-        tip = hilt + direction * extension
-        return hilt, tip
+        guard = hilt + direction * self.effective_grip_length
+        tip = guard + direction * extension
+        return hilt, guard, tip
 
     def _damage_enemies(self, swing: dict) -> None:
         if not swing["is_active"]:
@@ -206,10 +210,10 @@ class Sword(BaseWeapon):
                 t_arc = arc_index / max(1, SWORD_ARC_SAMPLE_COUNT)
                 angle = start_angle + (end_angle - start_angle) * t_arc
                 extension = start_extension + (end_extension - start_extension) * t_arc
-                hilt, tip = self._segment_points(angle, extension)
+                _hilt, guard, tip = self._pose_points(angle, extension)
                 for blade_index in range(1, SWORD_BLADE_SAMPLE_COUNT + 1):
                     t_blade = blade_index / SWORD_BLADE_SAMPLE_COUNT
-                    point = hilt.lerp(tip, t_blade)
+                    point = guard.lerp(tip, t_blade)
                     if enemy.rect.collidepoint(point.x, point.y):
                         hit = True
                         break
@@ -255,12 +259,10 @@ class Sword(BaseWeapon):
             previous_angle = swing["previous_angle"]
             direction = Vector2(1, 0).rotate(current_angle)
             perpendicular = direction.rotate(90)
-            hilt = self.owner.pos + direction * self.effective_hand_offset
-            grip_end = hilt + direction * SWORD_GRIP_LENGTH
-            tip = grip_end + direction * swing["current_extension"]
+            hilt, grip_end, tip = self._pose_points(current_angle, swing["current_extension"])
             taper = grip_end + direction * (swing["current_extension"] * SWORD_TAPER_START)
 
-            previous_hilt, previous_tip = self._segment_points(previous_angle, swing["previous_extension"])
+            previous_hilt, _previous_guard, previous_tip = self._pose_points(previous_angle, swing["previous_extension"])
             pygame.draw.line(
                 surface,
                 SWORD_SWING_TRAIL_COLOR,
