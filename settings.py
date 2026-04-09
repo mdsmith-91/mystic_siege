@@ -354,9 +354,11 @@ SWORD_GUARD_THICKNESS = 4             # pixels; guard depth along the blade axis
 SWORD_TAPER_START = 0.70              # fraction of blade length where tapering begins
 SWORD_GRIP_COLOR = (94, 64, 38)       # RGB leather grip tint
 SWORD_HIGHLIGHT_COLOR = (236, 238, 242)  # RGB blade highlight tint
+SWORD_HIGHLIGHT_TIP_INSET = 10        # pixels; keeps the bright blade highlight off the sword point to avoid a white tip artifact
 SWORD_GUARD_COLOR = (160, 135, 84)    # RGB brass-and-iron crossguard/pommel tint
 SWORD_POMMEL_RADIUS = 4               # pixels; pommel size
 SWORD_SWING_TRAIL_COLOR = (210, 210, 205)  # RGB muted slash trail tint
+SWORD_SWING_TRAIL_TIP_INSET = 10      # pixels; keeps the tip trail slightly behind the blade point to avoid a bright line artifact
 SWORD_SWING_TRAIL_WIDTH = 2           # pixels; slash trail thickness
 SWORD_HIT_SPARK_COLOR = (220, 205, 150)  # RGB physical hit-feedback tint
 

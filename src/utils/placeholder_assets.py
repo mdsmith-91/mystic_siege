@@ -351,7 +351,7 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (22, 10), (10, 22), 2)
     elif weapon_key == "lightning":
         pygame.draw.polygon(surface, detail, [(18, 6), (10, 17), (15, 17), (12, 26), (22, 14), (17, 14)])
-    elif weapon_key == "blade":
+    elif weapon_key == "sword":
         blade_outline = (52, 54, 60)
         blade_fill = (198, 202, 208)
         blade_highlight = (236, 238, 242)
@@ -595,7 +595,7 @@ def generate_weapon_icon_assets():
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
-        ("blade.png", (190, 195, 202)),  # Sword placeholder icon
+        ("sword.png", (160, 160, 170)),  # Sword placeholder icon — use the darker neutral metal frame family
         ("longbow.png", (170, 120, 60)),
         ("knife.png", (170, 120, 60)),   # Shadow knives — same frame palette as longbow/caltrops
         ("spear.png", (160, 160, 170)),   # Spear — same frame palette as axe, blade, and flail

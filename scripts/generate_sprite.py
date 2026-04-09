@@ -6,7 +6,7 @@ Usage:
     # Hero — 4-direction spritesheet (cols: down, left, right, up), 32x32 per frame:
     OPENAI_API_KEY=your_key python generate_sprite.py \
         --category heroes --name knight \
-        --subject "armored knight with a burning crown and spectral sword" \
+        --subject "armored knight with a burning crown and steel sword" \
         --directions
 
     OPENAI_API_KEY=your_key python generate_sprite.py \

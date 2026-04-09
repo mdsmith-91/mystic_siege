@@ -27,7 +27,7 @@ _WEAPON_ICON_NAMES = {
     "Caltrops": "caltrops",
     "ChainFlail": "flail",
     "HolyNova": "nova",
-    "Sword": "blade",
+    "Sword": "sword",
     "FlameBlast": "fire",
     "FrostRing": "frost",
     "HexOrb": "hex",

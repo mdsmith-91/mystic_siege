@@ -115,7 +115,7 @@ mystic_siege/
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
 │   │   ├── flame_blast.py
-│   │   ├── spectral_blade.py
+│   │   ├── sword.py
 │   │   ├── frost_ring.py
 │   │   ├── lightning_chain.py
 │   │   └── longbow.py
@@ -159,7 +159,7 @@ mystic_siege/
 ### Knight
 - **HP:** 150 | **Speed:** Medium | **Armor:** High
 - **Passive:** +10% armor bonus (scales with armor upgrades)
-- **Starting Weapon:** Spectral Blade (orbiting swords)
+- **Starting Weapon:** Sword (timed melee sweeps)
 - **Playstyle:** Tank — survives by being a wall
 
 ### Wizard
@@ -195,7 +195,7 @@ Current implementation note:
 | Arcane Bolt | Projectile | Auto-fires homing bolts at nearest enemy |
 | Holy Nova | Area Pulse | Expands ring of light around player, damages all in range |
 | Flame Blast | Cone | Sweeping fire arc in front of movement direction |
-| Spectral Blade | Orbit | 2–4 swords orbit player and pass through enemies |
+| Sword | Melee Sweep | Timed steel slashes with windup, active sweep, and recovery |
 | Frost Ring | Zone | Ice ring expands slowly, freezes enemies briefly |
 | Lightning Chain | Chain | Bolt jumps between up to 6 enemies |
 | Longbow | Projectile | Fires fast arrows at nearby enemies with pierce/crit scaling |

@@ -21,6 +21,7 @@ from settings import (
     SWORD_GRIP_WIDTH,
     SWORD_HAND_OFFSET,
     SWORD_HIGHLIGHT_COLOR,
+    SWORD_HIGHLIGHT_TIP_INSET,
     SWORD_HIT_SPARK_COLOR,
     SWORD_KNOCKBACK_FORCE,
     SWORD_L5_SECOND_DELAY,
@@ -29,8 +30,6 @@ from settings import (
     SWORD_RECOVERY_DURATION,
     SWORD_SWEEP_ANGLE,
     SWORD_SWEEP_DURATION,
-    SWORD_SWING_TRAIL_COLOR,
-    SWORD_SWING_TRAIL_WIDTH,
     SWORD_TAPER_START,
     SWORD_TARGETING_RANGE,
     SWORD_UPGRADE_LEVELS,
@@ -262,22 +261,6 @@ class Sword(BaseWeapon):
             hilt, grip_end, tip = self._pose_points(current_angle, swing["current_extension"])
             taper = grip_end + direction * (swing["current_extension"] * SWORD_TAPER_START)
 
-            previous_hilt, _previous_guard, previous_tip = self._pose_points(previous_angle, swing["previous_extension"])
-            pygame.draw.line(
-                surface,
-                SWORD_SWING_TRAIL_COLOR,
-                screen_space(previous_tip),
-                screen_space(tip),
-                SWORD_SWING_TRAIL_WIDTH,
-            )
-            pygame.draw.line(
-                surface,
-                SWORD_SWING_TRAIL_COLOR,
-                screen_space(previous_hilt),
-                screen_space(hilt),
-                1,
-            )
-
             grip_points = [
                 screen_space(hilt + perpendicular * grip_half_width),
                 screen_space(hilt - perpendicular * grip_half_width),
@@ -310,7 +293,7 @@ class Sword(BaseWeapon):
             pygame.draw.polygon(surface, SWORD_OUTLINE_COLOR, blade_points, 1)
 
             highlight_start = grip_end + direction * 2
-            highlight_end = tip - direction * 5
+            highlight_end = tip - direction * SWORD_HIGHLIGHT_TIP_INSET
             pygame.draw.line(
                 surface,
                 SWORD_HIGHLIGHT_COLOR,
