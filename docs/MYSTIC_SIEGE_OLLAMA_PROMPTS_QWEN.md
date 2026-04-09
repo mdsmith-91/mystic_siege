@@ -79,7 +79,7 @@ mystic_siege/
 │   │   ├── base_weapon.py
 │   │   ├── arcane_bolt.py
 │   │   ├── holy_nova.py
-│   │   ├── spectral_blade.py
+│   │   ├── sword.py
 │   │   ├── flame_blast.py
 │   │   ├── frost_ring.py
 │   │   └── lightning_chain.py
@@ -217,8 +217,8 @@ HERO_CLASSES list of 3 dicts, each with keys:
 
   Hero 1 — "Knight":
     hp=150, speed=180, armor=15, color=(180,140,60)
-    passive_desc="Takes 15% less damage. Immune to knockback."
-    starting_weapon="SpectralBlade"
+    passive_desc="+10% armor bonus. Immune to knockback."
+    starting_weapon="Sword"
 
   Hero 2 — "Wizard":
     hp=80, speed=240, armor=0, color=(160,60,220)
@@ -513,39 +513,37 @@ This weapon doesn't use Projectile. It manages its own ring hitbox:
 Output the complete file. Wait for confirmation.
 
 
---- PROMPT 3D — Spectral Blade ---
+--- PROMPT 3D — Sword ---
 
-Generate src/weapons/spectral_blade.py — SpectralBlade(BaseWeapon):
+Generate src/weapons/sword.py — Sword(BaseWeapon):
 
-name = "Spectral Blade"
-description = "Spectral swords orbit the player, passing through enemies."
-base_damage = 18.0
-base_cooldown = 0.0  (no cooldown — orbiting continuously)
-blade_count = 2
-orbit_radius = 90
-orbit_speed = 180  # degrees per second
-blade_size = (24, 8)
-orbit_angle: float = 0.0  (current rotation, increments each frame)
+name = "Sword"
+description = "Sweeps a steel blade through nearby enemies with deliberate, heavy slashes."
+base_damage = 24.0
+base_cooldown = 0.95
+targeting_range = 155
+blade_length = 68
+sweep_angle = 120
+windup_duration = 0.08
+sweep_duration = 0.16
+recovery_duration = 0.14
+knockback_force = 200
 
-Per-enemy hit cooldown dict: {enemy_id: timer} — each enemy can only be hit once per 0.5s.
-
-update(self, dt):
-1. orbit_angle += orbit_speed * dt
-2. For each blade index i in range(blade_count):
-   - angle = orbit_angle + (360/blade_count * i)
-   - blade_pos = owner.pos + Vector2 rotated by angle at orbit_radius
-   - Create a rect at blade_pos
-   - Check rect against each enemy in enemy_group
-   - If hit and not in cooldown: deal damage, start 0.5s cooldown for that enemy
-3. Draw blades directly in draw(surface, offset) method
+Runtime shape:
+- Acquire the nearest enemy within targeting range before starting a swing
+- Each swing has windup, active sweep, and recovery phases
+- Track `hit_enemies` per swing so each enemy is hit at most once per swing instance
+- Level 5 adds a short delayed reverse follow-up slash
+- Draw the sword directly in draw(surface, camera_offset)
 
 upgrade_levels:
-  L2: {"blade_count": 1}      — 3 blades
-  L3: {"orbit_speed": 60}     — faster rotation
-  L4: {"orbit_radius": 20}    — wider orbit
-  L5: {"blade_count": 1, "base_damage": 12}  — 4 blades, more damage
+  L2: {"base_damage": 8.0}
+  L3: {"base_cooldown": -0.12}
+  L4: {"blade_length": 18}
+  L5: {"double_slash_count": 1}
 
-Note: SpectralBlade overrides update() fully — base class fire() is not used.
+Note: Sword uses timed melee collision sampling during the active sweep window instead
+of an always-on contact hitbox.
 Include a draw(surface, camera_offset) method called from game_scene.
 
 Output the complete file. Wait for confirmation.
@@ -790,7 +788,7 @@ Define PASSIVE_UPGRADES as a module-level list of dicts:
     +5% Cooldown Reduc  → stat="cooldown_reduction",value=0.05, color=(255,140,60)
 
 Define WEAPON_CLASSES as module-level list of weapon class names (strings):
-  ["ArcaneBolt","HolyNova","SpectralBlade","FlameBlast","FrostRing","LightningChain"]
+  ["ArcaneBolt","HolyNova","Sword","FlameBlast","FrostRing","LightningChain"]
 
 get_random_choices(self, player) -> list[dict]:
 - Build candidate list:
@@ -874,7 +872,7 @@ check_projectile_enemies(self, projectile_group, enemy_group):
     for enemy in enemy_list: projectile.on_hit(enemy)
 
 check_weapon_hits(self, player, enemy_group):
-- For orbit weapons (SpectralBlade): handled internally in weapon.update()
+- For timed melee weapons (Sword): handled internally in weapon.update()
 - For area weapons (HolyNova, FrostRing): handled internally in weapon.update()
 - This method is a hook for any weapon that needs external collision checking
 
@@ -1129,7 +1127,7 @@ draw(self, screen):
   2. For each sprite in all_sprites (sorted by rect.bottom for depth):
        screen.blit(sprite.image, camera.apply(sprite))
        sprite.draw_health_bar(screen, camera.offset) if enemy
-  3. Draw weapon effects that need explicit draw calls (SpectralBlade, FlameBlast arc, etc.)
+  3. Draw weapon effects that need explicit draw calls (Sword, FlameBlast arc, etc.)
   4. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
   5. If upgrade_menu: upgrade_menu.draw(screen)
   6. If paused: draw "PAUSED" centered in large text with semi-transparent overlay
@@ -1178,7 +1176,7 @@ Class-level constants for SFX names:
   WEAPON_ARCANE = "arcane_bolt"
   WEAPON_NOVA = "holy_nova"
   WEAPON_FLAME_BLAST = "flame_blast"
-  WEAPON_BLADE = "spectral_blade"
+  WEAPON_SWORD = "sword"
   WEAPON_CHAIN = "lightning_chain"
   WEAPON_FROST = "frost_ring"
 

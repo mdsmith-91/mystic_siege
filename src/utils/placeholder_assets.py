@@ -227,48 +227,62 @@ def _weapon_bg(surface: pygame.Surface, color: tuple[int, int, int]) -> None:
 
 
 def _draw_throwing_hatchet_icon(surface: pygame.Surface) -> None:
-    """Draw a compact competition-style throwing hatchet readable at 32x32."""
-    handle_shadow = (64, 38, 12)
-    handle_color = (176, 132, 74)
-    handle_highlight = (214, 172, 110)
+    """Draw a simple hatchet silhouette readable at 32x32."""
+    handle_shadow = (78, 48, 18)
+    handle_color = (170, 122, 72)
+    handle_highlight = (208, 166, 112)
     steel_outline = (42, 46, 54)
-    steel_fill = (190, 192, 196)
-    steel_shadow = (132, 136, 144)
-    steel_highlight = (232, 234, 238)
+    steel_fill = (188, 192, 198)
+    steel_shadow = (136, 140, 148)
+    steel_highlight = (234, 236, 240)
 
-    # Straight haft with slight taper so the silhouette reads as wood instead of a line.
-    pygame.draw.polygon(surface, handle_shadow, [(9, 26), (12, 27), (20, 12), (17, 11)])
-    pygame.draw.polygon(surface, handle_color, [(10, 25), (12, 26), (19, 12), (17, 12)])
-    pygame.draw.line(surface, handle_highlight, (11, 24), (18, 13), 1)
+    # Straight wooden haft.
+    haft_outline = [(16, 25), (19, 25), (19, 13), (16, 13)]
+    haft_fill = [(16, 24), (18, 24), (18, 14), (16, 14)]
+    pygame.draw.polygon(surface, handle_shadow, haft_outline)
+    pygame.draw.polygon(surface, handle_color, haft_fill)
+    pygame.draw.line(surface, handle_highlight, (17, 15), (17, 23), 1)
 
-    # Small eye/socket where the steel wraps the haft. This creates clear wood/metal separation.
-    pygame.draw.polygon(surface, steel_outline, [(14, 11), (18, 9), (21, 11), (19, 15), (16, 14), (14, 13)])
-    pygame.draw.polygon(surface, steel_shadow, [(15, 11), (18, 10), (20, 11), (18, 14), (16, 13), (15, 12)])
+    # Hatchet eye/socket around the top of the handle.
+    eye_outline = [(15, 12), (20, 12), (20, 15), (15, 15)]
+    eye_fill = [(16, 12), (19, 12), (19, 14), (16, 14)]
+    pygame.draw.polygon(surface, steel_outline, eye_outline)
+    pygame.draw.polygon(surface, steel_shadow, eye_fill)
 
-    # Competition-style hatchet head: mostly trapezoidal with the narrow mounted side at the shaft.
-    head_outline = [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)]
-    head_fill = [(7, 9), (17, 7), (20, 9), (18, 14), (16, 15), (8, 14), (5, 12)]
+    # Broad single-bit hatchet head.
+    head_outline = [(7, 10), (16, 8), (20, 10), (20, 15), (16, 17), (10, 16), (6, 13)]
+    head_fill = [(8, 10), (16, 9), (19, 10), (19, 14), (16, 16), (11, 15), (7, 13)]
     pygame.draw.polygon(surface, steel_outline, head_outline)
     pygame.draw.polygon(surface, steel_fill, head_fill)
 
-    # Subtle darker underside keeps the rectangular head readable at icon size.
-    pygame.draw.polygon(surface, steel_shadow, [(9, 14), (16, 15), (18, 14), (16, 13), (10, 13)])
-
-    # Keep the bevel subtle and inside the blade face.
-    pygame.draw.lines(surface, steel_highlight, False, [(7, 9), (5, 12), (8, 14)], 1)
-    pygame.draw.line(surface, steel_highlight, (9, 9), (17, 7), 1)
-
-    # Re-assert the silhouette edges after the highlight so the dark border stays crisp.
-    pygame.draw.lines(surface, steel_outline, False, [(6, 9), (17, 6), (21, 9), (19, 15), (16, 16), (8, 15), (4, 12)], 1)
+    # Underside shadow and cutting-edge highlight keep it reading as a hatchet.
+    pygame.draw.polygon(surface, steel_shadow, [(11, 15), (16, 16), (18, 15), (16, 14), (12, 14)])
+    pygame.draw.line(surface, steel_highlight, (9, 10), (16, 9), 1)
+    pygame.draw.line(surface, steel_highlight, (7, 11), (7, 13), 1)
 
 
 def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
     detail = _shade(color, 55)
     shadow = _shade(color, -70)
     if weapon_key == "arcane":
-        pygame.draw.circle(surface, detail, (16, 16), 7)
-        pygame.draw.circle(surface, shadow, (16, 16), 7, 2)
-        pygame.draw.line(surface, detail, (21, 11), (26, 6), 2)
+        outline = (36, 16, 72)
+        mid_glow = (120, 55, 210)
+        core = (210, 140, 255)
+        center = (240, 210, 255)
+        rune = (190, 120, 255)
+        highlight = (225, 185, 255)
+        pygame.draw.circle(surface, outline, (16, 16), 10)
+        pygame.draw.circle(surface, shadow, (16, 16), 9)
+        pygame.draw.circle(surface, mid_glow, (16, 16), 7)
+        pygame.draw.circle(surface, highlight, (13, 12), 2)
+        pygame.draw.circle(surface, core, (16, 16), 4)
+        pygame.draw.circle(surface, center, (16, 16), 2)
+        pygame.draw.line(surface, rune, (8, 11), (11, 9), 2)
+        pygame.draw.line(surface, rune, (8, 11), (10, 14), 2)
+        pygame.draw.line(surface, rune, (21, 8), (24, 11), 2)
+        pygame.draw.line(surface, rune, (24, 11), (21, 13), 2)
+        pygame.draw.line(surface, rune, (11, 23), (16, 25), 2)
+        pygame.draw.line(surface, rune, (16, 25), (21, 23), 2)
     elif weapon_key == "caltrops":
         outline = (44, 46, 54)
         spike = (192, 196, 205)
@@ -337,15 +351,40 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         pygame.draw.line(surface, detail, (22, 10), (10, 22), 2)
     elif weapon_key == "lightning":
         pygame.draw.polygon(surface, detail, [(18, 6), (10, 17), (15, 17), (12, 26), (22, 14), (17, 14)])
-    elif weapon_key == "blade":
-        pygame.draw.line(surface, detail, (11, 23), (22, 10), 3)
-        pygame.draw.line(surface, shadow, (9, 24), (13, 24), 2)
-        pygame.draw.line(surface, shadow, (12, 21), (16, 25), 2)
+    elif weapon_key == "sword":
+        blade_outline = (52, 54, 60)
+        blade_fill = (198, 202, 208)
+        blade_highlight = (236, 238, 242)
+        guard_color = (160, 135, 84)
+        grip_color = (94, 64, 38)
+        pommel_color = (120, 102, 74)
+
+        # Very simple generic sword: straight blade, crossguard, grip, pommel.
+        blade_outline_pts = [(16, 5), (20, 10), (18, 21), (14, 21), (12, 10)]
+        blade_fill_pts = [(16, 7), (19, 10), (17, 20), (15, 20), (13, 10)]
+        pygame.draw.polygon(surface, blade_outline, blade_outline_pts)
+        pygame.draw.polygon(surface, blade_fill, blade_fill_pts)
+        pygame.draw.line(surface, blade_highlight, (16, 8), (16, 19), 1)
+
+        pygame.draw.line(surface, blade_outline, (10, 21), (22, 21), 4)
+        pygame.draw.line(surface, guard_color, (11, 21), (21, 21), 2)
+
+        pygame.draw.rect(surface, blade_outline, pygame.Rect(14, 21, 4, 6), border_radius=1)
+        pygame.draw.rect(surface, grip_color, pygame.Rect(15, 22, 2, 4), border_radius=1)
+
+        pygame.draw.circle(surface, blade_outline, (16, 27), 2)
+        pygame.draw.circle(surface, pommel_color, (16, 27), 1)
     elif weapon_key == "longbow":
-        pygame.draw.arc(surface, shadow, (8, 5, 12, 22), 1.2, 5.1, 3)
-        pygame.draw.line(surface, detail, (18, 7), (18, 25), 1)
-        pygame.draw.line(surface, detail, (11, 16), (25, 16), 2)
-        pygame.draw.polygon(surface, detail, [(25, 16), (21, 13), (21, 19)])
+        bow_outline = (70, 42, 18)
+        bow_fill = (164, 118, 70)
+        bow_highlight = (208, 166, 112)
+        string_color = (224, 214, 190)
+
+        # Fresh simple bow silhouette: wood arc plus string, no arrow.
+        pygame.draw.arc(surface, bow_outline, (9, 5, 14, 22), 1.1, 5.18, 4)
+        pygame.draw.arc(surface, bow_fill, (10, 6, 12, 20), 1.1, 5.18, 2)
+        pygame.draw.line(surface, string_color, (18, 8), (18, 24), 1)
+        pygame.draw.line(surface, bow_highlight, (13, 10), (12, 21), 1)
     elif weapon_key == "spear":
         shaft_color = (110, 75, 40)
         shaft_outline = (60, 40, 20)
@@ -366,12 +405,12 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
     elif weapon_key == "axe":
         _draw_throwing_hatchet_icon(surface)
     elif weapon_key == "knife":
-        blade_outline = (42, 40, 52)
+        blade_outline = (42, 46, 54)
         blade_fill = (188, 192, 205)
         blade_highlight = (238, 240, 248)
-        guard = _shade(color, 35)
-        handle = shadow
-        pommel = _shade(color, -35)
+        guard = (118, 122, 132)
+        handle = (78, 52, 30)
+        pommel = (104, 108, 118)
 
         # Slim, pointy blade and compact grip stay clear of the rounded icon border.
         pygame.draw.polygon(surface, blade_outline, [(16, 5), (20, 15), (18, 21), (14, 21), (12, 15)])
@@ -548,18 +587,18 @@ def generate_weapon_icon_assets():
     # Weapon colors matching projectiles
     weapons = [
         ("arcane.png", (160, 80, 255)),
-        ("caltrops.png", (150, 150, 160)),
+        ("caltrops.png", (170, 120, 60)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
-        ("flail.png", (150, 150, 160)),
+        ("flail.png", (190, 195, 202)),
         ("hex.png", (95, 35, 145)),
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),
-        ("blade.png", (100, 150, 255)),  # Spectral blade color
+        ("sword.png", (160, 160, 170)),  # Sword placeholder icon — use the darker neutral metal frame family
         ("longbow.png", (170, 120, 60)),
-        ("knife.png", (105, 105, 135)),   # Shadow knives — muted rogue steel
-        ("spear.png", (185, 190, 200)),   # Spear — cool steel
+        ("knife.png", (170, 120, 60)),   # Shadow knives — same frame palette as longbow/caltrops
+        ("spear.png", (160, 160, 170)),   # Spear — same frame palette as axe, blade, and flail
         ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
@@ -669,7 +708,7 @@ def generate_audio_placeholders():
     maybe_write_sweep("hex_orb.wav",        freq_start=260, freq_end=90, duration_s=0.18)
     maybe_write_sine("holy_nova.wav",       freq_hz=110,  duration_s=0.25)
     maybe_write_sine("flame_blast.wav",     freq_hz=330,  duration_s=0.10)
-    maybe_write_sine("spectral_blade.wav",  freq_hz=550,  duration_s=0.06)
+    maybe_write_sweep("sword.wav",          freq_start=620, freq_end=280, duration_s=0.09)
     maybe_write_sine("lightning_chain.wav", freq_hz=1760, duration_s=0.08)
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)

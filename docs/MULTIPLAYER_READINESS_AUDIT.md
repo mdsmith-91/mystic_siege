@@ -82,8 +82,9 @@ design choice — see Section 6.2. The XPSystem itself is clean; the orb semanti
 the item to consciously decide.
 
 ### 2.2 Weapon owner binding
-All seven weapon classes (`arcane_bolt.py`, `holy_nova.py`, `spectral_blade.py`,
-`flame_blast.py`, `frost_ring.py`, `lightning_chain.py`, `longbow.py`) bind `self.owner = owner`
+All current weapon classes (`arcane_bolt.py`, `holy_nova.py`, `sword.py`,
+`flame_blast.py`, `frost_ring.py`, `lightning_chain.py`, `longbow.py`, and the
+expanded roster added later) bind `self.owner = owner`
 at construction. Every stat access (`self.owner.damage_multiplier`,
 `self.owner.crit_chance`, `self.owner.pos`) already works correctly per-player.
 Weapons are created per-player and need no changes to function in multiplayer.

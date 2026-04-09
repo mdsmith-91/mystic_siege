@@ -99,7 +99,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_HEX_ORB, "assets/audio/sfx/hex_orb.wav")
         _am.load_sfx(AudioManager.WEAPON_NOVA,   "assets/audio/sfx/holy_nova.wav")
         _am.load_sfx(AudioManager.WEAPON_FLAME_BLAST, "assets/audio/sfx/flame_blast.wav")
-        _am.load_sfx(AudioManager.WEAPON_BLADE,  "assets/audio/sfx/spectral_blade.wav")
+        _am.load_sfx(AudioManager.WEAPON_SWORD,  "assets/audio/sfx/sword.wav")
         _am.load_sfx(AudioManager.WEAPON_CHAIN,  "assets/audio/sfx/lightning_chain.wav")
         _am.load_sfx(AudioManager.WEAPON_FROST,  "assets/audio/sfx/frost_ring.wav")
         _am.load_sfx(AudioManager.WEAPON_LONGBOW, "assets/audio/sfx/longbow.wav")
@@ -928,7 +928,7 @@ class GameScene:
             if hasattr(sprite, 'hp') and hasattr(sprite, 'max_hp') and sprite not in self.player_group:
                 sprite.draw_health_bar(world_surface, local_offset)
 
-        # 3. Draw weapon effects that need explicit draw calls (SpectralBlade, HolyNova, FrostRing, etc.)
+        # 3. Draw weapon effects that need explicit draw calls (Sword, HolyNova, FrostRing, etc.)
         for player in self.players:
             if player.is_downed:
                 continue

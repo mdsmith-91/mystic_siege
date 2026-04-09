@@ -313,45 +313,54 @@ HOLY_NOVA_FLARE_LENGTH = 14                    # pixels; larger values lengthen 
 HOLY_NOVA_PARTICLE_SPEED_VARIANCE = 40         # pixels/second variance; higher values create a noisier burst
 
 
-# Spectral Blade -------------------------------------------------------------
-# Gameplay role: continuous close-range orbiting melee. Damage uptime depends on
-# blade count, orbit speed, and radius working together.
+# Sword ----------------------------------------------------------------------
+# Gameplay role: disciplined close-range physical sweep with clear hit windows,
+# broad crowd control, and deliberate cadence.
 # Gameplay
-SPECTRAL_BLADE_BASE_DAMAGE = 18.0      # damage per hit
-SPECTRAL_BLADE_BASE_COOLDOWN = 0.0     # seconds; 0 keeps the blade orbit always active
-SPECTRAL_BLADE_BASE_BLADE_COUNT = 2    # orbiting blades at level 1
-SPECTRAL_BLADE_ORBIT_RADIUS = 20       # pixels from player center to hilt; larger values sweep a wider circle
-SPECTRAL_BLADE_ORBIT_SPEED = 180       # degrees/second; higher values increase hit frequency on nearby enemies
-SPECTRAL_BLADE_HIT_COOLDOWN = 0.3       # seconds per-enemy hit cooldown; lower values increase repeated hits
+SWORD_BASE_DAMAGE = 24.0              # damage per hit
+SWORD_BASE_COOLDOWN = 0.95            # seconds between attack cycles
+SWORD_TARGETING_RANGE = 155           # pixels; only nearby enemies should trigger a swing
+SWORD_HAND_OFFSET = 16                # pixels from player center to hilt during the swing
+SWORD_BLADE_LENGTH = 68               # pixels from guard to tip; keeps Sword clearly shorter than Spear
+SWORD_SWEEP_ANGLE = 120               # degrees traversed during the active slash
+SWORD_WINDUP_DURATION = 0.08          # seconds spent setting the blade before the active sweep
+SWORD_SWEEP_DURATION = 0.16           # seconds spent cutting through the arc
+SWORD_RECOVERY_DURATION = 0.14        # seconds spent settling after the slash
+SWORD_KNOCKBACK_FORCE = 200           # pixels/second impulse applied on hit
+SWORD_ARC_SAMPLE_COUNT = 6            # angle samples across the moving sweep used for collision checks
+SWORD_BLADE_SAMPLE_COUNT = 6          # sample points along the blade used for melee collision
+SWORD_L5_SECOND_DELAY = 0.22          # seconds after the first swing before the level-5 follow-up slash
 
 # Upgrade Levels
-# Levels 2-5: +1 blade, faster orbit, wider orbit, then +1 blade with more damage.
-SPECTRAL_BLADE_UPGRADE_LEVELS = [
+# Levels 2-5: stronger hit, faster cadence, longer reach, then a follow-up slash.
+SWORD_UPGRADE_LEVELS = [
     {},
-    {"blade_count": 1},
-    {"orbit_speed": 60},
-    {"orbit_radius": 20},
-    {"blade_count": 1, "base_damage": 12},
+    {"base_damage": 8.0},
+    {"base_cooldown": -0.12},
+    {"blade_length": 18},
+    {"double_slash_count": 1},
 ]
 
 # Visual
-# Sword geometry and colors only. These tune silhouette and readability, not hit cadence or orbit coverage.
-SPECTRAL_BLADE_BLADE_LENGTH = 78       # pixels; sword length used for rendering
-SPECTRAL_BLADE_BLADE_WIDTH = 5         # pixels; blade width
-SPECTRAL_BLADE_BLADE_COLOR = (100, 150, 255)   # RGB blade body tint
-SPECTRAL_BLADE_OUTLINE_COLOR = (60, 90, 180)   # RGB outline tint
-SPECTRAL_BLADE_GRIP_LENGTH = 16        # pixels; hilt length
-SPECTRAL_BLADE_GRIP_WIDTH = 5          # pixels; grip thickness
-SPECTRAL_BLADE_GUARD_HALF_WIDTH = 17   # pixels; half-width of crossguard
-SPECTRAL_BLADE_GUARD_THICKNESS = 4     # pixels; guard depth along the blade axis
-SPECTRAL_BLADE_TAPER_START = 0.72      # fraction of blade length where the blade begins tapering
-SPECTRAL_BLADE_GRIP_COLOR = (50, 70, 130)       # RGB grip tint
-SPECTRAL_BLADE_HIGHLIGHT_COLOR = (190, 215, 255)  # RGB inner highlight tint
-SPECTRAL_BLADE_GUARD_COLOR = (160, 190, 255)    # RGB guard/pommel accent tint
-SPECTRAL_BLADE_POMMEL_RADIUS = 5       # pixels; pommel size
-SPECTRAL_BLADE_GLOW_COLOR = (140, 175, 255)     # RGB outer glow tint
-SPECTRAL_BLADE_GLOW_EXTRA_WIDTH = 3     # pixels added around the blade for glow thickness
-SPECTRAL_BLADE_HIT_SPARK_COLOR = (100, 150, 255)  # RGB hit feedback tint
+# Steel-and-leather sword styling only. These tune readability and silhouette,
+# not hit timing or collision logic.
+SWORD_BLADE_WIDTH = 6                 # pixels; blade width
+SWORD_BLADE_COLOR = (198, 202, 208)   # RGB steel blade tint
+SWORD_OUTLINE_COLOR = (52, 54, 60)    # RGB silhouette outline tint
+SWORD_GRIP_LENGTH = 18                # pixels; hilt length
+SWORD_GRIP_WIDTH = 4                  # pixels; grip thickness
+SWORD_GUARD_HALF_WIDTH = 12           # pixels; half-width of crossguard
+SWORD_GUARD_THICKNESS = 4             # pixels; guard depth along the blade axis
+SWORD_TAPER_START = 0.70              # fraction of blade length where tapering begins
+SWORD_GRIP_COLOR = (94, 64, 38)       # RGB leather grip tint
+SWORD_HIGHLIGHT_COLOR = (236, 238, 242)  # RGB blade highlight tint
+SWORD_HIGHLIGHT_TIP_INSET = 10        # pixels; keeps the bright blade highlight off the sword point to avoid a white tip artifact
+SWORD_GUARD_COLOR = (160, 135, 84)    # RGB brass-and-iron crossguard/pommel tint
+SWORD_POMMEL_RADIUS = 4               # pixels; pommel size
+SWORD_SWING_TRAIL_COLOR = (210, 210, 205)  # RGB muted slash trail tint
+SWORD_SWING_TRAIL_TIP_INSET = 10      # pixels; keeps the tip trail slightly behind the blade point to avoid a bright line artifact
+SWORD_SWING_TRAIL_WIDTH = 2           # pixels; slash trail thickness
+SWORD_HIT_SPARK_COLOR = (220, 205, 150)  # RGB physical hit-feedback tint
 
 
 # Flame Blast ----------------------------------------------------------------
@@ -639,7 +648,7 @@ THROWING_AXES_EDGE_HIGHLIGHT_WIDTH = 2            # pixels at 18x18 reference si
 # Gameplay
 SHADOW_KNIVES_BASE_DAMAGE = 18.0       # damage per knife hit
 SHADOW_KNIVES_BASE_COOLDOWN = 0.65     # seconds between volleys; lower values increase burst cadence
-SHADOW_KNIVES_TARGETING_RANGE = 360    # pixels; shorter than Longbow by design
+SHADOW_KNIVES_TARGETING_RANGE = 300    # pixels; shorter acquisition range keeps volleys from starting too early
 SHADOW_KNIVES_PROJECTILE_SPEED = 760   # pixels/second during outward travel
 SHADOW_KNIVES_RETURN_SPEED = 920       # pixels/second while the knife returns to the owner
 SHADOW_KNIVES_PROJECTILE_LIFETIME = 1.1   # seconds before forced despawn
@@ -717,33 +726,34 @@ CALTROPS_BLEED_COLOR = (185, 55, 55)         # RGB bleed hit-feedback tint
 
 
 # Chain Flail ----------------------------------------------------------------
-# Gameplay role: physical tethered sweep with burst windows, reach, and lane
+# Gameplay role: physical tethered spin with burst windows, reach, and crowd
 # disruption rather than continuous orbit uptime.
 # Gameplay
 CHAIN_FLAIL_BASE_DAMAGE = 26.0          # damage per enemy hit during a swing
-CHAIN_FLAIL_BASE_COOLDOWN = 1.6         # seconds between swings
+CHAIN_FLAIL_BASE_COOLDOWN = 1.8         # seconds between swings; slightly slower to support a readable full spin
+CHAIN_FLAIL_TARGETING_RANGE = 180       # pixels; only nearby enemies should trigger a flail spin
 CHAIN_FLAIL_CHAIN_LENGTH = 110          # pixels; max reach of the flail head from the player
 CHAIN_FLAIL_HEAD_RADIUS = 11            # pixels; damaging footprint of the flail head
-CHAIN_FLAIL_SWEEP_ANGLE = 120           # degrees traversed during the swing phase
+CHAIN_FLAIL_SWEEP_ANGLE = 360           # degrees traversed during the swing phase
 CHAIN_FLAIL_EXTEND_DURATION = 0.14      # seconds from hand to full extension
-CHAIN_FLAIL_SWEEP_DURATION = 0.18       # seconds spent traversing the arc
+CHAIN_FLAIL_SWEEP_DURATION = 0.34       # seconds spent traversing the full spin
 CHAIN_FLAIL_RETRACT_DURATION = 0.12     # seconds from full extension back to the player
 CHAIN_FLAIL_KNOCKBACK_FORCE = 230       # pixels/second impulse applied on hit
 CHAIN_FLAIL_CHAIN_SAMPLE_COUNT = 5      # points along the chain used for light body collision checks
 
 # Upgrade Levels
-# Levels 2-5: +damage, longer reach, wider sweep, then faster cooldown with a
+# Levels 2-5: +damage, longer reach, longer spin, then faster cooldown with a
 # slightly larger head for consistency.
 CHAIN_FLAIL_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},
     {"chain_length": 24},
-    {"sweep_angle": 28},
+    {"sweep_duration": 0.08},
     {"base_cooldown": -0.2, "head_radius": 4},
 ]
 
 # Visual
-# Chain and flail-head styling only. These do not change sweep timing or damage.
+# Chain and flail-head styling only. These do not change spin timing or damage.
 CHAIN_FLAIL_CHAIN_COLOR = (120, 120, 130)      # RGB chain tint
 CHAIN_FLAIL_CHAIN_WIDTH = 3                    # pixels; rendered chain thickness
 CHAIN_FLAIL_HEAD_COLOR = (150, 150, 160)       # RGB flail head tint
@@ -759,8 +769,8 @@ CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 # Gameplay
 SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
 SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
-SPEAR_TARGETING_RANGE    = 380           # pixels; comparable to ThrowingAxes range
-SPEAR_THRUST_LENGTH      = 100           # pixels from hand position to spear tip
+SPEAR_TARGETING_RANGE    = 400           # pixels; keeps Spear meaningfully farther-reaching than Sword
+SPEAR_THRUST_LENGTH      = 108           # pixels from hand position to spear tip
 SPEAR_HAND_OFFSET        = 8            # px perpendicular right of thrust direction — right-hand grip position
 SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
 SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
@@ -1251,7 +1261,7 @@ HERO_CLASSES = [
         "speed": 180,
         "armor": 15,
         "passive_desc": "+10% armor bonus.\nImmune to knockback.",
-        "starting_weapon": "SpectralBlade",
+        "starting_weapon": "Sword",
         "color": (180, 140, 60),
         "sprite": "assets/sprites/heroes/knight.png",
         "passives": {

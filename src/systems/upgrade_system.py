@@ -90,7 +90,7 @@ WEAPON_CLASSES = [
     "Caltrops",
     "ChainFlail",
     "HolyNova",
-    "SpectralBlade",
+    "Sword",
     "FlameBlast",
     "FrostRing",
     "HexOrb",
@@ -125,8 +125,8 @@ WEAPON_META = {
     },
     "ChainFlail": {
         "name": "Chain Flail",
-        "new_description": "Extends a tethered flail, sweeps through an arc, then retracts.",
-        "upgrade_description": "L2 +damage. L3 longer reach. L4 wider sweep. L5 faster cooldown and larger head.",
+        "new_description": "Extends a tethered flail, spins once around the wielder, then retracts.",
+        "upgrade_description": "L2 +damage. L3 longer reach. L4 longer spin. L5 faster cooldown and larger head.",
         "icon_color": (180, 170, 130),
         "symbol": "CF",
     },
@@ -137,12 +137,12 @@ WEAPON_META = {
         "icon_color": (255, 220, 80),
         "symbol": "HN",
     },
-    "SpectralBlade": {
-        "name": "Spectral Blade",
-        "new_description": "Orbiting swords that continuously slash surrounding foes.",
-        "upgrade_description": "L2 +1 blade. L3 faster orbit speed. L4 wider orbit radius. L5 +1 blade and +12 damage.",
-        "icon_color": (80, 220, 200),
-        "symbol": "SB",
+    "Sword": {
+        "name": "Sword",
+        "new_description": "Delivers broad steel slashes against nearby enemies with heavy, readable timing.",
+        "upgrade_description": "L2 +8 damage. L3 -0.12s cooldown. L4 +18 reach. L5 follow-up slash.",
+        "icon_color": (185, 188, 194),
+        "symbol": "SW",
     },
     "FlameBlast": {
         "name": "Flame Blast",

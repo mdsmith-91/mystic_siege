@@ -30,7 +30,7 @@ _WEAPON_DISPLAY_NAMES = {
     "ArcaneBolt": "Arcane Bolt",
     "BrambleSeeds": "Bramble Seeds",
     "HolyNova": "Holy Nova",
-    "SpectralBlade": "Spectral Blade",
+    "Sword": "Sword",
     "FlameBlast": "Flame Blast",
     "FrostRing": "Frost Ring",
     "HexOrb": "Hex Orb",
