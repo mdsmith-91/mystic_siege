@@ -549,11 +549,14 @@ class ClassSelect:
             pygame.draw.rect(screen, bg_color, card_rect, border_radius=8)
 
             if hovered or is_selected or is_keyboard_focus:
-                pygame.draw.rect(screen, (255, 215, 0), card_rect, 3, border_radius=8)
+                border_color = (255, 215, 0)
+                border_width = 3
             elif is_locked:
-                pygame.draw.rect(screen, (110, 110, 110), card_rect, 3, border_radius=8)
+                border_color = (110, 110, 110)
+                border_width = 3
             else:
-                pygame.draw.rect(screen, (85, 70, 45), card_rect, 1, border_radius=8)
+                border_color = (85, 70, 45)
+                border_width = 1
 
             color_band = pygame.Rect(
                 card_rect.x,
@@ -663,6 +666,8 @@ class ClassSelect:
                     owner_text,
                     (center_x - owner_text.get_width() // 2, card_rect.centery + 8),
                 )
+
+            pygame.draw.rect(screen, border_color, card_rect, border_width, border_radius=8)
 
         if self._can_confirm_selected_class():
             confirm_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
