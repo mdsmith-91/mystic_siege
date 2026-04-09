@@ -80,9 +80,9 @@ Not yet verified:
 
 | Hero | HP | Speed | Armor | Passive | Starting Weapon |
 |------|----|-------|-------|---------|-----------------|
-| Knight | 150 | 180 | 15 | 15% damage reduction, knockback immune | Spectral Blade |
+| Knight | 150 | 180 | 15 | +10% armor bonus, knockback immune | Spectral Blade |
 | Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
-| Friar | 110 | 210 | 5 | Heal based on XP gained (`FRIAR_HEAL_PER_XP`) | Holy Nova |
+| Friar | 110 | 210 | 5 | 0.1 HP per XP gained, +20% area effect size | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
 | Barbarian | 120 | 205 | 8 | +20% physical damage, +10% max HP | Throwing Axes |
 

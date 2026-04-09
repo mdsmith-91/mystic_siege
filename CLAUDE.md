@@ -10,16 +10,16 @@ escalating waves of enemies, collect XP orbs, level up, and pick upgrades — al
 Two developers, AI-assisted workflow, small scope first.
 
 **Current state:** the single-player baseline is playable, and the local co-op
-migration is partially implemented. New runs currently flow through a lobby and queued
-hero select, and the repo now includes slot-based lobby join/leave, duplicate-locked
-hero select, multiplayer `GameScene` plumbing, multi-player HUD/camera support,
-downed/revive runtime support, reconnect/reclaim handling, and controller-binding
-settings. Weapon creation is now also centralized through the shared
+migration is complete and runtime-verified for 1P–4P. New runs flow through a lobby
+and queued hero select, and the repo includes slot-based lobby join/leave,
+duplicate-locked hero select, multiplayer `GameScene` plumbing, multi-player
+HUD/camera support, downed/revive runtime support, reconnect/reclaim handling, and
+controller-binding settings. Weapon creation is centralized through the shared
 `src/weapons/factory.py` registry/helper path for both hero starting weapons and
-upgrade unlocks. The main remaining gap is runtime verification and hardening, not
-missing foundational architecture.
-**Planned direction:** finish the local co-op migration through phased, low-regression
-changes that continue to preserve the current single-player experience.
+upgrade unlocks. The remaining open items are multiplayer balance tuning and spawn
+fairness, not missing foundational architecture.
+**Planned direction:** add content (heroes, weapons, enemies) on the now-solid
+multiplayer foundation while continuing to preserve the single-player experience.
 
 ---
 
@@ -152,7 +152,7 @@ mystic_siege/
 
 Knight passive: +10% armor bonus (scales with armor upgrades), immune to knockback  
 Wizard passive: +20% spell damage, +10% crit chance  
-Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`)
+Friar passive: heal 0.1 HP per XP point gained (= `FRIAR_HEAL_PER_XP` in `settings.py`), +20% area effect size
 Ranger passive: +10% crit chance, arrows pierce +1 enemy
 Barbarian passive: +20% physical damage, +10% max HP
 

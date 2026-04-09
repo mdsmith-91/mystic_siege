@@ -10,9 +10,10 @@ Codex-friendly entry point for repository rules and should stay aligned with
 ## Project Summary
 
 Mystic Siege is a top-down medieval fantasy survivor game built in Python 3.12.13
-with pygame-ce. The stable baseline is single-player. A local co-op migration is
-partially implemented for 1–4 players on one machine, but it is still in an
-incremental verification phase and must continue to preserve the solo experience.
+with pygame-ce. The stable baseline is single-player. Local co-op for 1–4 players
+on one machine is fully implemented and runtime-verified. The remaining open work is
+multiplayer balance tuning and spawn fairness, not core architecture. All changes
+must continue to preserve the solo experience.
 
 ## Core Rules
 
