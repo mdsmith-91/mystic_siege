@@ -478,7 +478,11 @@ BRAMBLE_SEEDS_PATCH_THORN_COLOR = (178, 225, 105)  # RGB thorn accent tint
 BRAMBLE_SEEDS_PATCH_ALPHA = 80              # alpha 0-255 for patch fill
 BRAMBLE_SEEDS_PATCH_RING_ALPHA = 150        # alpha 0-255 for patch ring
 BRAMBLE_SEEDS_PATCH_THORN_COUNT = 12        # thorns around each patch; higher values add detail
-BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT = 5       # inner vine strokes per patch
+BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT = 20      # inner vine strokes per patch; higher values make the patch denser
+BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS = 4    # jagged line segments per inner vine
+BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS = 0.0   # fraction of patch radius where inner vines begin
+BRAMBLE_SEEDS_PATCH_TENDRIL_OUTER_RADIUS = 1.0   # fraction of patch radius where inner vines end
+BRAMBLE_SEEDS_PATCH_TENDRIL_JAG = 0.14      # radians of angular bend per inner vine segment
 BRAMBLE_SEEDS_HIT_SPARK_COLOR = (115, 220, 95)  # RGB hit feedback tint
 
 

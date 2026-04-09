@@ -17,6 +17,10 @@ from settings import (
     BRAMBLE_SEEDS_PATCH_RING_ALPHA,
     BRAMBLE_SEEDS_PATCH_RING_COLOR,
     BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT,
+    BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS,
+    BRAMBLE_SEEDS_PATCH_TENDRIL_JAG,
+    BRAMBLE_SEEDS_PATCH_TENDRIL_OUTER_RADIUS,
+    BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS,
     BRAMBLE_SEEDS_PATCH_THORN_COLOR,
     BRAMBLE_SEEDS_PATCH_THORN_COUNT,
     BRAMBLE_SEEDS_PROJECTILE_COLOR,
@@ -121,16 +125,28 @@ class BrambleSeeds(BaseWeapon):
     def effective_patch_radius(self) -> float:
         return self.patch_radius * self.owner.area_size_multiplier
 
-    def _build_patch_visuals(self) -> tuple[list[float], list[tuple[float, float]]]:
+    def _build_patch_visuals(self) -> tuple[list[float], list[list[tuple[float, float]]]]:
         thorn_step = _TWO_PI / BRAMBLE_SEEDS_PATCH_THORN_COUNT
         thorn_angles = [
             i * thorn_step + random.uniform(-thorn_step * 0.25, thorn_step * 0.25)
             for i in range(BRAMBLE_SEEDS_PATCH_THORN_COUNT)
         ]
-        tendrils = [
-            (random.random() * _TWO_PI, random.uniform(0.25, 0.9))
-            for _ in range(BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT)
-        ]
+        tendrils = []
+        for _ in range(BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT):
+            angle = random.random() * _TWO_PI
+            points = []
+            for segment in range(BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS + 1):
+                progress = segment / BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS
+                radial_scale = (
+                    BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS
+                    + (BRAMBLE_SEEDS_PATCH_TENDRIL_OUTER_RADIUS - BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS) * progress
+                )
+                bend = 0.0
+                if 0 < segment < BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS:
+                    bend = random.uniform(-BRAMBLE_SEEDS_PATCH_TENDRIL_JAG, BRAMBLE_SEEDS_PATCH_TENDRIL_JAG)
+                point_angle = angle + bend
+                points.append((math.cos(point_angle) * radial_scale, math.sin(point_angle) * radial_scale))
+            tendrils.append(points)
         return thorn_angles, tendrils
 
     def spawn_patch(self, center: Vector2) -> None:
@@ -267,11 +283,12 @@ class BrambleSeeds(BaseWeapon):
             pygame.draw.circle(temp, (*BRAMBLE_SEEDS_PATCH_FILL_COLOR, fill_alpha), (cx, cy), radius)
             pygame.draw.circle(temp, (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha), (cx, cy), radius, 3)
 
-            for angle, scale in patch["tendrils"]:
-                end_radius = radius * scale
-                end_x = int(cx + math.cos(angle) * end_radius)
-                end_y = int(cy + math.sin(angle) * end_radius)
-                pygame.draw.line(temp, (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha), (cx, cy), (end_x, end_y), 2)
+            for tendril in patch["tendrils"]:
+                points = [
+                    (int(cx + x * radius), int(cy + y * radius))
+                    for x, y in tendril
+                ]
+                pygame.draw.lines(temp, (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha), False, points, 2)
 
             for angle in patch["thorn_angles"]:
                 inner = radius * 0.82
