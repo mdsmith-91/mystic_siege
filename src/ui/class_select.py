@@ -197,6 +197,18 @@ class ClassSelect:
         lines.append(current_line)
         return lines
 
+    def _wrap_multiline_text_to_pixel_width(
+        self,
+        text: str,
+        font: pygame.font.Font,
+        max_width: int,
+    ) -> list[str]:
+        lines: list[str] = []
+        for paragraph in text.splitlines():
+            wrapped_lines = self._wrap_text_to_pixel_width(paragraph, font, max_width)
+            lines.extend(wrapped_lines)
+        return lines or [""]
+
     def _line_limit_for_height(self, max_height: int, line_height: int) -> int:
         if max_height <= 0 or line_height <= 0:
             return 0
@@ -626,7 +638,7 @@ class ClassSelect:
                 18 + len(weapon_lines) * text_line_height
             )
 
-            passive_lines = self._wrap_text_to_pixel_width(
+            passive_lines = self._wrap_multiline_text_to_pixel_width(
                 hero["passive_desc"],
                 self.font_small,
                 content_width,
