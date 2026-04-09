@@ -325,7 +325,7 @@ class ClassSelect:
         total_slots = len(self.slots) + len(self.confirmed_slots)
         if cfg.get("scheme") == "wasd":
             if total_slots == 1:
-                return "WASD to move  -  Enter or click confirms  -  ESC, Left Shift, or Back click backs"
+                return "WASD to move  -  Space, Enter, or click confirms  -  ESC, Left Shift, or Back click backs"
             return "WASD or click to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
 
         if cfg.get("scheme") == "arrows":

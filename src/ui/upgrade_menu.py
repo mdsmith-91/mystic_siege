@@ -110,7 +110,7 @@ class UpgradeMenu:
 
         if cfg.get("scheme") == "wasd":
             if not getattr(self.player, "supports_revive", False):
-                return "A/D to choose  -  Enter confirms"
+                return "A/D to choose  -  Space or Enter confirms"
             return "A/D to choose  -  Space confirms"
 
         if cfg.get("scheme") == "arrows":

@@ -234,17 +234,17 @@ Current enemy architecture rules:
 - 0s: Skeletons only
 - 60s: Add Goblins
 - 120s: Add Wraiths
-- 300s: Add Bats
-- 480s: Stone Golem (one-time mini-boss)
-- 600s: Add Knights + Liches
-- 900s: Elite mode (1.5x HP/damage)
+- 180s: Add Bats
+- 240s: Add Knights + Liches
+- 300s: Stone Golem event begins
+- 600s: Elite mode (1.5x HP/damage)
 - 1200s: Final assault
 - 1800s: Victory
 
 ### Game Loop
 
 ```text
-Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Menu
+Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over → Lobby or Menu
 ```
 
 - Solo and local co-op use the same scene flow. A single joined slot preserves the

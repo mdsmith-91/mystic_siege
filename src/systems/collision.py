@@ -1,8 +1,10 @@
 import pygame
 from pygame.math import Vector2
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, ENEMY_MIN_SEPARATION
-
-IFRAME_DURATION = 0.5  # seconds of invincibility after player takes a hit
+from settings import (
+    ENEMY_MIN_SEPARATION,
+    PLAYER_HIT_IFRAME_DURATION,
+    PLAYER_HIT_KNOCKBACK_FORCE,
+)
 
 class CollisionSystem:
     def check_all(self, players, enemy_group, projectile_group, effect_group=None):
@@ -26,11 +28,11 @@ class CollisionSystem:
             for enemy in enemy_group:
                 if player.rect.colliderect(enemy.rect) and player.iframes <= 0:
                     actual_damage = player.take_damage(enemy.damage)
-                    player.iframes = IFRAME_DURATION
+                    player.iframes = PLAYER_HIT_IFRAME_DURATION
                     if not getattr(player, "knockback_immune", False):
                         diff = player.pos - enemy.pos
                         knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        player.knockback_vel = knockback_dir * 300
+                        player.knockback_vel = knockback_dir * PLAYER_HIT_KNOCKBACK_FORCE
                     if effect_group is not None:
                         from src.entities.effects import DamageNumber
                         DamageNumber(player.pos - Vector2(0, 30), actual_damage,
@@ -60,11 +62,11 @@ class CollisionSystem:
             for player in active_players:
                 if projectile.rect.colliderect(player.rect):
                     actual_damage = player.take_damage(projectile.damage)
-                    player.iframes = IFRAME_DURATION
+                    player.iframes = PLAYER_HIT_IFRAME_DURATION
                     if not getattr(player, "knockback_immune", False):
                         diff = player.pos - projectile.pos
                         knockback_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        player.knockback_vel = knockback_dir * 300
+                        player.knockback_vel = knockback_dir * PLAYER_HIT_KNOCKBACK_FORCE
                     if effect_group is not None:
                         from src.entities.effects import DamageNumber
                         DamageNumber(player.pos - Vector2(0, 30), actual_damage,
