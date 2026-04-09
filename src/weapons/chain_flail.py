@@ -70,7 +70,7 @@ class ChainFlail(BaseWeapon):
         return Vector2(1, 0)
 
     def fire(self) -> None:
-        if self.active_swings:
+        if self.active_swings or not self.enemy_group:
             return
 
         facing = self._get_target_direction()
