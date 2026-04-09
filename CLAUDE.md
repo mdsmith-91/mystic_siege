@@ -251,7 +251,10 @@ Menu → Lobby → Class Select (queued per joined slot) → Game → Game Over 
   solo runtime path for movement and death behavior, but the in-run HUD uses the
   same slot-panel renderer and weapon-slot treatment as local co-op.
 - The runtime party cap remains 4 local players. The hero roster now has 5 heroes,
-  and duplicate hero picks are still blocked.
+  and duplicate hero picks are still blocked. The class-select grid is designed for
+  up to 8 heroes in a 4-wide layout (rows of 4+4); `CLASS_SELECT_MAX_COLUMNS = 4`
+  and `CLASS_SELECT_CARD_HEIGHT = 210` are sized to accommodate that full layout
+  without overflowing the viewport. Adding heroes 6–8 requires no layout changes.
 - Save/progression is still machine-local and aggregate; multiplayer runs update the
   shared `saves/progress.json`, not per-person profiles.
 - XP orb collection is a shared pool. If two players are equally close, the lower
@@ -472,7 +475,9 @@ python src/utils/placeholder_assets.py
    when the hero has gameplay modifiers
 2. Prefer declarative passive keys in the hero record over adding hero-name checks
    in runtime code
-3. Update `class_select.py` if layout logic assumes a fixed hero count
+3. The class-select grid supports up to 8 heroes (4+4 rows) with the current
+   `CLASS_SELECT_MAX_COLUMNS = 4` and `CLASS_SELECT_CARD_HEIGHT = 210` values —
+   heroes 6–8 require no layout changes. Beyond 8 heroes, revisit these constants.
 4. Drop the hero sprite sheet at `assets/sprites/heroes/<name>.png`
 
 **Tune difficulty:**

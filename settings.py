@@ -620,12 +620,13 @@ MAIN_MENU_PARTICLE_SPAWN_ALPHA_MAX = 120  # alpha 0-255; maximum ember opacity
 # Class select layout (UI-only). These tune card positioning and spacing.
 CLASS_SELECT_TITLE_Y = 28             # pixels from top; title anchor
 CLASS_SELECT_PROMPT_MARGIN_TOP = 2    # pixels; spacing above prompt text
-CLASS_SELECT_GRID_TOP_Y = 134         # pixels from top; first row of hero cards
+CLASS_SELECT_GRID_TOP_Y = 160         # pixels from top; first row of hero cards — must clear title + prompt on all platforms
+CLASS_SELECT_GRID_BOTTOM_MARGIN = 110 # pixels; gap reserved below card grid bottom for confirm/back buttons
 CLASS_SELECT_CARD_WIDTH = 220         # pixels; hero card width
-CLASS_SELECT_CARD_HEIGHT = 230        # pixels; hero card height
+CLASS_SELECT_CARD_HEIGHT = 210        # pixels; hero card height — reduced to fit 2 rows (4+4) within the available vertical space
 CLASS_SELECT_CARD_GAP_X = 24          # pixels between card columns
 CLASS_SELECT_CARD_GAP_Y = 26          # pixels between card rows
-CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping
+CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping — 4-wide grid gives a 4+4 layout for up to 8 heroes
 CLASS_SELECT_CARD_PADDING_X = 16      # pixels; inner horizontal card padding
 CLASS_SELECT_COLOR_BAND_HEIGHT = 32   # pixels; color accent band height on each card
 
