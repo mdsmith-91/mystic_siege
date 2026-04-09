@@ -2,7 +2,16 @@ import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
 from settings import (
+    BATTLE_RAGE_DAMAGE_BONUS_PCT,
+    BUFF_DEFAULT_DURATION,
+    BUFF_DURATION_BY_ITEM,
     PICKUP_RADIUS,
+    PICKUP_BATTLE_RAGE,
+    PICKUP_HASTE,
+    PICKUP_IRON_SKIN,
+    HASTE_COOLDOWN_REDUCTION,
+    HASTE_SPEED_BONUS_PCT,
+    IRON_SKIN_DAMAGE_TAKEN_MULTIPLIER,
     WORLD_WIDTH,
     WORLD_HEIGHT,
     MAX_WEAPON_SLOTS,
@@ -63,29 +72,42 @@ class Player(BaseEntity):
         self.xp_multiplier = 1.0
         self.base_xp_multiplier = 1.0
         self.xp_multiplier_bonus_pct = 0.0
+        self.temp_xp_multiplier_bonus_pct = 0.0
         self.pickup_radius = PICKUP_RADIUS
         self.base_pickup_radius = PICKUP_RADIUS
         self.pickup_radius_bonus_pct = 0.0
+        self.temp_pickup_radius_bonus_pct = 0.0
+        self.base_cooldown_reduction = 0.0
+        self.temp_cooldown_reduction = 0.0
         self.cooldown_reduction = 0.0       # 0.0 to 0.9 max
         self.crit_chance = CRIT_CHANCE_BASE
         self.spell_damage_multiplier = 1.0
         self.base_spell_damage_multiplier = 1.0
         self.spell_damage_bonus_pct = 0.0
+        self.temp_spell_damage_bonus_pct = 0.0
         self.physical_damage_multiplier = 1.0
         self.base_physical_damage_multiplier = 1.0
         self.physical_damage_bonus_pct = 0.0
+        self.temp_physical_damage_bonus_pct = 0.0
         self.projectile_pierce_bonus = 0
         self.arrow_pierce_bonus = 0
         self.armor_bonus_pct = 0.0
         self.max_hp_bonus_pct = 0.0
         self.speed_bonus_pct = 0.0
+        self.temp_speed_bonus_pct = 0.0
         self.area_size_bonus_pct = 0.0
+        self.base_damage_taken_multiplier = 1.0
+        self.temp_damage_taken_multiplier = 1.0
         self.damage_taken_multiplier = 1.0
         self.knockback_immune = False
         self.heal_per_xp = 0.0
+        self.base_damage_bonus_pct = 0.0
+        self.temp_damage_bonus_pct = 0.0
+        self.active_buffs: dict[str, dict[str, float]] = {}
         self._apply_hero_passives()
         self.damage_multiplier = 1.0
         self._recalculate_pct_stats()
+        self._rebuild_combat_modifiers()
 
         # iframes: float = 0.0  (countdown timer for invincibility frames)
         self.iframes = 0.0
@@ -115,6 +137,7 @@ class Player(BaseEntity):
         self.revive_timer = 0.0
 
     def update(self, dt):
+        self.update_active_buffs(dt)
         if self.is_downed:
             self.vel = Vector2(0, 0)
             self.knockback_vel = Vector2(0, 0)
@@ -191,11 +214,25 @@ class Player(BaseEntity):
 
     def _recalculate_pct_stats(self) -> None:
         """Recompute effective percent-based stats from their base values."""
-        self.speed = self.base_speed * (1.0 + self.speed_bonus_pct)
-        self.pickup_radius = self.base_pickup_radius * (1.0 + self.pickup_radius_bonus_pct)
-        self.xp_multiplier = self.base_xp_multiplier * (1.0 + self.xp_multiplier_bonus_pct)
-        self.spell_damage_multiplier = self.base_spell_damage_multiplier * (1.0 + self.spell_damage_bonus_pct)
-        self.physical_damage_multiplier = self.base_physical_damage_multiplier * (1.0 + self.physical_damage_bonus_pct)
+        self.speed = self.base_speed * (1.0 + self.speed_bonus_pct + self.temp_speed_bonus_pct)
+        self.pickup_radius = self.base_pickup_radius * (
+            1.0 + self.pickup_radius_bonus_pct + self.temp_pickup_radius_bonus_pct
+        )
+        self.xp_multiplier = self.base_xp_multiplier * (
+            1.0 + self.xp_multiplier_bonus_pct + self.temp_xp_multiplier_bonus_pct
+        )
+        self.spell_damage_multiplier = self.base_spell_damage_multiplier * (
+            1.0 + self.spell_damage_bonus_pct + self.temp_spell_damage_bonus_pct
+        )
+        self.physical_damage_multiplier = self.base_physical_damage_multiplier * (
+            1.0 + self.physical_damage_bonus_pct + self.temp_physical_damage_bonus_pct
+        )
+
+    def _rebuild_combat_modifiers(self) -> None:
+        """Recompute effective combat modifiers from persistent and temporary sources."""
+        self.cooldown_reduction = min(0.9, self.base_cooldown_reduction + self.temp_cooldown_reduction)
+        self.damage_multiplier = 1.0 + self.base_damage_bonus_pct + self.temp_damage_bonus_pct
+        self.damage_taken_multiplier = self.base_damage_taken_multiplier * self.temp_damage_taken_multiplier
 
     def _recalculate_max_hp(self) -> float:
         """Recompute effective max HP and return how much it changed."""
@@ -227,7 +264,7 @@ class Player(BaseEntity):
         self.projectile_pierce_bonus += passives.get("projectile_pierce_bonus", 0)
         self.arrow_pierce_bonus += passives.get("arrow_pierce_bonus", 0)
         self.area_size_bonus_pct += passives.get("area_size_bonus_pct", 0.0)
-        self.damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
+        self.base_damage_taken_multiplier = passives.get("damage_taken_multiplier", 1.0)
         self.knockback_immune = passives.get("knockback_immune", False)
         self.heal_per_xp = passives.get("heal_per_xp", 0.0)
         self.armor_bonus_pct += passives.get("armor_bonus_pct", 0.0)
@@ -256,6 +293,72 @@ class Player(BaseEntity):
         else:
             return
         self._recalculate_pct_stats()
+
+    def _buff_defaults(self, buff_id: str) -> tuple[float, float]:
+        duration = BUFF_DURATION_BY_ITEM.get(buff_id, BUFF_DEFAULT_DURATION)
+        magnitude = 0.0
+        if buff_id == PICKUP_BATTLE_RAGE:
+            magnitude = BATTLE_RAGE_DAMAGE_BONUS_PCT
+        elif buff_id == PICKUP_IRON_SKIN:
+            magnitude = IRON_SKIN_DAMAGE_TAKEN_MULTIPLIER
+        elif buff_id == PICKUP_HASTE:
+            magnitude = HASTE_SPEED_BONUS_PCT
+        return duration, magnitude
+
+    def apply_timed_buff(self, buff_id: str, duration: float | None = None, magnitude: float | None = None) -> None:
+        default_duration, default_magnitude = self._buff_defaults(buff_id)
+        self.active_buffs[buff_id] = {
+            "remaining": duration if duration is not None else default_duration,
+            "magnitude": magnitude if magnitude is not None else default_magnitude,
+        }
+        self._rebuild_temporary_buffs()
+
+    def update_active_buffs(self, dt: float) -> None:
+        if not self.active_buffs:
+            return
+
+        expired = []
+        for buff_id, buff_data in self.active_buffs.items():
+            buff_data["remaining"] = max(0.0, buff_data["remaining"] - dt)
+            if buff_data["remaining"] <= 0.0:
+                expired.append(buff_id)
+
+        for buff_id in expired:
+            self.active_buffs.pop(buff_id, None)
+
+        self._rebuild_temporary_buffs()
+
+    def _rebuild_temporary_buffs(self) -> None:
+        self.temp_speed_bonus_pct = 0.0
+        self.temp_cooldown_reduction = 0.0
+        self.temp_damage_bonus_pct = 0.0
+        self.temp_damage_taken_multiplier = 1.0
+
+        battle_rage = self.active_buffs.get(PICKUP_BATTLE_RAGE)
+        if battle_rage is not None:
+            self.temp_damage_bonus_pct += battle_rage["magnitude"]
+
+        iron_skin = self.active_buffs.get(PICKUP_IRON_SKIN)
+        if iron_skin is not None:
+            self.temp_damage_taken_multiplier *= iron_skin["magnitude"]
+
+        haste = self.active_buffs.get(PICKUP_HASTE)
+        if haste is not None:
+            self.temp_speed_bonus_pct += haste["magnitude"]
+            self.temp_cooldown_reduction += HASTE_COOLDOWN_REDUCTION
+
+        self._recalculate_pct_stats()
+        self._rebuild_combat_modifiers()
+
+    def get_active_buffs(self) -> list[tuple[str, float]]:
+        return sorted(
+            (
+                (buff_id, buff_data["remaining"])
+                for buff_id, buff_data in self.active_buffs.items()
+                if buff_data["remaining"] > 0.0
+            ),
+            key=lambda entry: entry[0],
+        )
 
     def _read_input(self) -> Vector2:
         """Return the raw (un-normalized) movement direction for this player.

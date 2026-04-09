@@ -19,9 +19,10 @@ class LichFamiliar(Enemy):
         all_groups: tuple,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
-        super().__init__(pos, player_list, all_groups, LICH_FAMILIAR_ENEMY_DATA, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, LICH_FAMILIAR_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
         # Maintains orbit distance of ~200px from player, fires slow orb every 2.5s
         self.projectile_group = projectile_group

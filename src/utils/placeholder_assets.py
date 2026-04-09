@@ -278,6 +278,26 @@ def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int
         _draw_throwing_hatchet_icon(surface)
 
 
+def _draw_pickup_icon(surface: pygame.Surface, pickup_key: str, color: tuple[int, int, int]) -> None:
+    _weapon_bg(surface, color)
+    white = (245, 245, 245)
+    if pickup_key == "magnet":
+        pygame.draw.arc(surface, white, (8, 7, 16, 16), 0.1, 3.04, 3)
+        pygame.draw.line(surface, white, (10, 16), (10, 24), 3)
+        pygame.draw.line(surface, white, (22, 16), (22, 24), 3)
+    elif pickup_key == "health_potion":
+        pygame.draw.rect(surface, white, (11, 8, 10, 13), border_radius=3)
+        pygame.draw.rect(surface, (200, 230, 255), (13, 5, 6, 4), border_radius=1)
+        pygame.draw.rect(surface, color, (12, 14, 8, 5), border_radius=2)
+    elif pickup_key == "battle_rage":
+        pygame.draw.polygon(surface, white, [(15, 5), (22, 14), (17, 14), (22, 23), (10, 13), (15, 13)])
+    elif pickup_key == "iron_skin":
+        pygame.draw.polygon(surface, white, [(16, 5), (23, 8), (23, 17), (16, 24), (9, 17), (9, 8)])
+        pygame.draw.line(surface, color, (16, 7), (16, 21), 2)
+    elif pickup_key == "haste":
+        pygame.draw.polygon(surface, white, [(11, 9), (19, 9), (15, 15), (22, 15), (11, 26), (15, 18), (9, 18)])
+
+
 def _draw_projectile(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
     detail = _shade(color, 45)
     shadow = _shade(color, -60)
@@ -436,6 +456,27 @@ def generate_weapon_icon_assets():
         if not os.path.exists(filepath):
             pygame.image.save(surface, filepath)
 
+
+def generate_pickup_icon_assets():
+    """Generate pickup placeholder assets."""
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
+    pygame.init()
+
+    pickups = [
+        ("magnet.png", (120, 220, 255)),
+        ("health_potion.png", (220, 70, 90)),
+        ("battle_rage.png", (255, 145, 60)),
+        ("iron_skin.png", (160, 170, 190)),
+        ("haste.png", (120, 255, 160)),
+    ]
+
+    for filename, color in pickups:
+        surface = pygame.Surface((32, 32), pygame.SRCALPHA)
+        _draw_pickup_icon(surface, filename.split(".")[0], color)
+        filepath = f"assets/sprites/ui/{filename}"
+        if not os.path.exists(filepath):
+            pygame.image.save(surface, filepath)
+
 def _write_sine_wav(path: str, freq_hz: float, duration_s: float, volume: float = 0.25, sample_rate: int = 44100):
     """Write a mono sine-wave WAV file."""
     np = _require_numpy()
@@ -514,6 +555,7 @@ def generate_audio_placeholders():
     maybe_write_sine("frost_ring.wav",      freq_hz=220,  duration_s=0.20)
     maybe_write_sine("longbow.wav",         freq_hz=440,  duration_s=0.10)
     maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
+    maybe_write_chord("pickup_collect.wav", freqs=[520, 780, 1040], duration_s=0.18)
 
 
 def main():
@@ -529,6 +571,7 @@ def main():
     generate_projectile_assets()
     generate_xp_orb_asset()
     generate_weapon_icon_assets()
+    generate_pickup_icon_assets()
     generate_audio_placeholders()
 
     print("Generated placeholder assets to assets/")

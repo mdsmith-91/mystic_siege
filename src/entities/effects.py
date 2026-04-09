@@ -218,3 +218,26 @@ class LevelUpEffect(pygame.sprite.Sprite):
                              (particle["pos"].x - self.rect.x,
                               particle["pos"].y - self.rect.y),
                              particle["radius"])
+
+
+class PickupText(pygame.sprite.Sprite):
+    def __init__(self, pos, text: str, color: tuple[int, int, int], groups, lifetime: float = 0.8):
+        super().__init__(groups)
+        self.font = pygame.font.SysFont(None, 20, bold=True)
+        self.image = self.font.render(text, True, color)
+        self.rect = self.image.get_rect(center=pos)
+        self.pos = Vector2(pos)
+        self.vel = Vector2(random.uniform(-12, 12), -55)
+        self.lifetime = lifetime
+        self._initial_lifetime = max(0.001, lifetime)
+
+    def update(self, dt):
+        self.lifetime -= dt
+        self.pos += self.vel * dt
+        self.rect.center = self.pos
+        if self.lifetime <= 0:
+            self.kill()
+            return
+
+        alpha = int(255 * (self.lifetime / self._initial_lifetime))
+        self.image.set_alpha(max(0, min(255, alpha)))

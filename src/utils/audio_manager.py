@@ -20,6 +20,7 @@ class AudioManager:
     WEAPON_FROST = "frost_ring"
     WEAPON_LONGBOW = "longbow"
     WEAPON_THROWING_AXES = "throwing_axes"
+    PICKUP_COLLECT = "pickup_collect"
 
     def __new__(cls):
         if cls._instance is None:

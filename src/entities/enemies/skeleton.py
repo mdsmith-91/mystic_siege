@@ -18,9 +18,10 @@ class Skeleton(Enemy):
         all_groups: tuple,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
-        super().__init__(pos, player_list, all_groups, SKELETON_ENEMY_DATA, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, SKELETON_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
         # Add small random angle offset (±5 degrees, change every 0.5s) so they spread out
         self.angle_offset = 0.0

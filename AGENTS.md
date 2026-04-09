@@ -32,7 +32,9 @@ slot-panel HUD treatment, including the 4-segment border tracker that fills cloc
 from the top and uses the empty-slot gray for unearned sections. Keep the shared HUD
 render path allocation-aware as well: cache stable panel/weapon-slot geometry inside
 `HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
-draws instead of rebuilding equivalent screen-space work every frame.
+draws instead of rebuilding equivalent screen-space work every frame. Timed pickup
+buff readouts belong in the optional stat-bonus area rather than the main panel
+chrome, and right-side panels should mirror that buff column inward.
 
 Weapon architecture note: weapon tunables should follow the same settings-driven
 pattern as heroes and enemies. Keep weapon stats, upgrade deltas, and relevant
@@ -94,6 +96,8 @@ recomputing `self.vel` in a way that the parent class then overwrites.
    multiplayer runs; there is no per-person profile split yet.
 6. XP orb collection is currently a shared pool, and equal-distance ties resolve
    to the lowest slot index.
+7. World pickups are shared-world objects. Timed buff pickups stay on the collector,
+   while `Magnet` retargets active XP orbs to the closest eligible player per orb.
 
 ## Review guidelines
 

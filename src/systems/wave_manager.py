@@ -58,13 +58,23 @@ from src.entities.enemies import create_enemy
 import random
 
 class WaveManager:
-    def __init__(self, players, all_sprites, enemy_group, xp_orb_group, projectile_group=None, effect_group=None):
+    def __init__(
+        self,
+        players,
+        all_sprites,
+        enemy_group,
+        xp_orb_group,
+        projectile_group=None,
+        effect_group=None,
+        pickup_group=None,
+    ):
         self.players = players
         self.all_sprites = all_sprites
         self.enemy_group = enemy_group
         self.xp_orb_group = xp_orb_group
         self.projectile_group = projectile_group
         self.effect_group = effect_group
+        self.pickup_group = pickup_group
 
         # elapsed: float = 0.0
         self.elapsed = 0.0
@@ -264,6 +274,7 @@ class WaveManager:
                 enemy_data=data,
                 xp_orb_group=self.xp_orb_group,
                 effect_group=self.effect_group,
+                pickup_group=self.pickup_group,
                 projectile_group=self.projectile_group,
             )
 

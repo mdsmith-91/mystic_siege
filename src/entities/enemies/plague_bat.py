@@ -20,9 +20,10 @@ class PlagueBat(Enemy):
         all_groups: tuple,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
-        super().__init__(pos, player_list, all_groups, PLAGUE_BAT_ENEMY_DATA, xp_orb_group, effect_group)
+        super().__init__(pos, player_list, all_groups, PLAGUE_BAT_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
         # split_chance = 0.4  — on death, 40% chance to spawn 2 mini bats
         self.split_chance = PLAGUE_BAT_ENEMY_DATA["split_chance"]
@@ -99,6 +100,7 @@ class MiniBat(PlagueBat):
         groups,
         xp_orb_group=None,
         effect_group=None,
+        pickup_group=None,
         projectile_group=None,
     ):
         super().__init__(
@@ -107,6 +109,7 @@ class MiniBat(PlagueBat):
             groups,
             xp_orb_group=xp_orb_group,
             effect_group=effect_group,
+            pickup_group=pickup_group,
             projectile_group=projectile_group,
         )
         self.is_mini = True

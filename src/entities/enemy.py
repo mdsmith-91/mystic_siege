@@ -1,20 +1,37 @@
+import random
+
 import pygame
 from pygame.math import Vector2
 from src.entities.base_entity import BaseEntity
+from src.entities.pickup import Pickup
 from src.entities.xp_orb import XPOrb
 from settings import (
     ENEMY_BASE_ATTACK_COOLDOWN,
     ENEMY_KNOCKBACK_FORCE,
     ENEMY_RETARGET_INTERVAL,
+    PICKUP_CATEGORY_NONE,
+    PICKUP_DROP_CHANCE_BY_CATEGORY,
+    PICKUP_DROP_WEIGHTS_BY_CATEGORY,
+    PICKUP_ENEMY_DROP_CATEGORY,
 )
 from src.utils.audio_manager import AudioManager
 
 class Enemy(BaseEntity):
-    def __init__(self, pos, player_list, all_groups: tuple, enemy_data: dict, xp_orb_group=None, effect_group=None):
+    def __init__(
+        self,
+        pos,
+        player_list,
+        all_groups: tuple,
+        enemy_data: dict,
+        xp_orb_group=None,
+        effect_group=None,
+        pickup_group=None,
+    ):
         super().__init__(pos, all_groups)
         self.all_groups = all_groups
         self.xp_orb_group = xp_orb_group
         self.effect_group = effect_group
+        self.pickup_group = pickup_group
 
         self.player_list = player_list
         self._target = None
@@ -168,6 +185,25 @@ class Enemy(BaseEntity):
             credited_player.kill_count += 1
         all_sprites = self.all_groups[0]
         XPOrb(self.pos, self.xp_value, (all_sprites, xp_orb_group))
+        self._maybe_spawn_pickup(all_sprites)
         if self.effect_group is not None:
             from src.entities.effects import DeathExplosion
             DeathExplosion(self.pos, 40, (200, 100, 50), [self.effect_group])
+
+    def _maybe_spawn_pickup(self, all_sprites) -> None:
+        if self.pickup_group is None:
+            return
+
+        category_key = PICKUP_ENEMY_DROP_CATEGORY.get(self.name.replace(" ", ""), PICKUP_CATEGORY_NONE)
+        drop_chance = PICKUP_DROP_CHANCE_BY_CATEGORY.get(category_key, 0.0)
+        if drop_chance <= 0.0 or random.random() > drop_chance:
+            return
+
+        weight_map = PICKUP_DROP_WEIGHTS_BY_CATEGORY.get(category_key)
+        if not weight_map:
+            return
+
+        pickup_ids = list(weight_map.keys())
+        pickup_weights = list(weight_map.values())
+        pickup_id = random.choices(pickup_ids, weights=pickup_weights, k=1)[0]
+        Pickup(self.pos, pickup_id, (all_sprites, self.pickup_group), effect_group=self.effect_group)

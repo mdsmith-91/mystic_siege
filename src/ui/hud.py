@@ -13,6 +13,7 @@ from settings import (
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_PANEL_CORNER_RADIUS, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_WARNING_COLOR, HUD_REVIVE_RING_BG_COLOR, HUD_DOWNED_HP_BAR_COLOR,
     HUD_PANEL_TUPLES,
+    PICKUP_BATTLE_RAGE, PICKUP_HASTE, PICKUP_IRON_SKIN,
 )
 from src.utils.resource_loader import ResourceLoader
 
@@ -30,6 +31,12 @@ _WEAPON_ICON_NAMES = {
     "Longbow": "longbow",
     "ThrowingAxes": "axe",
 }
+_BUFF_STAT_LABELS = {
+    PICKUP_BATTLE_RAGE: ("RAGE", (255, 200, 120)),
+    PICKUP_IRON_SKIN: ("SKIN", (192, 200, 215)),
+    PICKUP_HASTE: ("HASTE", (120, 255, 160)),
+}
+_BUFF_COLUMN_GAP = 18
 
 
 class HUD:
@@ -364,10 +371,14 @@ class HUD:
             stat_lines.append((f"SPD  {spd_pct}%", (200, 200, 200)))
         if player.armor > 0:
             stat_lines.append((f"ARM  {int(player.armor)}%", (192, 200, 215)))
+        if player.damage_taken_multiplier < player.base_damage_taken_multiplier:
+            damage_reduction = 1.0 - (player.damage_taken_multiplier / player.base_damage_taken_multiplier)
+            stat_lines.append((f"DR  {round(damage_reduction * 100)}%", (180, 205, 225)))
         if player.cooldown_reduction > 0:
             stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
         if player.damage_multiplier > 1.0:
-            stat_lines.append((f"DMG  {player.damage_multiplier:.1f}x", (255, 200, 120)))
+            damage_pct = round((player.damage_multiplier - 1.0) * 100)
+            stat_lines.append((f"DMG  +{damage_pct}%", (255, 200, 120)))
         if player.crit_chance > CRIT_CHANCE_BASE:
             stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 230, 80)))
         if player.regen_rate > 0:
@@ -384,6 +395,13 @@ class HUD:
         if player.pickup_radius > PICKUP_RADIUS:
             stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
         return stat_lines
+
+    def _buff_lines(self, player) -> list[tuple[str, tuple[int, int, int]]]:
+        buff_lines = []
+        for buff_id, remaining in player.get_active_buffs():
+            label, color = _BUFF_STAT_LABELS.get(buff_id, (buff_id.upper(), WHITE))
+            buff_lines.append((f"{label}  {max(1, math.ceil(remaining))}s", color))
+        return buff_lines
 
     def _draw_stat_lines(
         self,
@@ -409,18 +427,44 @@ class HUD:
         rect: pygame.Rect,
     ) -> None:
         stat_lines = self._stat_lines(player)
-        if not stat_lines:
+        buff_lines = self._buff_lines(player)
+        if not stat_lines and not buff_lines:
             return
 
         align_right = rect.centerx >= SCREEN_WIDTH // 2
         if rect.centery < SCREEN_HEIGHT // 2:
             start_y = rect.bottom + 6
         else:
-            total_height = len(stat_lines) * 16
+            total_height = max(len(stat_lines), len(buff_lines)) * 16
             start_y = rect.top - total_height - 6
 
-        start_x = rect.right if align_right else rect.left
-        self._draw_stat_lines(screen, stat_lines, start_x, start_y, align_right)
+        stat_width = 0
+        if stat_lines:
+            stat_width = max(
+                self._render_text(self.font_14, label, color).get_width()
+                for label, color in stat_lines
+            )
+        buff_width = 0
+        if buff_lines:
+            buff_width = max(
+                self._render_text(self.font_14, label, color).get_width()
+                for label, color in buff_lines
+            )
+
+        if align_right:
+            stat_start_x = rect.right
+            buff_start_x = stat_start_x - stat_width - _BUFF_COLUMN_GAP
+        else:
+            stat_start_x = rect.left
+            buff_start_x = stat_start_x + stat_width + _BUFF_COLUMN_GAP
+
+        if stat_lines and buff_lines:
+            self._draw_stat_lines(screen, stat_lines, stat_start_x, start_y, align_right)
+            self._draw_stat_lines(screen, buff_lines, buff_start_x, start_y, align_right)
+        elif stat_lines:
+            self._draw_stat_lines(screen, stat_lines, stat_start_x, start_y, align_right)
+        elif buff_lines:
+            self._draw_stat_lines(screen, buff_lines, stat_start_x, start_y, align_right)
 
     def _draw_player_panel(self, screen, player, xp_system, rect: pygame.Rect, slot, camera, show_stat_bonuses: bool) -> None:
         panel_surface = self._get_panel_surface(rect.size)
