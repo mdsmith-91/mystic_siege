@@ -389,6 +389,8 @@ class HUD:
         if player.physical_damage_multiplier > 1.0:
             physical_pct = round((player.physical_damage_multiplier - 1.0) * 100)
             stat_lines.append((f"PHYS  +{physical_pct}%", (215, 170, 120)))
+        if player.projectile_pierce_bonus > 0:
+            stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", (150, 180, 255)))
         if player.xp_multiplier > 1.0:
             xp_pct = round((player.xp_multiplier - 1.0) * 100)
             stat_lines.append((f"XP  +{xp_pct}%", (200, 255, 200)))

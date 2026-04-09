@@ -355,6 +355,7 @@ class UpgradeMenu:
                     "crit_chance": "CRIT",
                     "spell_damage_multiplier_pct": "SPL",
                     "physical_damage_multiplier_pct": "PHYS",
+                    "projectile_pierce_bonus": "PRC",
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 

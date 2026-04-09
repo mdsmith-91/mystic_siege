@@ -160,7 +160,7 @@ class Enemy(BaseEntity):
         if self.attack_timer <= 0:
             self.attack_timer = self.attack_cooldown
 
-    def take_damage(self, amount, hit_direction=None, attacker=None):
+    def take_damage(self, amount, hit_direction=None, attacker=None, knockback_force=None):
         """Override to trigger on_death after the entity is killed."""
         if self._death_handled:
             return
@@ -168,7 +168,9 @@ class Enemy(BaseEntity):
             self.last_attacker = attacker
         super().take_damage(amount)
         if hit_direction is not None and hit_direction.length() > 0:
-            self.apply_knockback(-hit_direction, ENEMY_KNOCKBACK_FORCE)
+            force = ENEMY_KNOCKBACK_FORCE if knockback_force is None else knockback_force
+            if force > 0:
+                self.apply_knockback(-hit_direction, force)
         if self.hp <= 0 and self.xp_orb_group is not None:
             self._death_handled = True
             self.on_death(self.xp_orb_group)
