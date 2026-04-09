@@ -23,6 +23,7 @@ _ARROW_DEPTH = 14
 _ARROW_HALF = 8
 _WEAPON_ICON_NAMES = {
     "ArcaneBolt": "arcane",
+    "BrambleSeeds": "bramble",
     "HolyNova": "nova",
     "SpectralBlade": "blade",
     "FlameBlast": "fire",
