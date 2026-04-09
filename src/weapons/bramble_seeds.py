@@ -16,16 +16,20 @@ from settings import (
     BRAMBLE_SEEDS_PATCH_RADIUS,
     BRAMBLE_SEEDS_PATCH_RING_ALPHA,
     BRAMBLE_SEEDS_PATCH_RING_COLOR,
+    BRAMBLE_SEEDS_PATCH_RING_WIDTH,
     BRAMBLE_SEEDS_PATCH_TENDRIL_COUNT,
     BRAMBLE_SEEDS_PATCH_TENDRIL_INNER_RADIUS,
     BRAMBLE_SEEDS_PATCH_TENDRIL_JAG,
     BRAMBLE_SEEDS_PATCH_TENDRIL_OUTER_RADIUS,
     BRAMBLE_SEEDS_PATCH_TENDRIL_SEGMENTS,
+    BRAMBLE_SEEDS_PATCH_TENDRIL_WIDTH,
     BRAMBLE_SEEDS_PATCH_THORN_COLOR,
     BRAMBLE_SEEDS_PATCH_THORN_COUNT,
+    BRAMBLE_SEEDS_PATCH_THORN_WIDTH,
     BRAMBLE_SEEDS_PROJECTILE_COLOR,
     BRAMBLE_SEEDS_PROJECTILE_CORE_COLOR,
     BRAMBLE_SEEDS_PROJECTILE_LIFETIME,
+    BRAMBLE_SEEDS_PROJECTILE_OUTLINE_COLOR,
     BRAMBLE_SEEDS_PROJECTILE_SIZE,
     BRAMBLE_SEEDS_PROJECTILE_SPEED,
     BRAMBLE_SEEDS_SLOW_DURATION,
@@ -75,7 +79,7 @@ class BrambleSeedProjectile(pygame.sprite.Sprite):
         center = (width // 2, height // 2)
         pygame.draw.circle(surface, (*BRAMBLE_SEEDS_PROJECTILE_COLOR, 230), center, min(width, height) // 2)
         pygame.draw.circle(surface, (*BRAMBLE_SEEDS_PROJECTILE_CORE_COLOR, 255), center, max(2, min(width, height) // 4))
-        pygame.draw.circle(surface, (40, 80, 35, 255), center, min(width, height) // 2, 1)
+        pygame.draw.circle(surface, (*BRAMBLE_SEEDS_PROJECTILE_OUTLINE_COLOR, 255), center, min(width, height) // 2, 1)
         return surface
 
     def _sprout(self, center: Vector2 | None = None) -> None:
@@ -120,6 +124,7 @@ class BrambleSeeds(BaseWeapon):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in BRAMBLE_SEEDS_UPGRADE_LEVELS]
         self.patches: list[dict] = []
+        self._enemy_hit_cooldowns: dict[int, float] = {}
 
     @property
     def effective_patch_radius(self) -> float:
@@ -213,26 +218,40 @@ class BrambleSeeds(BaseWeapon):
                 continue
             if (enemy.pos - center).length_squared() > radius_sq:
                 continue
-            to_attacker = self.owner.pos - enemy.pos
-            hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
-            enemy.take_damage(
-                tick_damage,
-                hit_direction=hit_dir,
-                attacker=self.owner,
-                knockback_force=0,
-            )
+            can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
+            if can_damage:
+                to_attacker = self.owner.pos - enemy.pos
+                hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
+                enemy.take_damage(
+                    tick_damage,
+                    hit_direction=hit_dir,
+                    attacker=self.owner,
+                    knockback_force=0,
+                )
+                self._enemy_hit_cooldowns[enemy.sprite_id] = BRAMBLE_SEEDS_TICK_INTERVAL
             if hasattr(enemy, "apply_slow"):
                 enemy.apply_slow(
                     BRAMBLE_SEEDS_SLOW_MULTIPLIER,
                     BRAMBLE_SEEDS_SLOW_DURATION,
                     source=self,
                 )
-            if self.effect_group is not None:
+            if can_damage and self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
                 DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])
                 HitSpark(enemy.pos, BRAMBLE_SEEDS_HIT_SPARK_COLOR, [self.effect_group])
 
     def _tick_patches(self, dt: float) -> None:
+        for enemy_id in list(self._enemy_hit_cooldowns.keys()):
+            remaining = self._enemy_hit_cooldowns[enemy_id] - dt
+            if remaining <= 0.0:
+                del self._enemy_hit_cooldowns[enemy_id]
+            else:
+                self._enemy_hit_cooldowns[enemy_id] = remaining
+
+        had_patches = bool(self.patches)
+        if not had_patches:
+            return
+
         i = 0
         while i < len(self.patches):
             patch = self.patches[i]
@@ -248,12 +267,19 @@ class BrambleSeeds(BaseWeapon):
             else:
                 i += 1
 
+        if had_patches and not self.patches:
+            self._enemy_hit_cooldowns.clear()
+            for enemy in self.enemy_group:
+                if hasattr(enemy, "remove_slow"):
+                    enemy.remove_slow(self)
+
     def update(self, dt: float) -> None:
         super().update(dt)
         self._tick_patches(dt)
 
     def on_owner_inactive(self) -> None:
         self.patches.clear()
+        self._enemy_hit_cooldowns.clear()
         for enemy in self.enemy_group:
             if hasattr(enemy, "remove_slow"):
                 enemy.remove_slow(self)
@@ -281,14 +307,26 @@ class BrambleSeeds(BaseWeapon):
             ring_alpha = int(BRAMBLE_SEEDS_PATCH_RING_ALPHA * min(1.0, progress * 2.0))
 
             pygame.draw.circle(temp, (*BRAMBLE_SEEDS_PATCH_FILL_COLOR, fill_alpha), (cx, cy), radius)
-            pygame.draw.circle(temp, (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha), (cx, cy), radius, 3)
+            pygame.draw.circle(
+                temp,
+                (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha),
+                (cx, cy),
+                radius,
+                BRAMBLE_SEEDS_PATCH_RING_WIDTH,
+            )
 
             for tendril in patch["tendrils"]:
                 points = [
                     (int(cx + x * radius), int(cy + y * radius))
                     for x, y in tendril
                 ]
-                pygame.draw.lines(temp, (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha), False, points, 2)
+                pygame.draw.lines(
+                    temp,
+                    (*BRAMBLE_SEEDS_PATCH_RING_COLOR, ring_alpha),
+                    False,
+                    points,
+                    BRAMBLE_SEEDS_PATCH_TENDRIL_WIDTH,
+                )
 
             for angle in patch["thorn_angles"]:
                 inner = radius * 0.82
@@ -297,6 +335,12 @@ class BrambleSeeds(BaseWeapon):
                 y0 = int(cy + math.sin(angle) * inner)
                 x1 = int(cx + math.cos(angle) * outer)
                 y1 = int(cy + math.sin(angle) * outer)
-                pygame.draw.line(temp, (*BRAMBLE_SEEDS_PATCH_THORN_COLOR, ring_alpha), (x0, y0), (x1, y1), 2)
+                pygame.draw.line(
+                    temp,
+                    (*BRAMBLE_SEEDS_PATCH_THORN_COLOR, ring_alpha),
+                    (x0, y0),
+                    (x1, y1),
+                    BRAMBLE_SEEDS_PATCH_THORN_WIDTH,
+                )
 
         surface.blit(temp, (0, 0))
