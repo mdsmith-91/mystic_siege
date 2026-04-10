@@ -828,7 +828,7 @@ CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 # Gameplay
 SPEAR_BASE_DAMAGE = 32.0              # damage per hit
 SPEAR_BASE_COOLDOWN = 1.5             # seconds between thrusts
-SPEAR_TARGETING_RANGE = 400           # pixels; keeps Spear meaningfully farther-reaching than Sword
+SPEAR_TARGETING_RANGE = 160           # pixels; slightly farther reach than Sword (155 px), matched to thrust length
 SPEAR_THRUST_LENGTH = 108             # pixels from hand position to spear tip
 SPEAR_HAND_OFFSET = 8                 # pixels perpendicular right of thrust direction — right-hand grip position
 SPEAR_BASE_PIERCE = 1                 # enemies hit per thrust: pierce+1 total
