@@ -9,7 +9,7 @@ from settings import (
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
-    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE, HUD_PANEL_WEAPON_SLOT_WIDTH,
+    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE,
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_PANEL_CORNER_RADIUS, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_WARNING_COLOR, HUD_REVIVE_RING_BG_COLOR, HUD_DOWNED_HP_BAR_COLOR,
     HUD_PANEL_TUPLES,
@@ -100,10 +100,10 @@ class HUD:
         return cached
 
     def _get_weapon_slot_offsets(self, slot_size: int) -> tuple[int, tuple[int, ...]]:
-        cache_key = (slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+        cache_key = (slot_size, HUD_PANEL_WEAPON_SLOT_SIZE)
         cached = self._weapon_slot_offset_cache.get(cache_key)
         if cached is None:
-            slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+            slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_SIZE)
             offsets = tuple(
                 index * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
                 for index in range(MAX_WEAPON_SLOTS)

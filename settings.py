@@ -185,6 +185,7 @@ PICKUP_DROP_WEIGHTS_BY_CATEGORY = {
     },
 }
 
+# Visual-only. These colors do not affect pickup behavior or gameplay.
 PICKUP_ICON_COLORS = {
     PICKUP_MAGNET: (120, 220, 255),
     PICKUP_HEALTH_POTION: (220, 70, 90),
@@ -495,7 +496,7 @@ BRAMBLE_SEEDS_UPGRADE_LEVELS = [
 ]
 
 # Overgrowth (L5 capstone)
-BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT = 0.5  # fraction of patch_duration for the bloom patch
+BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT = 0.5  # fraction of patch_duration applied to the bonus patch that spawns on a kill inside an existing bramble
 
 # Visual
 # Seed and bramble patch presentation only. Collision, damage, and slow use the
@@ -825,42 +826,45 @@ CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 # strong pierce identity. Heavier per-hit than Longbow, slower cadence, tighter
 # coverage than ChainFlail.
 # Gameplay
-SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
-SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
-SPEAR_TARGETING_RANGE    = 400           # pixels; keeps Spear meaningfully farther-reaching than Sword
-SPEAR_THRUST_LENGTH      = 108           # pixels from hand position to spear tip
-SPEAR_HAND_OFFSET        = 8            # px perpendicular right of thrust direction — right-hand grip position
-SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
-SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
+SPEAR_BASE_DAMAGE = 32.0              # damage per hit
+SPEAR_BASE_COOLDOWN = 1.5             # seconds between thrusts
+SPEAR_TARGETING_RANGE = 400           # pixels; keeps Spear meaningfully farther-reaching than Sword
+SPEAR_THRUST_LENGTH = 108             # pixels from hand position to spear tip
+SPEAR_HAND_OFFSET = 8                 # pixels perpendicular right of thrust direction — right-hand grip position
+SPEAR_BASE_PIERCE = 1                 # enemies hit per thrust: pierce+1 total
+SPEAR_KNOCKBACK_FORCE = 180           # pixels/second impulse applied on hit
 
 # Thrust timing phases (extend → hold → retract)
-SPEAR_EXTEND_DURATION    = 0.10          # seconds to push the spear to full extension
-SPEAR_HOLD_DURATION      = 0.06          # seconds held at full extension
-SPEAR_RETRACT_DURATION   = 0.09          # seconds to pull the spear back
+SPEAR_EXTEND_DURATION = 0.10          # seconds to push the spear to full extension
+SPEAR_HOLD_DURATION = 0.06            # seconds held at full extension
+SPEAR_RETRACT_DURATION = 0.09         # seconds to pull the spear back
 
 # L5 double-thrust: a follow-up stab fires this many seconds after the first
-SPEAR_L5_SECOND_DELAY    = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
+SPEAR_L5_SECOND_DELAY = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
+SPEAR_SAMPLE_COUNT = 6                # sample points along the shaft used for collision checks; more = more accurate narrow-angle hits
 
+# Upgrade Levels
+# Levels 2-5: +damage, longer reach with faster cooldown, +1 pierce, then double thrust + crit bonus.
 SPEAR_UPGRADE_LEVELS = [
-    {},                                               # L1 baseline
-    {"base_damage": 10.0},                            # L2 +10 damage
-    {"thrust_length": 24, "base_cooldown": -0.15},    # L3 longer reach + faster cooldown
-    {"pierce": 1},                                    # L4 +1 pierce
-    {"double_thrust_count": 1, "crit_bonus": 0.08},    # L5 double thrust + crit bonus
+    {},
+    {"base_damage": 10.0},
+    {"thrust_length": 24, "base_cooldown": -0.15},
+    {"pierce": 1},
+    {"double_thrust_count": 1, "crit_bonus": 0.08},
 ]
 
 # Visual
-SPEAR_HEAD_COLOR         = (190, 195, 205)   # RGB steel blue-grey
-SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)      # RGB silhouette outline
-SPEAR_HIGHLIGHT_COLOR    = (235, 240, 250)   # RGB blade edge highlight
-SPEAR_SHAFT_COLOR        = (110, 75, 40)     # RGB wooden shaft brown
-SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)     # RGB shaft silhouette
-SPEAR_BUTT_COLOR         = (155, 158, 168)   # RGB metal butt cap
-SPEAR_HEAD_LENGTH        = 28                # px length from socket to tip
-SPEAR_HEAD_HALF_WIDTH    = 5                 # px half-width at the widest point of the head
-SPEAR_SHAFT_HALF_WIDTH   = 3                 # px half-width of the shaft
-SPEAR_HIT_SPARK_COLOR    = (220, 200, 120)   # RGB hit-feedback spark tint
-SPEAR_SAMPLE_COUNT       = 6                 # sample points along shaft for collision checks
+# Spear geometry and coloring only. These do not change thrust timing, pierce, or collision.
+SPEAR_HEAD_COLOR = (190, 195, 205)          # RGB steel blue-grey head tint
+SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)     # RGB silhouette outline tint
+SPEAR_HIGHLIGHT_COLOR = (235, 240, 250)     # RGB blade edge highlight tint
+SPEAR_SHAFT_COLOR = (110, 75, 40)           # RGB wooden shaft tint
+SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)    # RGB shaft silhouette tint
+SPEAR_BUTT_COLOR = (155, 158, 168)          # RGB metal butt cap tint
+SPEAR_HEAD_LENGTH = 28                      # pixels; length from socket to tip
+SPEAR_HEAD_HALF_WIDTH = 5                   # pixels; half-width at the widest point of the head
+SPEAR_SHAFT_HALF_WIDTH = 3                  # pixels; half-width of the shaft
+SPEAR_HIT_SPARK_COLOR = (220, 200, 120)     # RGB hit-feedback spark tint
 
 
 # ============================================================================
@@ -899,8 +903,8 @@ SKELETON_ENEMY_DATA = {
     "damage": 10,
     "xp_value": 3,
     "behavior": "chase",
-    "wander_angle_max": 5.0,
-    "wander_angle_change_interval": 0.5,
+    "wander_angle_max": 5.0,          # degrees; max random angular offset per wander step
+    "wander_angle_change_interval": 0.5,  # seconds between wander direction changes
 }
 
 # Goblin: fast melee chaser intended to pressure movement with pack spawns.
@@ -922,9 +926,9 @@ WRAITH_ENEMY_DATA = {
     "damage": 15,
     "xp_value": 5,
     "behavior": "chase",
-    "lunge_cooldown": 3.0,
-    "lunge_duration": 0.4,
-    "lunge_speed_multiplier": 3.0,
+    "lunge_cooldown": 3.0,            # seconds between lunge attempts
+    "lunge_duration": 0.4,            # seconds the lunge speed boost is active
+    "lunge_speed_multiplier": 3.0,    # multiplier applied to base speed during a lunge
 }
 
 # Plague Bat: fragile fast chaser with wave motion and death splitting.
@@ -935,10 +939,10 @@ PLAGUE_BAT_ENEMY_DATA = {
     "damage": 8,
     "xp_value": 3,
     "behavior": "chase",
-    "split_chance": 0.4,
-    "split_count": 2,
-    "wave_frequency": 4.0,
-    "wave_amplitude": 0.5,
+    "split_chance": 0.4,              # fraction; probability of spawning mini bats on death
+    "split_count": 2,                 # number of mini bats spawned if split triggers
+    "wave_frequency": 4.0,            # Hz; oscillation rate of the arc movement
+    "wave_amplitude": 0.5,            # pixels perpendicular to travel per oscillation cycle
     "sprite_scale": (20, 20),
 }
 
@@ -965,8 +969,8 @@ CURSED_KNIGHT_ENEMY_DATA = {
     "damage": 20,
     "xp_value": 10,
     "behavior": "chase",
-    "shield_block_angle": 60.0,
-    "shield_damage_multiplier": 0.2,
+    "shield_block_angle": 60.0,           # degrees; total frontal arc protected by the shield (±30° from facing)
+    "shield_damage_multiplier": 0.2,      # fraction of incoming damage that passes through the shield (0.2 = 80% reduction)
 }
 
 # Lich Familiar: orbiting ranged threat that fires slow enemy projectiles.
@@ -977,17 +981,19 @@ LICH_FAMILIAR_ENEMY_DATA = {
     "damage": 12,
     "xp_value": 10,
     "behavior": "orbit",
-    "orbit_radius": 200,
-    "orbit_angular_speed": 45.0,
-    "fire_interval": 2.5,
-    "projectile_speed": 120,
-    "projectile_damage": 12,
-    "projectile_lifetime": 4.0,
-    "projectile_color": (187, 0, 0),
-    "fire_range": 450,
+    "orbit_radius": 200,              # pixels; distance maintained while orbiting the target
+    "orbit_angular_speed": 45.0,      # degrees/second; higher values orbit faster
+    "fire_interval": 2.5,             # seconds between projectile shots
+    "projectile_speed": 120,          # pixels/second; intentionally slow for dodgeable threat
+    "projectile_damage": 12,          # damage per projectile hit
+    "projectile_lifetime": 4.0,       # seconds before projectile despawns
+    "projectile_color": (187, 0, 0),  # RGB; blood-red enemy projectile tint (visual-only)
+    "fire_range": 450,                # pixels; must be within this range to fire
 }
 
 # Stone Golem: high-HP mini-boss with low movement speed and heavy contact damage.
+# Shockwave mechanic: when a player is within trigger range, the Golem telegraphs then
+# fires an expanding ring AoE. Immune to CC and knockback so players must dodge cleanly.
 STONE_GOLEM_ENEMY_DATA = {
     "name": "Golem",
     "hp": 500,
@@ -996,20 +1002,20 @@ STONE_GOLEM_ENEMY_DATA = {
     "xp_value": 80,
     "behavior": "chase",
     "spritesheet_frame_size": (64, 64),
-    "cc_immune": True,
-    "knockback_immune": True,
-    "shockwave_cooldown": 6.0,
-    "shockwave_windup": 1.1,
-    "shockwave_trigger_range": 220,
-    "shockwave_radius": 170,
-    "shockwave_damage": 32,
-    "shockwave_ring_width": 8,
-    "shockwave_telegraph_color": (210, 120, 70),
-    "shockwave_blast_color": (185, 110, 70),
-    "shockwave_telegraph_alpha": 120,
-    "shockwave_blast_alpha": 170,
-    "shockwave_telegraph_lifetime": 1.1,
-    "shockwave_blast_lifetime": 0.45,
+    "cc_immune": True,                          # immune to freeze/stun effects
+    "knockback_immune": True,                   # weapons and contact cannot move the Golem
+    "shockwave_cooldown": 6.0,                  # seconds between shockwave attempts
+    "shockwave_windup": 1.1,                    # seconds of telegraph before the blast fires
+    "shockwave_trigger_range": 220,             # pixels; player must be within this range to trigger the shockwave
+    "shockwave_radius": 170,                    # pixels; outer edge of the expanding blast ring
+    "shockwave_damage": 32,                     # damage dealt to players caught in the blast
+    "shockwave_ring_width": 8,                  # pixels; width of the damaging ring band
+    "shockwave_telegraph_color": (210, 120, 70),  # RGB; warning circle tint (visual-only)
+    "shockwave_blast_color": (185, 110, 70),      # RGB; expanding ring tint (visual-only)
+    "shockwave_telegraph_alpha": 120,           # alpha 0-255 for the warning circle
+    "shockwave_blast_alpha": 170,               # alpha 0-255 for the expanding ring
+    "shockwave_telegraph_lifetime": 1.1,        # seconds the warning circle is shown (matches windup)
+    "shockwave_blast_lifetime": 0.45,           # seconds the expanding ring is visible
 }
 
 # Shared lookup used by the enemy registry/spawner. Keep ids stable because wave
@@ -1186,8 +1192,7 @@ WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR = (80, 80, 80)     # RGB unearned segment c
 # shared slot-panel renderer is used for all player counts.
 HUD_PANEL_PADDING = 10              # pixels; inner panel padding
 HUD_PANEL_BAR_HEIGHT = 12           # pixels; HP/XP bar height
-HUD_PANEL_WEAPON_SLOT_SIZE = 40     # pixels; square slot footprint
-HUD_PANEL_WEAPON_SLOT_WIDTH = 40    # pixels; kept separate for compatibility with current HUD code
+HUD_PANEL_WEAPON_SLOT_SIZE = 40     # pixels; square slot footprint used for both icon drawing and column spacing
 HUD_PANEL_WEAPON_SLOT_GAP = 4       # pixels between weapon slots
 HUD_PANEL_CORNER_RADIUS = 6         # pixels; rounded panel corners
 HUD_REVIVE_RING_RADIUS = 28         # pixels; on-screen revive progress ring size
@@ -1198,8 +1203,8 @@ HUD_DOWNED_HP_BAR_COLOR = (110, 110, 110) # RGB HP bar fill when player is downe
 
 # Settings menu controls (UI-only). Slider step sizes here should stay readable
 # with the FPS cap steps defined earlier in the file.
-SETTINGS_SLIDER_STEP_COARSE = 0.05          # normalized slider value step for larger adjustments
-SETTINGS_SLIDER_STEP_FINE = 0.02            # normalized slider value step for smaller adjustments
+SETTINGS_SLIDER_STEP_COARSE = 0.05          # normalized 0-1 slider delta for larger adjustments
+SETTINGS_SLIDER_STEP_FINE = 0.02            # normalized 0-1 slider delta for smaller adjustments
 SETTINGS_ANALOG_ADJUST_REPEAT_DELAY = 0.2   # seconds before held analog adjustment repeats
 SETTINGS_ANALOG_ADJUST_REPEAT_RATE = 0.08   # seconds between repeated analog adjustments
 SETTINGS_SLIDER_VALUE_X_OFFSET = 24         # pixels; spacing between slider and displayed value
@@ -1343,7 +1348,7 @@ SPAWN_OFFSETS = [
 # Shared camera framing. Primarily multiplayer-facing, but solo camera behavior
 # also reads these values through the same system.
 CAMERA_ZOOM_MIN = 0.45     # minimum zoom scale; lower values zoom farther out for wider parties
-CAMERA_ZOOM_LERP = 2.0     # interpolation speed; higher values make zoom react faster
+CAMERA_ZOOM_LERP = 2.0     # unitless lerp factor; higher values make zoom react faster to party spread changes
 CAMERA_PLAYER_MARGIN = 200  # pixels of padding around tracked players; larger values zoom out sooner
 
 # Downed/revive runtime. These are gameplay/multiplayer settings used by Player
