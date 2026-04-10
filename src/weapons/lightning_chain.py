@@ -26,6 +26,9 @@ from settings import (
     LIGHTNING_CHAIN_IMPACT_ALPHA,
     LIGHTNING_CHAIN_IMPACT_COLOR,
     LIGHTNING_CHAIN_IMPACT_RADIUS,
+    LIGHTNING_CHAIN_OVERLOAD_COLOR,
+    LIGHTNING_CHAIN_OVERLOAD_DAMAGE_PCT,
+    LIGHTNING_CHAIN_OVERLOAD_RADIUS,
     LIGHTNING_CHAIN_STUN_DURATION,
     LIGHTNING_CHAIN_TARGETING_RANGE,
     LIGHTNING_CHAIN_UPGRADE_LEVELS,
@@ -52,6 +55,8 @@ class LightningChain(BaseWeapon):
         # Geometry frozen at fire time; timer counts down from ARC_LIFETIME then arc is removed.
         self.lightning_arcs = []
         self.stunned_enemies: dict[object, float] = {}
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.overload = 0
 
     def _build_arc_points(self, start: Vector2, end: Vector2) -> list[Vector2]:
         """Freeze the arc geometry once so draw() avoids per-frame random work."""
@@ -132,11 +137,23 @@ class LightningChain(BaseWeapon):
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
             hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+            kill_pos = enemy.pos.copy()
             enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
             if self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
                 DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                 HitSpark(enemy.pos, LIGHTNING_CHAIN_HIT_SPARK_COLOR, [self.effect_group])
+
+            # Overload: killing a stunned enemy bursts static to all nearby enemies.
+            if self.overload and not enemy.alive() and enemy in self.stunned_enemies:
+                overload_dmg = damage * LIGHTNING_CHAIN_OVERLOAD_DAMAGE_PCT
+                radius_sq = LIGHTNING_CHAIN_OVERLOAD_RADIUS * LIGHTNING_CHAIN_OVERLOAD_RADIUS
+                for nearby in list(self.enemy_group):
+                    if nearby.alive() and (nearby.pos - kill_pos).length_squared() <= radius_sq:
+                        nearby.take_damage(overload_dmg, hit_direction=None, attacker=self.owner)
+                if self.effect_group is not None:
+                    from src.entities.effects import DeathExplosion
+                    DeathExplosion(kill_pos, LIGHTNING_CHAIN_OVERLOAD_RADIUS, LIGHTNING_CHAIN_OVERLOAD_COLOR, [self.effect_group])
 
             # Chance to stun: if random() < stun_chance: freeze enemy briefly
             if self.stun_chance > 0.0 and random.random() < self.stun_chance:

@@ -11,6 +11,9 @@ from settings import (
     CALTROPS_BLEED_DAMAGE,
     CALTROPS_BLEED_DURATION,
     CALTROPS_HITBOX_SIZE,
+    CALTROPS_NAIL_BOMB_COLOR,
+    CALTROPS_NAIL_BOMB_DAMAGE_PCT,
+    CALTROPS_NAIL_BOMB_RADIUS,
     CALTROPS_PATCH_ALPHA,
     CALTROPS_PATCH_CALTROP_ALPHA,
     CALTROPS_PATCH_DURATION,
@@ -143,6 +146,8 @@ class Caltrops(BaseWeapon):
         self._enemy_hit_cooldowns: dict[int, float] = {}
         self._bleeding_enemies: dict[object, float] = {}
         self._draw_surface: pygame.Surface | None = None
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.nail_bomb = 0
 
     @property
     def effective_patch_radius(self) -> float:
@@ -218,6 +223,7 @@ class Caltrops(BaseWeapon):
 
             can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
             if can_damage:
+                kill_pos = enemy.pos.copy()
                 to_attacker = self.owner.pos - enemy.pos
                 hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
                 enemy.take_damage(
@@ -228,6 +234,16 @@ class Caltrops(BaseWeapon):
                 )
                 self._enemy_hit_cooldowns[enemy.sprite_id] = CALTROPS_TICK_INTERVAL
                 self._bleeding_enemies[enemy] = self.bleed_duration
+                # Nail Bomb: a kill inside a trap bursts for AoE damage.
+                if self.nail_bomb and not enemy.alive():
+                    bomb_damage = tick_damage * CALTROPS_NAIL_BOMB_DAMAGE_PCT
+                    radius_sq = CALTROPS_NAIL_BOMB_RADIUS * CALTROPS_NAIL_BOMB_RADIUS
+                    for nearby in list(self.enemy_group):
+                        if nearby.alive() and (nearby.pos - kill_pos).length_squared() <= radius_sq:
+                            nearby.take_damage(bomb_damage, hit_direction=None, attacker=self.owner)
+                    if self.effect_group is not None:
+                        from src.entities.effects import DeathExplosion
+                        DeathExplosion(kill_pos, CALTROPS_NAIL_BOMB_RADIUS, CALTROPS_NAIL_BOMB_COLOR, [self.effect_group])
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
                     DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])

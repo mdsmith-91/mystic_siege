@@ -21,6 +21,10 @@ from settings import (
     FLAME_BLAST_PARTICLE_RADIUS_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MIN,
+    FLAME_BLAST_POOL_COLOR,
+    FLAME_BLAST_POOL_DURATION,
+    FLAME_BLAST_POOL_RADIUS,
+    FLAME_BLAST_POOL_TICK_INTERVAL,
     FLAME_BLAST_UPGRADE_LEVELS,
 )
 from src.utils.audio_manager import AudioManager
@@ -49,6 +53,11 @@ class FlameBlast(BaseWeapon):
 
         # Live explosion particles — each dict holds pos, vel, life, max_life, radius, color
         self.effect_particles: list[dict] = []
+
+        # Inferno pools: each dict holds center, remaining, tick_timer
+        self.pools: list[dict] = []
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.inferno_pool = 0
 
     @property
     def effective_cone_range(self) -> float:
@@ -102,6 +111,15 @@ class FlameBlast(BaseWeapon):
                     DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                     HitSpark(enemy.pos, FLAME_BLAST_HIT_SPARK_COLOR, [self.effect_group])
 
+        # Inferno Pool: leave a lingering fire zone at the far end of the cone.
+        if self.inferno_pool:
+            pool_center = self.owner.pos + self.fire_direction * self.effective_cone_range * 0.7
+            self.pools.append({
+                "center": pool_center,
+                "remaining": FLAME_BLAST_POOL_DURATION,
+                "tick_timer": 0.0,
+            })
+
         # Spawn explosion particles spreading within the cone
         base_angle = math.degrees(math.atan2(-self.fire_direction.y, self.fire_direction.x))
         half_cone = self.cone_angle / 2
@@ -133,6 +151,26 @@ class FlameBlast(BaseWeapon):
                 'color': color,
             })
 
+    def _tick_pools(self, dt: float) -> None:
+        pool_damage = self._scaled_dot_damage(self.burn_damage)
+        radius_sq = FLAME_BLAST_POOL_RADIUS * FLAME_BLAST_POOL_RADIUS
+        i = 0
+        while i < len(self.pools):
+            pool = self.pools[i]
+            pool["remaining"] -= dt
+            pool["tick_timer"] -= dt
+            if pool["remaining"] <= 0:
+                self.pools.pop(i)
+                continue
+            if pool["tick_timer"] <= 0:
+                pool["tick_timer"] = FLAME_BLAST_POOL_TICK_INTERVAL
+                center = pool["center"]
+                for enemy in self.enemy_group:
+                    if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
+                        enemy.take_damage(pool_damage, hit_direction=None, attacker=self.owner, knockback_force=0)
+                        self.burning_enemies[enemy] = self.burn_duration
+            i += 1
+
     def update(self, dt):
         """Update the flame blast effect."""
         super().update(dt)
@@ -159,9 +197,25 @@ class FlameBlast(BaseWeapon):
                 knockback_force=0,
             )
 
+        self._tick_pools(dt)
+
     def on_owner_inactive(self):
         self.burning_enemies.clear()
         self.effect_particles.clear()
+        self.pools.clear()
+
+    def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+        """Draw lingering inferno pools beneath all sprites."""
+        if not self.pools:
+            return
+        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        for pool in self.pools:
+            cx = int(pool["center"].x - camera_offset.x)
+            cy = int(pool["center"].y - camera_offset.y)
+            alpha = int(160 * (pool["remaining"] / FLAME_BLAST_POOL_DURATION))
+            pygame.draw.circle(tmp, (*FLAME_BLAST_POOL_COLOR, alpha), (cx, cy), FLAME_BLAST_POOL_RADIUS)
+            pygame.draw.circle(tmp, (255, 200, 50, min(255, alpha + 40)), (cx, cy), FLAME_BLAST_POOL_RADIUS // 2)
+        surface.blit(tmp, (0, 0))
 
     def draw_effect(self, surface, camera_offset):
         """Draw the particle explosion blast.

@@ -34,6 +34,8 @@ class ThrowingAxes(BaseWeapon):
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in THROWING_AXES_UPGRADE_LEVELS]
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.ricochet = 0
 
     def _spawn_axe(self, direction: Vector2) -> None:
         Projectile(
@@ -52,6 +54,7 @@ class ThrowingAxes(BaseWeapon):
             draw_shape="axe",
             rotate_to_direction=True,
             spin_speed=THROWING_AXES_SPIN_SPEED,
+            ricochet=bool(self.ricochet),
         )
 
     def fire(self):

@@ -249,14 +249,19 @@ ARCANE_BOLT_PROJECTILE_SPEED = 400    # pixels/second; higher values reduce trav
 ARCANE_BOLT_HITBOX_SIZE = (10, 10)    # pixels; gameplay collision rect for each bolt despite its visual-focused name
 
 # Upgrade Levels
-# Levels 2-5: +damage, +1 bolt, +1 pierce, then +1 bolt with another damage bump.
+# Levels 2-5: +damage, +1 bolt, +1 pierce, then +1 bolt / +damage / kill-explosion capstone.
 ARCANE_BOLT_UPGRADE_LEVELS = [
     {},
     {"base_damage": 10},
     {"bolt_count": 1},
     {"pierce": 1},
-    {"bolt_count": 1, "base_damage": 15},
+    {"bolt_count": 1, "base_damage": 15, "explode_on_kill": 1},
 ]
+
+# Kill-Explosion (L5 capstone)
+ARCANE_BOLT_EXPLOSION_RADIUS = 80           # pixels; AoE splash radius when a bolt kills an enemy
+ARCANE_BOLT_EXPLOSION_DAMAGE_PCT = 0.5      # fraction of bolt damage dealt to splash targets
+ARCANE_BOLT_EXPLOSION_COLOR = (180, 80, 255)  # RGB; arcane purple burst visual
 
 # Visual
 # Projectile presentation only. Trail and glow knobs affect readability, not damage or targeting.
@@ -290,14 +295,20 @@ HOLY_NOVA_EXPAND_SPEED = 200          # pixels/second; higher values make the ri
 HOLY_NOVA_RING_WIDTH = 8              # pixels; damaging band width, so this affects actual hit coverage
 
 # Upgrade Levels
-# Levels 2-5: +damage, +radius, faster cooldown, then more damage with a thinner ring.
+# Levels 2-5: +damage, +radius, faster cooldown, then +damage and consecrated-ground capstone.
 HOLY_NOVA_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"base_radius": 40},
     {"base_cooldown": -0.4},
-    {"base_damage": 20, "ring_width": -4},
+    {"base_damage": 20, "consecrate": 1},
 ]
+
+# Consecration (L5 capstone)
+HOLY_NOVA_CONSECRATE_DURATION = 3.0          # seconds the zone persists after the ring expires
+HOLY_NOVA_CONSECRATE_DAMAGE = 8.0            # damage per tick to enemies standing in the zone
+HOLY_NOVA_CONSECRATE_TICK = 0.5              # seconds between zone damage ticks
+HOLY_NOVA_CONSECRATE_COLOR = (255, 245, 120) # RGB; golden glow for consecrated ground
 
 # Visual
 # Cast accents for the ring effect. These change readability and style, not ring damage or radius.
@@ -374,14 +385,20 @@ FLAME_BLAST_BURN_DAMAGE = 5.0          # damage dealt per burn tick source
 FLAME_BLAST_BURN_DURATION = 2.0        # seconds; longer values keep DOT active longer
 
 # Upgrade Levels
-# Levels 2-5: +damage, +range, longer burn, then wider cone with another damage bump.
+# Levels 2-5: +damage, +range, longer burn, then +damage and inferno-pool capstone.
 FLAME_BLAST_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"cone_range": 40},
     {"burn_duration": 1.5},
-    {"cone_angle": 30, "base_damage": 20},
+    {"base_damage": 20, "inferno_pool": 1},
 ]
+
+# Inferno Pool (L5 capstone)
+FLAME_BLAST_POOL_DURATION = 2.5          # seconds the fire pool lingers
+FLAME_BLAST_POOL_RADIUS = 50             # pixels; AoE radius of the lingering pool
+FLAME_BLAST_POOL_TICK_INTERVAL = 0.5     # seconds between pool damage ticks
+FLAME_BLAST_POOL_COLOR = (255, 100, 0)   # RGB; deep orange lingering fire
 
 # Visual
 # Flame particles and color accents. These do not change cone size, burn duration, or damage.
@@ -466,14 +483,17 @@ BRAMBLE_SEEDS_HITBOX_SIZE = (10, 10)  # pixels; gameplay collision rect for each
 
 # Upgrade Levels
 # Levels 2-5: larger patch, stronger ticks, longer patch duration, then faster
-# cooldown with an extra seed.
+# cooldown and overgrowth capstone (kills bloom a second patch).
 BRAMBLE_SEEDS_UPGRADE_LEVELS = [
     {},
     {"patch_radius": 14},
     {"base_damage": 3.0},
     {"patch_duration": 1.0},
-    {"base_cooldown": -0.35, "projectile_count": 1},
+    {"base_cooldown": -0.35, "overgrowth": 1},
 ]
+
+# Overgrowth (L5 capstone)
+BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT = 0.5  # fraction of patch_duration for the bloom patch
 
 # Visual
 # Seed and bramble patch presentation only. Collision, damage, and slow use the
@@ -510,14 +530,20 @@ FROST_RING_FREEZE_DURATION = 1.0       # seconds enemies stay frozen; higher val
 FROST_RING_HALF_WIDTH = 5              # pixels; damaging band half-width, so this changes actual hit coverage
 
 # Upgrade Levels
-# Levels 2-5: longer freeze, +damage, faster ring travel, then faster cooldown with larger radius.
+# Levels 2-5: longer freeze, +damage, longer freeze again, then faster cooldown /
+# larger radius plus shatter capstone (frozen kills burst into ice AoE).
 FROST_RING_UPGRADE_LEVELS = [
     {},
     {"freeze_duration": 0.5},
     {"base_damage": 10},
-    {"ring_speed": 30},
-    {"base_cooldown": -0.8, "max_radius": 80},
+    {"freeze_duration": 0.5},
+    {"base_cooldown": -0.8, "max_radius": 80, "shatter": 1},
 ]
+
+# Shatter (L5 capstone)
+FROST_RING_SHATTER_RADIUS = 70            # pixels; ice-shard AoE radius on frozen kill
+FROST_RING_SHATTER_DAMAGE_PCT = 0.6       # fraction of ring hit-damage dealt as shatter splash
+FROST_RING_SHATTER_COLOR = (180, 230, 255) # RGB; icy blue burst visual
 
 # Visual
 # Ring styling and secondary particles. These tune clarity and atmosphere, not freeze logic.
@@ -548,14 +574,20 @@ LIGHTNING_CHAIN_STUN_DURATION = 0.5    # seconds; longer values increase control
 LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER = 0.8   # multiplier per hop; lower values increase damage falloff
 
 # Upgrade Levels
-# Levels 2-5: +damage, +2 chain targets, longer hop range, then +1 chain target with stun chance.
+# Levels 2-5: +damage, +2 chain targets, longer hop range, then +1 chain target /
+# stronger stun plus overload capstone (stunned kills arc to all nearby enemies).
 LIGHTNING_CHAIN_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"chain_count": 2},
     {"chain_range": 50},
-    {"chain_count": 1, "stun_chance": 0.25},
+    {"chain_count": 1, "stun_chance": 0.30, "overload": 1},
 ]
+
+# Overload (L5 capstone)
+LIGHTNING_CHAIN_OVERLOAD_RADIUS = 100        # pixels; radius of the static burst on a stunned kill
+LIGHTNING_CHAIN_OVERLOAD_DAMAGE_PCT = 0.4    # fraction of hit damage dealt to nearby enemies
+LIGHTNING_CHAIN_OVERLOAD_COLOR = (255, 235, 60)  # RGB; electric-yellow burst visual
 
 # Visual
 # Arc rendering and endpoint flashes. These affect the look and persistence of chain visuals only.
@@ -591,14 +623,18 @@ LONGBOW_SPREAD = 5                     # degrees between multiple arrows; higher
 LONGBOW_BASE_CRIT_BONUS = 0.05         # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, faster cooldown, +1 pierce, then +1 arrow with extra crit chance.
+# Levels 2-5: +damage, faster cooldown, +1 pierce, then pin-shot capstone (+crit bonus,
+# crits briefly root the target).
 LONGBOW_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},
     {"base_cooldown": -0.15},
     {"pierce": 1},
-    {"projectile_count": 2, "crit_bonus": 0.10},
+    {"pin_shot": 1, "crit_bonus": 0.10},
 ]
+
+# Pin Shot (L5 capstone)
+LONGBOW_PIN_SHOT_DURATION = 0.6   # seconds target is rooted when struck by a crit arrow
 
 # Visual
 # Arrow appearance only. Collision and reach are driven by projectile speed/lifetime, not these draw settings.
@@ -621,14 +657,19 @@ THROWING_AXES_SPREAD = 12              # degrees between extra axes; higher valu
 THROWING_AXES_BASE_CRIT_BONUS = 0.05   # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, faster cooldown, +1 pierce, then +2 axes with extra crit chance.
+# Levels 2-5: +damage, faster cooldown, +1 pierce, then ricochet capstone (+crit bonus,
+# killing axes bounce to a nearby enemy).
 THROWING_AXES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 12.0},
     {"base_cooldown": -0.20},
     {"pierce": 1},
-    {"projectile_count": 2, "crit_bonus": 0.10},
+    {"ricochet": 1, "crit_bonus": 0.10},
 ]
+
+# Ricochet (L5 capstone)
+THROWING_AXES_RICOCHET_RANGE = 140        # pixels; max distance to the next ricochet target
+THROWING_AXES_RICOCHET_DAMAGE_PCT = 0.65  # fraction of axe damage dealt on the bounce
 
 # Visual
 # Axe silhouette and tumble presentation only. These do not change projectile travel, pierce, or crit behavior.
@@ -660,14 +701,19 @@ SHADOW_KNIVES_SPREAD = 9               # degrees between knives in a volley
 SHADOW_KNIVES_BASE_CRIT_BONUS = 0.10   # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, +1 knife, faster cooldown with more crit, then +1 pierce with +damage.
+# Levels 2-5: +damage, +1 knife, faster cooldown with more crit, then venom capstone
+# (+damage, knife hits apply a poison DOT).
 SHADOW_KNIVES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 6.0},
     {"projectile_count": 1},
     {"base_cooldown": -0.10, "crit_bonus": 0.05},
-    {"pierce": 1, "base_damage": 8.0},
+    {"venom": 1, "base_damage": 8.0},
 ]
+
+# Venom (L5 capstone)
+SHADOW_KNIVES_VENOM_DAMAGE = 8.0    # damage per second while venom is active
+SHADOW_KNIVES_VENOM_DURATION = 2.0  # seconds venom lasts after a knife hit
 
 # Visual
 # Knife silhouette and return-trail tuning only. These do not change targeting,
@@ -704,14 +750,19 @@ CALTROPS_HITBOX_SIZE = (10, 10)         # pixels; thrown-caltrop collision rect
 
 # Upgrade Levels
 # Levels 2-5: +trap damage, +1 caltrop, longer hazard life with stronger bleed,
-# then faster cooldown and larger trap radius.
+# then faster cooldown and nail-bomb capstone (kills inside traps burst for AoE).
 CALTROPS_UPGRADE_LEVELS = [
     {},
     {"base_damage": 2.0},
     {"projectile_count": 1},
     {"patch_duration": 1.0, "bleed_damage": 1.0},
-    {"base_cooldown": -0.3, "patch_radius": 6},
+    {"base_cooldown": -0.3, "nail_bomb": 1},
 ]
+
+# Nail Bomb (L5 capstone)
+CALTROPS_NAIL_BOMB_RADIUS = 50            # pixels; AoE burst radius on a kill inside a trap
+CALTROPS_NAIL_BOMB_DAMAGE_PCT = 1.5       # multiplier on trap tick damage for the burst hit
+CALTROPS_NAIL_BOMB_COLOR = (255, 160, 0)  # RGB; orange-hot burst visual
 
 # Visual
 # Ground hazard styling only. These do not change damage, slow, or bleed logic.
@@ -742,15 +793,19 @@ CHAIN_FLAIL_KNOCKBACK_FORCE = 230       # pixels/second impulse applied on hit
 CHAIN_FLAIL_CHAIN_SAMPLE_COUNT = 5      # points along the chain used for light body collision checks
 
 # Upgrade Levels
-# Levels 2-5: +damage, longer reach, longer spin, then faster cooldown with a
-# slightly larger head for consistency.
+# Levels 2-5: +damage, longer reach, longer spin, then faster cooldown and
+# rebound capstone (flail snaps back for a second reverse arc after the main sweep).
 CHAIN_FLAIL_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},
     {"chain_length": 24},
     {"sweep_duration": 0.08},
-    {"base_cooldown": -0.2, "head_radius": 4},
+    {"base_cooldown": -0.2, "rebound": 1},
 ]
+
+# Rebound (L5 capstone)
+CHAIN_FLAIL_REBOUND_ANGLE = 140.0        # degrees swept in the reverse arc
+CHAIN_FLAIL_REBOUND_DAMAGE_PCT = 0.5     # fraction of base damage dealt by the rebound arc
 
 # Visual
 # Chain and flail-head styling only. These do not change spin timing or damage.

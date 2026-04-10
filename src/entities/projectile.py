@@ -3,8 +3,10 @@ from pygame.math import Vector2
 import random
 from settings import (
     WORLD_WIDTH, WORLD_HEIGHT, CRIT_MULTIPLIER,
+    LONGBOW_PIN_SHOT_DURATION,
     THROWING_AXES_HANDLE_COLOR, THROWING_AXES_GUARD_COLOR, THROWING_AXES_OUTLINE_COLOR,
     THROWING_AXES_OUTLINE_WIDTH, THROWING_AXES_EDGE_HIGHLIGHT_WIDTH,
+    THROWING_AXES_RICOCHET_RANGE, THROWING_AXES_RICOCHET_DAMAGE_PCT,
 )
 
 class Projectile(pygame.sprite.Sprite):
@@ -16,7 +18,9 @@ class Projectile(pygame.sprite.Sprite):
                  size: tuple[int, int] | None = None,
                  draw_shape: str = "circle",
                  rotate_to_direction: bool = False,
-                 spin_speed: float = 0.0):
+                 spin_speed: float = 0.0,
+                 pin_shot: bool = False,
+                 ricochet: bool = False):
         super().__init__(groups)
 
         # direction normalized on init
@@ -53,6 +57,8 @@ class Projectile(pygame.sprite.Sprite):
 
         self.owner_crit_chance = owner_crit_chance
         self.owner = owner
+        self.pin_shot = pin_shot
+        self.ricochet = ricochet
 
     def _build_image(self) -> pygame.Surface:
         width, height = self.projectile_size
@@ -208,6 +214,33 @@ class Projectile(pygame.sprite.Sprite):
             from src.entities.effects import DamageNumber, HitSpark
             DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [effect_group], is_crit=is_crit)
             HitSpark(enemy.pos, (255, 200, 50), [effect_group])
+
+        # Pin Shot: crit arrows briefly root the target (Longbow L5).
+        if self.pin_shot and is_crit and enemy.alive():
+            enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), LONGBOW_PIN_SHOT_DURATION)
+            if hasattr(enemy, "_refresh_speed"):
+                enemy._refresh_speed()
+
+        # Ricochet: axes that kill bounce to the nearest enemy (ThrowingAxes L5).
+        if self.ricochet and not enemy.alive():
+            bounce_pos = enemy.pos.copy()
+            ricochet_sq = THROWING_AXES_RICOCHET_RANGE * THROWING_AXES_RICOCHET_RANGE
+            nearest = None
+            nearest_sq = float("inf")
+            for candidate in self.enemy_group_ref:
+                if not candidate.alive():
+                    continue
+                dist_sq = (candidate.pos - bounce_pos).length_squared()
+                if dist_sq <= ricochet_sq and dist_sq < nearest_sq:
+                    nearest_sq = dist_sq
+                    nearest = candidate
+            if nearest is not None:
+                bounce_dmg = actual_damage * THROWING_AXES_RICOCHET_DAMAGE_PCT
+                nearest.take_damage(bounce_dmg, hit_direction=None, attacker=self.owner)
+                if effect_group is not None:
+                    from src.entities.effects import DamageNumber, HitSpark
+                    DamageNumber(nearest.pos - Vector2(0, 20), bounce_dmg, [effect_group])
+                    HitSpark(nearest.pos, (255, 180, 60), [effect_group])
 
         if self.pierce <= 0:
             self.kill()

@@ -8,6 +8,10 @@ from settings import (
     HOLY_NOVA_BASE_COOLDOWN,
     HOLY_NOVA_BASE_DAMAGE,
     HOLY_NOVA_BASE_RADIUS,
+    HOLY_NOVA_CONSECRATE_COLOR,
+    HOLY_NOVA_CONSECRATE_DAMAGE,
+    HOLY_NOVA_CONSECRATE_DURATION,
+    HOLY_NOVA_CONSECRATE_TICK,
     HOLY_NOVA_EXPAND_SPEED,
     HOLY_NOVA_FLARE_COLOR,
     HOLY_NOVA_FLARE_COUNT,
@@ -45,6 +49,10 @@ class HolyNova(BaseWeapon):
 
         # Keep a list of active rings; each ring carries its own particle list
         self.rings = []
+        # Consecration zones: each dict holds center, radius, remaining, tick_timer
+        self.consecrate_zones: list[dict] = []
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.consecrate = 0
 
     def _spawn_particles(self):
         """Build the initial spark particle list for a new ring cast."""
@@ -79,6 +87,8 @@ class HolyNova(BaseWeapon):
         """Update all active rings."""
         super().update(dt)
 
+        self._tick_zones(dt)
+
         i = 0
         while i < len(self.rings):
             ring = self.rings[i]
@@ -108,12 +118,56 @@ class HolyNova(BaseWeapon):
                             HitSpark(enemy.pos, HOLY_NOVA_HIT_SPARK_COLOR, [self.effect_group])
 
             if ring["radius"] > ring["max_radius"]:
+                # Consecration: leave a persistent damage zone when the ring expires.
+                if self.consecrate:
+                    self.consecrate_zones.append({
+                        "center": ring["center"].copy(),
+                        "radius": ring["max_radius"],
+                        "remaining": HOLY_NOVA_CONSECRATE_DURATION,
+                        "tick_timer": 0.0,
+                    })
                 self.rings.pop(i)
             else:
                 i += 1
 
+    def _tick_zones(self, dt: float) -> None:
+        zone_damage = self._scaled_damage(HOLY_NOVA_CONSECRATE_DAMAGE)
+        i = 0
+        while i < len(self.consecrate_zones):
+            zone = self.consecrate_zones[i]
+            zone["remaining"] -= dt
+            zone["tick_timer"] -= dt
+            if zone["remaining"] <= 0:
+                self.consecrate_zones.pop(i)
+                continue
+            if zone["tick_timer"] <= 0:
+                zone["tick_timer"] = HOLY_NOVA_CONSECRATE_TICK
+                center = zone["center"]
+                radius_sq = zone["radius"] * zone["radius"]
+                for enemy in self.enemy_group:
+                    if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
+                        diff = center - enemy.pos
+                        hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+                        enemy.take_damage(zone_damage, hit_direction=hit_dir, attacker=self.owner)
+            i += 1
+
     def on_owner_inactive(self):
         self.rings.clear()
+        self.consecrate_zones.clear()
+
+    def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+        """Draw persistent consecration zones beneath all sprites."""
+        if not self.consecrate_zones:
+            return
+        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        for zone in self.consecrate_zones:
+            cx = int(zone["center"].x - camera_offset.x)
+            cy = int(zone["center"].y - camera_offset.y)
+            progress = zone["remaining"] / HOLY_NOVA_CONSECRATE_DURATION
+            alpha = int(100 * progress)
+            pygame.draw.circle(tmp, (*HOLY_NOVA_CONSECRATE_COLOR, alpha), (cx, cy), int(zone["radius"]))
+            pygame.draw.circle(tmp, (*HOLY_NOVA_CONSECRATE_COLOR, min(255, alpha + 60)), (cx, cy), int(zone["radius"]), 3)
+        surface.blit(tmp, (0, 0))
 
     def draw(self, surface, camera_offset):
         """Draw the expanding holy rings with layered glow, flares, and sparks."""
