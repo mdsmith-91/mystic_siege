@@ -20,7 +20,7 @@ PASSIVE_UPGRADES = [
     },
     {
         "name": "+10% Pickup Radius",
-        "description": "Increase item pickup radius by 10%",
+        "description": "Increase XP orb and item pickup radius by 10%",
         "stat": "pickup_radius_pct",
         "value": 0.10,
         "icon_color": (212, 175, 55)
@@ -47,7 +47,7 @@ PASSIVE_UPGRADES = [
         "icon_color": (80, 220, 255)
     },
     {
-        "name": "+5% Cooldown Reduc",
+        "name": "+5% Cooldown Reduction",
         "description": "Reduce weapon cooldowns by 5%",
         "stat": "cooldown_reduction",
         "value": 0.05,
@@ -80,7 +80,28 @@ PASSIVE_UPGRADES = [
         "stat": "projectile_pierce_bonus",
         "value": 1,
         "icon_color": (150, 180, 255)
-    }
+    },
+    {
+        "name": "+10% Damage Over Time",
+        "description": "Increase all damage-over-time effects by 10%",
+        "stat": "dot_damage_bonus_pct",
+        "value": 0.10,
+        "icon_color": (220, 80, 30)
+    },
+    {
+        "name": "+10% Area Size",
+        "description": "Increase the radius of all area-of-effect abilities by 10%",
+        "stat": "area_size_bonus_pct",
+        "value": 0.10,
+        "icon_color": (80, 200, 180)
+    },
+    {
+        "name": "+5% All Damage",
+        "description": "Increase all outgoing damage by 5%",
+        "stat": "base_damage_bonus_pct",
+        "value": 0.05,
+        "icon_color": (210, 50, 50)
+    },
 ]
 
 # Define WEAPON_CLASSES as module-level list of weapon class names (strings)
@@ -345,5 +366,13 @@ class UpgradeSystem:
             player.add_flat_percent_bonus(stat, value)
         elif stat == "physical_damage_multiplier_pct":
             player.add_flat_percent_bonus(stat, value)
+        elif stat == "dot_damage_bonus_pct":
+            player.dot_damage_bonus_pct += value
+            player._recalculate_pct_stats()
+        elif stat == "area_size_bonus_pct":
+            player.area_size_bonus_pct += value
+        elif stat == "base_damage_bonus_pct":
+            player.base_damage_bonus_pct += value
+            player._rebuild_combat_modifiers()
         else:
             player.apply_passive(stat, value)
