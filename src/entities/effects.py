@@ -3,8 +3,18 @@ from pygame.math import Vector2
 import random
 import math
 
+_damage_numbers_enabled: bool = True
+
+
+def set_damage_numbers_enabled(enabled: bool) -> None:
+    global _damage_numbers_enabled
+    _damage_numbers_enabled = enabled
+
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, pos, amount: float, groups, is_player_damage=False, is_crit=False):
+        if not _damage_numbers_enabled:
+            return
         super().__init__(groups)
 
         # Display nearest-integer damage instead of truncating fractional hits.

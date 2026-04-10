@@ -29,6 +29,7 @@ from settings import (
     SHADOW_KNIVES_UPGRADE_LEVELS,
     SHADOW_KNIVES_VENOM_DAMAGE,
     SHADOW_KNIVES_VENOM_DURATION,
+    DOT_DISPLAY_TICK_INTERVAL,
 )
 from src.entities.projectile import Projectile
 from src.utils.audio_manager import AudioManager
@@ -210,20 +211,40 @@ class ShadowKnives(BaseWeapon):
         # Stored as int so the generic upgrade() += delta path works; truthy at L5.
         self.venom = 0
         self._poisoned_enemies: dict[object, float] = {}
+        self._venom_display_timers: dict[object, float] = {}
+        self._venom_crit_states: dict[object, bool] = {}
 
     def _apply_venom(self, enemy: object) -> None:
         """Start or refresh the venom timer on an enemy."""
         self._poisoned_enemies[enemy] = SHADOW_KNIVES_VENOM_DURATION
 
     def _tick_venoms(self, dt: float) -> None:
-        venom_tick = self._scaled_dot_damage(SHADOW_KNIVES_VENOM_DAMAGE) * dt
+        venom_damage_rate = self._scaled_dot_damage(SHADOW_KNIVES_VENOM_DAMAGE)
         for enemy in list(self._poisoned_enemies.keys()):
             remaining = self._poisoned_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
                 self._poisoned_enemies.pop(enemy, None)
+                self._venom_display_timers.pop(enemy, None)
+                self._venom_crit_states.pop(enemy, None)
                 continue
             self._poisoned_enemies[enemy] = remaining
-            enemy.take_damage(venom_tick, hit_direction=None, attacker=self.owner, knockback_force=0)
+            is_crit = self._venom_crit_states.get(enemy, False)
+            enemy.take_damage(
+                venom_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
+                hit_direction=None,
+                attacker=self.owner,
+                knockback_force=0,
+            )
+            if self.effect_group is not None:
+                elapsed = self._venom_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._venom_crit_states[enemy] = new_crit
+                    display_damage = venom_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._venom_display_timers[enemy] = elapsed
 
     def _spawn_knife(self, direction: Vector2) -> None:
         ShadowKnifeProjectile(
@@ -283,6 +304,8 @@ class ShadowKnives(BaseWeapon):
             if isinstance(projectile, ShadowKnifeProjectile) and projectile.owner is self.owner:
                 projectile.kill()
         self._poisoned_enemies.clear()
+        self._venom_display_timers.clear()
+        self._venom_crit_states.clear()
 
     def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
         trail_surface = None

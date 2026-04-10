@@ -99,6 +99,7 @@ WARLOCK_DOT_DAMAGE_BONUS = 0.20      # fraction added to damage-over-time effect
 WARLOCK_SPELL_DAMAGE_BONUS = 0.10    # fraction added to spell damage by Warlock passive
 DRUID_AREA_SIZE_BONUS_PCT = 0.20     # fraction added to area-based effects by Druid passive
 DRUID_MAX_HP_BONUS_PCT = 0.10        # fraction added to max HP by Druid passive
+DOT_DISPLAY_TICK_INTERVAL = 0.5      # seconds between damage-number pops for continuous DoTs
 
 BASE_XP_REQUIRED = 50                # XP needed for the first level-up; higher values slow early progression
 XP_SCALE_FACTOR = 1.12               # exponential growth factor per level; higher values steepen later leveling

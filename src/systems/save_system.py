@@ -21,6 +21,7 @@ def _build_default_save() -> Dict[str, Any]:
             "sfx_volume": 0.8,
             "show_fps": False,
             "show_stat_bonuses": True,
+            "show_damage_numbers": True,
             "fps_cap": detect_refresh_rate(),
             "controller_bindings": CONTROLLER_BINDINGS_SETTINGS_DEFAULT,
         },

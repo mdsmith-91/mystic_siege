@@ -146,9 +146,13 @@ class HolyNova(BaseWeapon):
                 radius_sq = zone["radius"] * zone["radius"]
                 for enemy in self.enemy_group:
                     if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
+                        is_crit = random.random() < self.owner.crit_chance
+                        actual_zone_damage = zone_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
                         diff = center - enemy.pos
                         hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
-                        enemy.take_damage(zone_damage, hit_direction=hit_dir, attacker=self.owner)
+                        enemy.take_damage(actual_zone_damage, hit_direction=hit_dir, attacker=self.owner)
+                        if self.effect_group is not None:
+                            DamageNumber(enemy.pos - Vector2(0, 20), actual_zone_damage, [self.effect_group], is_crit=is_crit)
             i += 1
 
     def on_owner_inactive(self):

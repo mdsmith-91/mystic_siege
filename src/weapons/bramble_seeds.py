@@ -39,6 +39,7 @@ from settings import (
     BRAMBLE_SEEDS_TARGETING_RANGE,
     BRAMBLE_SEEDS_TICK_INTERVAL,
     BRAMBLE_SEEDS_UPGRADE_LEVELS,
+    CRIT_MULTIPLIER,
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
@@ -225,10 +226,12 @@ class BrambleSeeds(BaseWeapon):
                 continue
             can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
             if can_damage:
+                is_crit = random.random() < self.owner.crit_chance
+                actual_damage = tick_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
                 to_attacker = self.owner.pos - enemy.pos
                 hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
                 enemy.take_damage(
-                    tick_damage,
+                    actual_damage,
                     hit_direction=hit_dir,
                     attacker=self.owner,
                     knockback_force=0,
@@ -246,7 +249,7 @@ class BrambleSeeds(BaseWeapon):
                 )
             if can_damage and self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
-                DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])
+                DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [self.effect_group], is_crit=is_crit)
                 HitSpark(enemy.pos, BRAMBLE_SEEDS_HIT_SPARK_COLOR, [self.effect_group])
 
     def _tick_patches(self, dt: float) -> None:

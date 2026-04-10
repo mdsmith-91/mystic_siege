@@ -1,4 +1,5 @@
 import math
+import random
 
 import pygame
 from pygame.math import Vector2
@@ -31,6 +32,8 @@ from settings import (
     CALTROPS_THROW_SPEED,
     CALTROPS_TICK_INTERVAL,
     CALTROPS_UPGRADE_LEVELS,
+    CRIT_MULTIPLIER,
+    DOT_DISPLAY_TICK_INTERVAL,
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
@@ -145,6 +148,8 @@ class Caltrops(BaseWeapon):
         self.patches: list[dict] = []
         self._enemy_hit_cooldowns: dict[int, float] = {}
         self._bleeding_enemies: dict[object, float] = {}
+        self._bleed_display_timers: dict[object, float] = {}
+        self._bleed_crit_states: dict[object, bool] = {}
         self._draw_surface: pygame.Surface | None = None
         # Stored as int so the generic upgrade() += delta path works; truthy at L5.
         self.nail_bomb = 0
@@ -216,11 +221,13 @@ class Caltrops(BaseWeapon):
 
             can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
             if can_damage:
+                is_crit = random.random() < self.owner.crit_chance
+                actual_damage = tick_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
                 kill_pos = enemy.pos.copy()
                 to_attacker = self.owner.pos - enemy.pos
                 hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
                 enemy.take_damage(
-                    tick_damage,
+                    actual_damage,
                     hit_direction=hit_dir,
                     attacker=self.owner,
                     knockback_force=0,
@@ -229,7 +236,7 @@ class Caltrops(BaseWeapon):
                 self._bleeding_enemies[enemy] = self.bleed_duration
                 # Nail Bomb: a kill inside a trap bursts for AoE damage.
                 if self.nail_bomb and not enemy.alive():
-                    bomb_damage = tick_damage * CALTROPS_NAIL_BOMB_DAMAGE_PCT
+                    bomb_damage = actual_damage * CALTROPS_NAIL_BOMB_DAMAGE_PCT
                     radius_sq = CALTROPS_NAIL_BOMB_RADIUS * CALTROPS_NAIL_BOMB_RADIUS
                     for nearby in list(self.enemy_group):
                         if nearby.alive() and (nearby.pos - kill_pos).length_squared() <= radius_sq:
@@ -239,7 +246,7 @@ class Caltrops(BaseWeapon):
                         DeathExplosion(kill_pos, CALTROPS_NAIL_BOMB_RADIUS, CALTROPS_NAIL_BOMB_COLOR, [self.effect_group])
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
-                    DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])
+                    DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [self.effect_group], is_crit=is_crit)
                     HitSpark(enemy.pos, CALTROPS_BLEED_COLOR, [self.effect_group])
 
     def _tick_patches(self, dt: float) -> None:
@@ -285,22 +292,35 @@ class Caltrops(BaseWeapon):
                     enemy.remove_slow(self)
 
     def _tick_bleeds(self, dt: float) -> None:
-        tick_damage = self._scaled_dot_damage(self.bleed_damage) * dt
+        bleed_damage_rate = self._scaled_dot_damage(self.bleed_damage)
         for enemy in list(self._bleeding_enemies.keys()):
             remaining = self._bleeding_enemies[enemy] - dt
             if remaining <= 0.0 or not enemy.alive():
                 self._bleeding_enemies.pop(enemy, None)
+                self._bleed_display_timers.pop(enemy, None)
+                self._bleed_crit_states.pop(enemy, None)
                 continue
 
             self._bleeding_enemies[enemy] = remaining
+            is_crit = self._bleed_crit_states.get(enemy, False)
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                tick_damage,
+                bleed_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
             )
+            if self.effect_group is not None:
+                elapsed = self._bleed_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._bleed_crit_states[enemy] = new_crit
+                    display_damage = bleed_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._bleed_display_timers[enemy] = elapsed
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -311,6 +331,8 @@ class Caltrops(BaseWeapon):
         self.patches.clear()
         self._enemy_hit_cooldowns.clear()
         self._bleeding_enemies.clear()
+        self._bleed_display_timers.clear()
+        self._bleed_crit_states.clear()
         for enemy in self.enemy_group:
             if hasattr(enemy, "remove_slow"):
                 enemy.remove_slow(self)

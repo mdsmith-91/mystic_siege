@@ -6,6 +6,7 @@ from pygame.math import Vector2
 
 from settings import (
     CRIT_MULTIPLIER,
+    DOT_DISPLAY_TICK_INTERVAL,
     HEX_ORB_BASE_COOLDOWN,
     HEX_ORB_BASE_DAMAGE,
     HEX_ORB_BASE_PIERCE,
@@ -162,6 +163,8 @@ class HexOrb(BaseWeapon):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in HEX_ORB_UPGRADE_LEVELS]
         self.cursed_enemies: dict[object, float] = {}
+        self._curse_display_timers: dict[object, float] = {}
+        self._curse_crit_states: dict[object, bool] = {}
 
     def apply_curse(self, enemy, effect_group=None) -> None:
         if not enemy.alive():
@@ -185,24 +188,41 @@ class HexOrb(BaseWeapon):
                 self.cursed_enemies[nearby_enemy] = self.curse_duration
 
     def _tick_curses(self, dt: float) -> None:
-        tick_damage = self._scaled_dot_damage(self.curse_damage) * dt
+        curse_damage_rate = self._scaled_dot_damage(self.curse_damage)
         for enemy in list(self.cursed_enemies.keys()):
             remaining = self.cursed_enemies[enemy] - dt
             if remaining <= 0.0 or not enemy.alive():
                 del self.cursed_enemies[enemy]
+                self._curse_display_timers.pop(enemy, None)
+                self._curse_crit_states.pop(enemy, None)
                 continue
 
             self.cursed_enemies[enemy] = remaining
+            is_crit = self._curse_crit_states.get(enemy, False)
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                tick_damage,
+                curse_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
             )
             if not enemy.alive():
                 self.cursed_enemies.pop(enemy, None)
+                self._curse_display_timers.pop(enemy, None)
+                self._curse_crit_states.pop(enemy, None)
+                continue
+
+            if self.effect_group is not None:
+                elapsed = self._curse_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._curse_crit_states[enemy] = new_crit
+                    display_damage = curse_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._curse_display_timers[enemy] = elapsed
 
     def _spawn_orb(self, direction: Vector2) -> None:
         HexOrbProjectile(
@@ -258,6 +278,8 @@ class HexOrb(BaseWeapon):
 
     def on_owner_inactive(self):
         self.cursed_enemies.clear()
+        self._curse_display_timers.clear()
+        self._curse_crit_states.clear()
         for projectile in list(self.projectile_group):
             if isinstance(projectile, HexOrbProjectile) and projectile.owner is self.owner:
                 projectile.kill()

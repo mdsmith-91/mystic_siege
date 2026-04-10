@@ -5,6 +5,7 @@ from pygame.math import Vector2
 
 from settings import (
     CRIT_MULTIPLIER,
+    DOT_DISPLAY_TICK_INTERVAL,
     FLAME_BLAST_BASE_COOLDOWN,
     FLAME_BLAST_BASE_DAMAGE,
     FLAME_BLAST_BURN_DAMAGE,
@@ -58,6 +59,8 @@ class FlameBlast(BaseWeapon):
         self.pools: list[dict] = []
         # Stored as int so the generic upgrade() += delta path works; truthy at L5.
         self.inferno_pool = 0
+        self._burn_display_timers: dict[object, float] = {}
+        self._burn_crit_states: dict[object, bool] = {}
 
     @property
     def effective_cone_range(self) -> float:
@@ -167,8 +170,13 @@ class FlameBlast(BaseWeapon):
                 center = pool["center"]
                 for enemy in self.enemy_group:
                     if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
-                        enemy.take_damage(pool_damage, hit_direction=None, attacker=self.owner, knockback_force=0)
+                        is_crit = random.random() < self.owner.crit_chance
+                        actual_pool_damage = pool_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
+                        enemy.take_damage(actual_pool_damage, hit_direction=None, attacker=self.owner, knockback_force=0)
                         self.burning_enemies[enemy] = self.burn_duration
+                        if self.effect_group is not None:
+                            from src.entities.effects import DamageNumber
+                            DamageNumber(enemy.pos - Vector2(0, 20), actual_pool_damage, [self.effect_group], is_crit=is_crit)
             i += 1
 
     def update(self, dt):
@@ -182,25 +190,41 @@ class FlameBlast(BaseWeapon):
         self.effect_particles = [p for p in self.effect_particles if p['life'] > 0]
 
         # Tick burn timers and apply burn damage each frame
+        burn_damage_rate = self._scaled_dot_damage(self.burn_damage)
         for enemy in list(self.burning_enemies.keys()):
             remaining = self.burning_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
                 del self.burning_enemies[enemy]
+                self._burn_display_timers.pop(enemy, None)
+                self._burn_crit_states.pop(enemy, None)
                 continue
             self.burning_enemies[enemy] = remaining
+            is_crit = self._burn_crit_states.get(enemy, False)
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                self._scaled_dot_damage(self.burn_damage) * dt,
+                burn_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
             )
+            if self.effect_group is not None:
+                elapsed = self._burn_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._burn_crit_states[enemy] = new_crit
+                    display_damage = burn_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._burn_display_timers[enemy] = elapsed
 
         self._tick_pools(dt)
 
     def on_owner_inactive(self):
         self.burning_enemies.clear()
+        self._burn_display_timers.clear()
+        self._burn_crit_states.clear()
         self.effect_particles.clear()
         self.pools.clear()
 
