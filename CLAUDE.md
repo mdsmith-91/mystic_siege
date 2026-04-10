@@ -155,6 +155,7 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 
 - Player contact damage: 0.5s iframes per hit.
 - Projectiles: `enemies_hit` set tracks pierce. Sword: one hit per enemy per swing. HolyNova/FrostRing: `damage_done` set per ring.
+- Same-frame projectile pierce collisions are ordered by projectile travel direction before `on_hit()` runs. Hit effects such as Hex Orb curse, Longbow Pin Shot, Shadow Knives venom, Arcane Bolt kill explosions, and Throwing Axes ricochet stay tied to actual pierce-budget hits only.
 - `enemy.take_damage(amount, hit_direction=None, attacker=None)` — all weapons pass `hit_direction` (Vector2 from enemy toward attacker) so CursedKnight's frontal shield correctly reduces damage by 80%. `attacker` enables kill-credit attribution in multiplayer.
 
 ---

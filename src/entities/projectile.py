@@ -10,6 +10,8 @@ from settings import (
 )
 
 class Projectile(pygame.sprite.Sprite):
+    ORDER_COLLISION_TARGETS = True
+
     def __init__(self, pos, direction: Vector2, speed: float, damage: float,
                  groups, enemy_group_ref, pierce: int = 0, homing: bool = False,
                  color: tuple = (200, 100, 255), target_enemy=None,

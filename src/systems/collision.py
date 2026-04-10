@@ -44,10 +44,21 @@ class CollisionSystem:
         for projectile, enemy_list in collisions.items():
             if projectile.is_enemy_projectile:
                 continue
+            if getattr(projectile, "ORDER_COLLISION_TARGETS", False):
+                enemy_list.sort(key=lambda enemy: self._projectile_hit_order(projectile, enemy))
             for enemy in enemy_list:
                 if not projectile.alive():
                     break
                 projectile.on_hit(enemy, effect_group)
+
+    @staticmethod
+    def _projectile_hit_order(projectile, enemy) -> float:
+        """Order same-frame projectile collisions from entry side to exit side."""
+        direction = getattr(projectile, "direction", None)
+        pos = getattr(projectile, "pos", None)
+        if direction is None or pos is None:
+            return 0.0
+        return (enemy.pos - pos).dot(direction)
 
     def check_enemy_projectiles_player(self, projectile_group, players, effect_group=None):
         """Check for enemy-projectile-player collisions."""
