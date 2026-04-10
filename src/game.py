@@ -27,6 +27,30 @@ class Game:
         self._invisible_cursor = pygame.cursors.Cursor((0, 0), _invis_surf)
         pygame.mouse.set_cursor(self._default_cursor)
 
+    def _save_screenshot(self) -> None:
+        screenshot_dir = Path(SCREENSHOT_DIR)
+        screenshot_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
+        filepath = screenshot_dir / filename
+        pygame.image.save(self.screen, filepath)
+        print(f"Screenshot saved: {filepath}")
+
+    def _controller_screenshot_suppressed(self) -> bool:
+        scene = self.scene_manager.current_scene
+        settings_menu = None
+        if getattr(scene, "controller_bindings_open", False):
+            settings_menu = scene
+        elif getattr(scene, "_settings_open", False):
+            settings_menu = getattr(scene, "_settings_menu", None)
+
+        if settings_menu is None:
+            return False
+
+        return (
+            getattr(settings_menu, "controller_bindings_open", False)
+            or getattr(settings_menu, "controller_capture_action", None) is not None
+        )
+
     def run(self):
         running = True
         while running:
@@ -46,12 +70,17 @@ class Game:
                     mouse_moved = True
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
-                        screenshot_dir = Path(SCREENSHOT_DIR)
-                        screenshot_dir.mkdir(parents=True, exist_ok=True)
-                        filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
-                        filepath = screenshot_dir / filename
-                        pygame.image.save(self.screen, filepath)
-                        print(f"Screenshot saved: {filepath}")
+                        self._save_screenshot()
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    if (
+                        InputManager.instance().button_matches(
+                            "screenshot",
+                            event.button,
+                            joystick_id=event.instance_id,
+                        )
+                        and not self._controller_screenshot_suppressed()
+                    ):
+                        self._save_screenshot()
 
             # Update with dt capped at 0.05 to prevent spiral-of-death on lag spikes
             dt = self.clock.tick(self.refresh_rate) / 1000.0

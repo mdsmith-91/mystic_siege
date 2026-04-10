@@ -501,6 +501,7 @@ class InputManager:
         return {
             "confirm": int(CONTROLLER_BINDINGS_DEFAULT["confirm"]),
             "back": int(CONTROLLER_BINDINGS_DEFAULT["back"]),
+            "screenshot": int(CONTROLLER_BINDINGS_DEFAULT["screenshot"]),
             "start": [int(button) for button in CONTROLLER_BINDINGS_DEFAULT["start"]],
         }
 
@@ -517,6 +518,10 @@ class InputManager:
         back = bindings.get("back")
         if isinstance(back, int) and back >= 0:
             normalized["back"] = back
+
+        screenshot = bindings.get("screenshot")
+        if isinstance(screenshot, int) and screenshot >= 0:
+            normalized["screenshot"] = screenshot
 
         start = bindings.get("start")
         if isinstance(start, int) and start >= 0:

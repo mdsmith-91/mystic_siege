@@ -651,22 +651,11 @@ class GameScene:
     def _toggle_pause(self) -> None:
         self._set_paused(not self.paused)
 
-    def _set_show_fps(self, value: bool) -> None:
-        self.show_fps = value
-        self.save_system.set_setting("show_fps", value)
-
-    def _toggle_show_fps(self) -> None:
-        self._set_show_fps(not self.show_fps)
-
     def _handle_keyboard_pause_event(self, event: pygame.event.Event) -> bool:
         if getattr(event, "synthetic_controller_event", False):
             # Pause ownership for controllers is handled via JOYBUTTONDOWN so a
             # Start press cannot also re-toggle pause through a synthetic ESC.
             return False
-
-        if event.key == pygame.K_F3:
-            self._toggle_show_fps()
-            return True
 
         for binding in self._owned_keyboard_pause_bindings().values():
             if event.key in binding["toggle"]:
@@ -788,8 +777,6 @@ class GameScene:
             for event in events:
                 if event.type == pygame.QUIT:
                     return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
-                    self._toggle_show_fps()
             self.upgrade_menu.handle_events(events)
             return
 

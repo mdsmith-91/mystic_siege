@@ -142,7 +142,7 @@ Menu → Lobby → Class Select (queued per slot) → Game → Game Over → Lob
 - World pickups: Health potions require missing HP; timed buffs affect only the collector; `Magnet` retargets active orbs to closest eligible player.
 - Unresolved controller disconnect keeps gameplay paused until the slot is reclaimed.
 - Controller bindings configurable from Settings; use semantic action names (`Confirm`, `Back`, `Start`) not raw button numbers in UI text.
-- Time stops on level-up. ESC / controller `Back` toggles pause. F3: FPS counter. F12: screenshot.
+- Time stops on level-up. ESC / controller `Start` toggles pause. F12 takes a screenshot. Controllers can trigger screenshots through the remappable `Screenshot / Select` binding.
 
 ### XP Formula
 
@@ -176,7 +176,7 @@ Always use the project singletons — never touch pygame subsystems directly.
 - **`AudioManager.instance()`** — `play_sfx(AudioManager.CONSTANT)`, `play_music(path)`. Fails silently if files or mixer are missing.
 - **`InputManager.instance()`** — `get_movement()`, `button_matches(..., joystick_id=...)`, `describe_binding(...)`, `get_confirm_for_joystick()`. Never hardcode controller button indices. Call `scan()` once after `pygame.init()`; hot-plug via `JOYDEVICEADDED`. Controller presses generate synthetic `pygame.KEYDOWN` events for global menus; owned multiplayer menus must explicitly route or reject those by device identity, or poll directly.
 
-Keyboard ownership: WASD (Space=confirm, Left Shift=back) and Arrows (Enter=confirm, Right Shift=back). Default controller: btn 0=confirm, btn 1=back, btn 7=pause.
+Keyboard ownership: WASD (Space=confirm, Left Shift=back) and Arrows (Enter=confirm, Right Shift=back). Default controller: btn 0=confirm, btn 1=back, btn 6=screenshot/select, btn 7=pause.
 
 Assets are drop-in: place PNG at `assets/sprites/<path>` or WAV/OGG at `assets/audio/sfx|music/` and they load automatically. Run `python src/utils/placeholder_assets.py` to regenerate missing placeholders.
 

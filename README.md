@@ -19,7 +19,7 @@ Mystic Siege is a playable survivor-style action game with:
 - settings-driven world pickups: Health Potion, Magnet, and three 10-second timed buffs (Battle Rage, Iron Skin, Haste)
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
-- controller support, hot-plug detection, and remappable controller confirm/back/pause bindings
+- controller support, hot-plug detection, and remappable controller confirm/back/screenshot/pause bindings
 
 Current run flow:
 
@@ -157,7 +157,6 @@ python src/utils/placeholder_assets.py
 | Join lobby | Press WASD keys or Arrow keys |
 | Move in-game | Assigned scheme movement keys |
 | Pause | ESC |
-| Toggle FPS counter | F3 |
 | Take screenshot | F12 |
 
 Owned menu keyboard bindings:
@@ -176,6 +175,7 @@ Controllers are detected at startup and on hot-plug.
 | Confirm / Select | Configurable in Settings |
 | Back / Cancel | Configurable in Settings |
 | Pause | Configurable in Settings |
+| Take screenshot | Configurable as Screenshot / Select in Settings (default Btn 6) |
 | Navigate menus | Left stick or D-pad |
 
 Controller binding notes:

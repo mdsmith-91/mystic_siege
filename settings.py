@@ -25,7 +25,7 @@ TITLE = "Mystic Siege"    # window title text (UI-only)
 TILE_SIZE = 32            # pixels per world tile; shared by map and spatial placement
 WORLD_WIDTH = 3000        # world width in pixels; larger values increase traversal space
 WORLD_HEIGHT = 3000       # world height in pixels; larger values increase traversal space
-SCREENSHOT_DIR = "screenshots"  # repo-relative folder for F12 screenshots
+SCREENSHOT_DIR = "screenshots"  # repo-relative folder for keyboard/controller screenshots
 
 
 # ============================================================================
@@ -1256,12 +1256,14 @@ CONTROLLER_AXIS_REPEAT_DELAY = 0.4     # seconds before held axis starts repeati
 CONTROLLER_AXIS_REPEAT_RATE = 0.15     # seconds between repeated axis navigation events
 CONTROLLER_CONFIRM_BUTTON = 0          # default confirm button index (A / Cross)
 CONTROLLER_BACK_BUTTON = 1             # default back button index (B / Circle)
+CONTROLLER_SCREENSHOT_BUTTON = 6       # default screenshot button index (Select / View)
 CONTROLLER_START_BUTTONS = (7,)        # tuple of default pause/start buttons; extend only for broader controller support
 
 # Default binding payloads persisted by SaveSystem/InputManager.
 CONTROLLER_BINDINGS_DEFAULT = {
     "confirm": CONTROLLER_CONFIRM_BUTTON,
     "back": CONTROLLER_BACK_BUTTON,
+    "screenshot": CONTROLLER_SCREENSHOT_BUTTON,
     "start": list(CONTROLLER_START_BUTTONS),
 }
 CONTROLLER_BINDINGS_SETTINGS_DEFAULT = {
@@ -1273,11 +1275,13 @@ CONTROLLER_BINDINGS_SETTINGS_DEFAULT = {
 CONTROLLER_BINDING_LABELS = {
     "confirm": "Confirm",
     "back": "Back",
+    "screenshot": "Screenshot / Select",
     "start": "Pause / Start",
 }
 CONTROLLER_HELP_LABELS = {
     "confirm": "Confirm",
     "back": "Back",
+    "screenshot": "Screenshot",
     "start": "Start",
 }
 
