@@ -114,6 +114,8 @@ Not yet verified:
 - HUD styling that is intentionally derived from weapon-slot chrome is also centralized in `settings.py`; `HUD_EMPTY_SLOT_BG_COLOR` now drives both empty weapon slots and HP/XP bar backgrounds in `src/ui/hud.py`.
 - The in-run HUD is now shared between solo and multiplayer: player panels use a 4-segment border tracker around occupied weapon slots that fills top, right, bottom, then left as levels 2–5 are earned. Unearned sections use the same gray baseline as empty weapon slots, and the segment tunables live in `settings.py`.
 - The shared HUD renderer now caches stable panel rect conversion, weapon-slot row geometry, weapon icon surfaces, and text surfaces inside `src/ui/hud.py` rather than rebuilding equivalent data every frame. Offscreen downed-player revive rings are culled while teammate threat arrows remain active.
+- The optional FPS readout is smoothed for display only: `GameScene` keeps a settings-driven EMA of frame time and refreshes the visible rounded number on `HUD_FPS_DISPLAY_UPDATE_INTERVAL` so the counter does not flicker every frame.
+- Screenshot feedback is global and settings-driven. Keyboard and controller screenshots save before the overlay is drawn, then `Game` displays `Screenshot Captured` below the FPS-counter area and fades it out over the configured notice duration.
 - Timed pickup buff durations render in the optional stat-bonus readout rather than inside the main HUD panel. The buff column sits beside the stat column and mirrors inward for right-side player panels.
 
 ## Enemy Architecture
@@ -158,6 +160,8 @@ python src/utils/placeholder_assets.py
 | Move in-game | Assigned scheme movement keys |
 | Pause | ESC |
 | Take screenshot | F12 |
+
+Screenshots are written to `screenshots/` and briefly show a fading `Screenshot Captured` notice near the top-center HUD area after capture.
 
 Owned menu keyboard bindings:
 

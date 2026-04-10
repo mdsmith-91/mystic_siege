@@ -16,7 +16,8 @@ from settings import (SCREEN_WIDTH, SCREEN_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
                        REVIVE_RADIUS, REVIVE_DURATION,
                        REVIVE_IFRAME_DURATION, REVIVE_MIN_RESCUER_HP,
                        CONTROLLER_AXIS_REPEAT_DELAY, CONTROLLER_AXIS_REPEAT_RATE,
-                       CAMERA_ZOOM_MIN)
+                       CAMERA_ZOOM_MIN, HUD_FPS_SMOOTHING_ALPHA,
+                       HUD_FPS_DISPLAY_UPDATE_INTERVAL)
 from src.core.player_slot import PlayerSlot
 from src.systems.save_system import SaveSystem
 from src.utils.resource_loader import ResourceLoader, _get_base_path
@@ -148,6 +149,8 @@ class GameScene:
         self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
         set_damage_numbers_enabled(self.save_system.get_setting("show_damage_numbers"))
         self._smooth_dt = 1 / 60  # exponential moving average of dt for stable FPS display
+        self._displayed_fps = 60.0
+        self._fps_display_timer = 0.0
 
         # 14. background — use Gemini-generated image if available, else procedural tiles
         bg_path = "assets/backgrounds/game_bg.png"
@@ -846,7 +849,14 @@ class GameScene:
             self.upgrade_menu.update(dt)
             return
 
-        self._smooth_dt = dt * 0.1 + self._smooth_dt * 0.9
+        self._smooth_dt = (
+            dt * HUD_FPS_SMOOTHING_ALPHA
+            + self._smooth_dt * (1.0 - HUD_FPS_SMOOTHING_ALPHA)
+        )
+        self._fps_display_timer -= dt
+        if self._fps_display_timer <= 0.0:
+            self._displayed_fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0.0
+            self._fps_display_timer = max(0.0, HUD_FPS_DISPLAY_UPDATE_INTERVAL)
 
         # all_sprites.update(dt)  — this updates player, enemies, orbs
         self.all_sprites.update(dt)
@@ -955,7 +965,6 @@ class GameScene:
             screen.blit(scaled_world, (0, 0))
 
         # 6. hud.draw(screen, player, xp_system, wave_manager, show_fps, clock_fps)
-        fps = 1.0 / self._smooth_dt if self._smooth_dt > 0 else 0
         self.hud.draw_threat_arrows(screen, self.enemy_group, self.camera, self.players)
         self.hud.draw(
             screen,
@@ -964,7 +973,7 @@ class GameScene:
             self.wave_manager,
             self.show_stat_bonuses,
             self.show_fps,
-            fps,
+            self._displayed_fps,
             self.camera,
         )
 

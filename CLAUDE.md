@@ -104,7 +104,7 @@ Weapon architecture rules:
 - Construction is centralized in `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` / `create_weapon()`. No new `if/elif` chains in `GameScene` or `UpgradeSystem`.
 - `src/weapons/__init__.py` re-exports the registry and helper for package-level imports.
 - **Ownership split:** `settings.py` owns gameplay values · `factory.py` owns id→class resolution · `upgrade_system.py` owns player-facing card metadata (`WEAPON_META`, `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
-- HUD weapon slots: `HUD_EMPTY_SLOT_BG_COLOR` drives empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment clockwise border tracker (levels 2–5). The HUD renderer caches stable panel/slot geometry and icon/text surfaces; cull offscreen revive rings.
+- HUD weapon slots: `HUD_EMPTY_SLOT_BG_COLOR` drives empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment clockwise border tracker (levels 2–5). The HUD renderer caches stable panel/slot geometry and icon/text surfaces; cull offscreen revive rings. The optional FPS readout uses settings-driven smoothing and a throttled display refresh cadence so the number remains readable without changing gameplay timing.
 
 ### Enemies
 
@@ -142,7 +142,7 @@ Menu → Lobby → Class Select (queued per slot) → Game → Game Over → Lob
 - World pickups: Health potions require missing HP; timed buffs affect only the collector; `Magnet` retargets active orbs to closest eligible player.
 - Unresolved controller disconnect keeps gameplay paused until the slot is reclaimed.
 - Controller bindings configurable from Settings; use semantic action names (`Confirm`, `Back`, `Start`) not raw button numbers in UI text.
-- Time stops on level-up. ESC / controller `Start` toggles pause. F12 takes a screenshot. Controllers can trigger screenshots through the remappable `Screenshot / Select` binding.
+- Time stops on level-up. ESC / controller `Start` toggles pause. F12 takes a screenshot. Controllers can trigger screenshots through the remappable `Screenshot / Select` binding. Successful screenshots briefly show a settings-driven `Screenshot Captured` notice below the FPS-counter area; the notice is drawn after saving so it is not included in the captured image.
 
 ### XP Formula
 
