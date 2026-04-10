@@ -15,6 +15,7 @@ __pycache__/
 saves/
 
 # Screenshots
+screenshots/
 screenshot_*.png
 
 # OS clutter

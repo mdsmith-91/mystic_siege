@@ -25,6 +25,7 @@ TITLE = "Mystic Siege"    # window title text (UI-only)
 TILE_SIZE = 32            # pixels per world tile; shared by map and spatial placement
 WORLD_WIDTH = 3000        # world width in pixels; larger values increase traversal space
 WORLD_HEIGHT = 3000       # world height in pixels; larger values increase traversal space
+SCREENSHOT_DIR = "screenshots"  # repo-relative folder for F12 screenshots
 
 
 # ============================================================================

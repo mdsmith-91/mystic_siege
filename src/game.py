@@ -1,8 +1,9 @@
 import pygame
 from src.scene_manager import SceneManager
 from src.utils.input_manager import InputManager
-from settings import STATE_MENU, MOUSE_HIDE_DELAY
+from settings import STATE_MENU, MOUSE_HIDE_DELAY, SCREENSHOT_DIR
 from datetime import datetime, timezone
+from pathlib import Path
 from src.systems.save_system import SaveSystem
 from src.utils.fps_cap import clamp_fps_cap
 
@@ -45,10 +46,12 @@ class Game:
                     mouse_moved = True
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
-                        # Take screenshot
+                        screenshot_dir = Path(SCREENSHOT_DIR)
+                        screenshot_dir.mkdir(parents=True, exist_ok=True)
                         filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
-                        pygame.image.save(self.screen, filename)
-                        print(f"Screenshot saved: {filename}")
+                        filepath = screenshot_dir / filename
+                        pygame.image.save(self.screen, filepath)
+                        print(f"Screenshot saved: {filepath}")
 
             # Update with dt capped at 0.05 to prevent spiral-of-death on lag spikes
             dt = self.clock.tick(self.refresh_rate) / 1000.0
