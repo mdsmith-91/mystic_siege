@@ -153,13 +153,6 @@ class Caltrops(BaseWeapon):
     def effective_patch_radius(self) -> float:
         return self.patch_radius * self.owner.area_size_multiplier
 
-    def _scaled_physical_dot_damage(self, base_damage: float) -> float:
-        return (
-            base_damage
-            * self.owner.damage_multiplier
-            * getattr(self.owner, "physical_damage_multiplier", 1.0)
-        )
-
     def spawn_patch(self, center: Vector2) -> None:
         self.patches.append({
             "center": Vector2(center),
@@ -292,7 +285,7 @@ class Caltrops(BaseWeapon):
                     enemy.remove_slow(self)
 
     def _tick_bleeds(self, dt: float) -> None:
-        tick_damage = self._scaled_physical_dot_damage(self.bleed_damage) * dt
+        tick_damage = self._scaled_dot_damage(self.bleed_damage) * dt
         for enemy in list(self._bleeding_enemies.keys()):
             remaining = self._bleeding_enemies[enemy] - dt
             if remaining <= 0.0 or not enemy.alive():

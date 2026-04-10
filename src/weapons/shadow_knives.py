@@ -216,7 +216,7 @@ class ShadowKnives(BaseWeapon):
         self._poisoned_enemies[enemy] = SHADOW_KNIVES_VENOM_DURATION
 
     def _tick_venoms(self, dt: float) -> None:
-        venom_tick = self.owner.damage_multiplier * SHADOW_KNIVES_VENOM_DAMAGE * dt
+        venom_tick = self._scaled_dot_damage(SHADOW_KNIVES_VENOM_DAMAGE) * dt
         for enemy in list(self._poisoned_enemies.keys()):
             remaining = self._poisoned_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():

@@ -1398,7 +1398,7 @@ HERO_CLASSES = [
         "name": "Wizard",
         "hp": 80,
         "speed": 240,
-        "armor": 0,
+        "armor": 2,
         "passive_desc": "+20% spell damage.\n+10% crit chance.",
         "starting_weapon": "ArcaneBolt",
         "color": (60, 120, 220),
