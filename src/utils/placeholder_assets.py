@@ -507,11 +507,12 @@ def generate_enemy_assets():
     ]
 
     for filename, color, label in enemies:
-        # Create surface
         if filename == "golem.png":
-            # Larger 48x48 surface for golem
-            surface = pygame.Surface((48, 48), pygame.SRCALPHA)
-            pygame.draw.rect(surface, color, (0, 0, 48, 48))
+            surface = pygame.Surface((256, 64), pygame.SRCALPHA)
+            for index in range(4):
+                frame_rect = pygame.Rect(index * 64, 0, 64, 64)
+                pygame.draw.rect(surface, color, frame_rect)
+                pygame.draw.rect(surface, _shade(color, 35), frame_rect, 2)
         else:
             surface = pygame.Surface((32, 32), pygame.SRCALPHA)
             pygame.draw.rect(surface, color, (0, 0, 32, 32))
@@ -527,8 +528,13 @@ def generate_enemy_assets():
         # Draw label
         font = pygame.font.SysFont(None, 24)
         text = font.render(label, True, (255, 255, 255))
-        text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
-        surface.blit(text, text_rect)
+        if filename == "golem.png":
+            for index in range(4):
+                text_rect = text.get_rect(center=(index * 64 + 32, 32))
+                surface.blit(text, text_rect)
+        else:
+            text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
+            surface.blit(text, text_rect)
 
         # Only write if no real asset exists
         filepath = f"assets/sprites/enemies/{filename}"

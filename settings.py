@@ -936,7 +936,7 @@ STONE_GOLEM_ENEMY_DATA = {
     "damage": 40,
     "xp_value": 80,
     "behavior": "chase",
-    "sprite_scale": (64, 64),
+    "spritesheet_frame_size": (64, 64),
     "cc_immune": True,
     "knockback_immune": True,
     "shockwave_cooldown": 6.0,

@@ -3,7 +3,7 @@ One-off script to regenerate assets/sprites/enemies/golem.png from golem_raw.png
 
 golem_raw.png is a 2x2 grid of directional frames with a dark non-transparent background.
 This script removes the background via BFS flood-fill from all 4 corners of each frame,
-then assembles a clean 128x32 RGBA spritesheet.
+then assembles a clean 256x64 RGBA runtime spritesheet.
 
 Run from the project root:
     python src/utils/process_golem_sprite.py
@@ -13,6 +13,7 @@ import os
 import sys
 import collections
 import pygame
+from settings import STONE_GOLEM_ENEMY_DATA
 
 # Resolve project root regardless of where the script is run from
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,8 +24,7 @@ OUT_PATH = os.path.join(_ROOT, "assets", "sprites", "enemies", "golem.png")
 # Higher = remove more; lower = remove less (safe range: 40-80 for high-contrast sprites)
 BG_THRESHOLD = 60
 
-# Output tile size — must match what stone_golem.py expects
-TILE_SIZE = 32
+FRAME_WIDTH, FRAME_HEIGHT = STONE_GOLEM_ENEMY_DATA["spritesheet_frame_size"]
 
 
 def _require_numpy():
@@ -112,7 +112,7 @@ def main() -> None:
         (frame_w, frame_h), # up    (back)
     ]
 
-    output = pygame.Surface((TILE_SIZE * 4, TILE_SIZE), pygame.SRCALPHA)
+    output = pygame.Surface((FRAME_WIDTH * 4, FRAME_HEIGHT), pygame.SRCALPHA)
 
     for col_idx, (ox, oy) in enumerate(frame_origins):
         # Extract one frame from the raw sheet
@@ -122,14 +122,14 @@ def main() -> None:
         # Remove dark background via BFS flood-fill from corners
         clean = flood_fill_background(frame, BG_THRESHOLD)
 
-        # Scale down to the target tile size
-        scaled = pygame.transform.scale(clean, (TILE_SIZE, TILE_SIZE))
+        # Scale to the runtime frame size used by the Stone Golem enemy.
+        scaled = pygame.transform.scale(clean, (FRAME_WIDTH, FRAME_HEIGHT))
 
-        output.blit(scaled, (col_idx * TILE_SIZE, 0))
+        output.blit(scaled, (col_idx * FRAME_WIDTH, 0))
         print(f"  Frame {col_idx} processed")
 
     pygame.image.save(output, OUT_PATH)
-    print(f"Saved {OUT_PATH}  ({TILE_SIZE * 4}x{TILE_SIZE})")
+    print(f"Saved {OUT_PATH}  ({FRAME_WIDTH * 4}x{FRAME_HEIGHT})")
 
     pygame.quit()
 
