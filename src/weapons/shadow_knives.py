@@ -217,6 +217,7 @@ class ShadowKnives(BaseWeapon):
     def _apply_venom(self, enemy: object) -> None:
         """Start or refresh the venom timer on an enemy."""
         self._poisoned_enemies[enemy] = SHADOW_KNIVES_VENOM_DURATION
+        self._venom_crit_states[enemy] = random.random() < self.owner.crit_chance
 
     def _tick_venoms(self, dt: float) -> None:
         venom_damage_rate = self._scaled_dot_damage(SHADOW_KNIVES_VENOM_DAMAGE)

@@ -57,6 +57,7 @@ class LightningChain(BaseWeapon):
         self.stunned_enemies: dict[object, float] = {}
         # Stored as int so the generic upgrade() += delta path works; truthy at L5.
         self.overload = 0
+        self._arc_draw_surface: pygame.Surface | None = None
 
     def _build_arc_points(self, start: Vector2, end: Vector2) -> list[Vector2]:
         """Freeze the arc geometry once so draw() avoids per-frame random work."""
@@ -136,7 +137,7 @@ class LightningChain(BaseWeapon):
             damage = self._scaled_damage(self.base_damage * damage_multiplier) * (CRIT_MULTIPLIER if is_crit else 1.0)
             source_pos = self.owner.pos if i == 0 else chain[i - 1].pos
             diff = source_pos - enemy.pos
-            hit_dir = diff.normalize() if diff.length() > 0 else Vector2(1, 0)
+            hit_dir = diff.normalize() if diff.length_squared() > 0 else Vector2(1, 0)
             kill_pos = enemy.pos.copy()
             enemy.take_damage(damage, hit_direction=hit_dir, attacker=self.owner)
             if self.effect_group is not None:
@@ -212,7 +213,11 @@ class LightningChain(BaseWeapon):
         """Draw jagged lightning arcs with layered glow and per-node impact flashes."""
         if not self.lightning_arcs:
             return
-        tmp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        size = surface.get_size()
+        if self._arc_draw_surface is None or self._arc_draw_surface.get_size() != size:
+            self._arc_draw_surface = pygame.Surface(size, pygame.SRCALPHA)
+        self._arc_draw_surface.fill((0, 0, 0, 0))
+        tmp = self._arc_draw_surface
         for arc in self.lightning_arcs:
             fade = arc["timer"] / LIGHTNING_CHAIN_ARC_LIFETIME
             points = [

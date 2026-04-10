@@ -167,12 +167,14 @@ class HexOrb(BaseWeapon):
         self._curse_display_timers: dict[object, float] = {}
         self._curse_crit_states: dict[object, bool] = {}
         self.pending_orbs: list[dict] = []
+        self._trail_draw_surface: pygame.Surface | None = None
 
     def apply_curse(self, enemy, effect_group=None) -> None:
         if not enemy.alive():
             return
 
         self.cursed_enemies[enemy] = self.curse_duration
+        self._curse_crit_states[enemy] = random.random() < self.owner.crit_chance
         if effect_group is not None:
             from src.entities.effects import HitSpark
             HitSpark(enemy.pos, HEX_ORB_CURSE_TICK_COLOR, [effect_group])
@@ -188,6 +190,7 @@ class HexOrb(BaseWeapon):
                 continue
             if (nearby_enemy.pos - enemy.pos).length_squared() <= radius_sq:
                 self.cursed_enemies[nearby_enemy] = self.curse_duration
+                self._curse_crit_states[nearby_enemy] = random.random() < self.owner.crit_chance
 
     def _tick_curses(self, dt: float) -> None:
         curse_damage_rate = self._scaled_dot_damage(self.curse_damage)
@@ -301,11 +304,17 @@ class HexOrb(BaseWeapon):
                 projectile.kill()
 
     def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
-        trail_surface = None
+        has_trails = any(
+            isinstance(p, HexOrbProjectile) and p.owner is self.owner and p._trail
+            for p in self.projectile_group
+        )
+        if not has_trails:
+            return
+        size = surface.get_size()
+        if self._trail_draw_surface is None or self._trail_draw_surface.get_size() != size:
+            self._trail_draw_surface = pygame.Surface(size, pygame.SRCALPHA)
+        self._trail_draw_surface.fill((0, 0, 0, 0))
         for projectile in self.projectile_group:
             if isinstance(projectile, HexOrbProjectile) and projectile.owner is self.owner and projectile._trail:
-                if trail_surface is None:
-                    trail_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-                projectile.draw_trail(trail_surface, camera_offset)
-        if trail_surface is not None:
-            surface.blit(trail_surface, (0, 0))
+                projectile.draw_trail(self._trail_draw_surface, camera_offset)
+        surface.blit(self._trail_draw_surface, (0, 0))

@@ -225,6 +225,10 @@ class Caltrops(BaseWeapon):
             if (enemy.pos - center).length_squared() > radius_sq:
                 continue
 
+            # Refresh slow on every damage tick for all enemies inside the patch.
+            if hasattr(enemy, "apply_slow"):
+                enemy.apply_slow(CALTROPS_SLOW_MULTIPLIER, CALTROPS_SLOW_DURATION, source=self)
+
             can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
             if can_damage:
                 is_crit = random.random() < self.owner.crit_chance
@@ -240,12 +244,13 @@ class Caltrops(BaseWeapon):
                 )
                 self._enemy_hit_cooldowns[enemy.sprite_id] = CALTROPS_TICK_INTERVAL
                 self._bleeding_enemies[enemy] = self.bleed_duration
+                self._bleed_crit_states[enemy] = random.random() < self.owner.crit_chance
                 # Nail Bomb: a kill inside a trap bursts for AoE damage.
                 if self.nail_bomb and not enemy.alive():
                     bomb_damage = actual_damage * CALTROPS_NAIL_BOMB_DAMAGE_PCT
-                    radius_sq = CALTROPS_NAIL_BOMB_RADIUS * CALTROPS_NAIL_BOMB_RADIUS
+                    bomb_radius_sq = CALTROPS_NAIL_BOMB_RADIUS * CALTROPS_NAIL_BOMB_RADIUS
                     for nearby in list(self.enemy_group):
-                        if nearby.alive() and (nearby.pos - kill_pos).length_squared() <= radius_sq:
+                        if nearby.alive() and (nearby.pos - kill_pos).length_squared() <= bomb_radius_sq:
                             nearby.take_damage(bomb_damage, hit_direction=None, attacker=self.owner)
                     if self.effect_group is not None:
                         from src.entities.effects import DeathExplosion
@@ -272,15 +277,6 @@ class Caltrops(BaseWeapon):
             patch = self.patches[i]
             patch["remaining"] -= dt
             patch["tick_timer"] -= dt
-
-            # Per-frame: keep enemies slowed while inside the patch
-            if patch["remaining"] > 0.0:
-                radius_sq = patch["radius"] * patch["radius"]
-                center = patch["center"]
-                for enemy in self.enemy_group:
-                    if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
-                        if hasattr(enemy, "apply_slow"):
-                            enemy.apply_slow(CALTROPS_SLOW_MULTIPLIER, CALTROPS_SLOW_DURATION, source=self)
 
             if patch["tick_timer"] <= 0.0 and patch["remaining"] > 0.0:
                 self._damage_patch_enemies(patch)
