@@ -250,13 +250,14 @@ class SettingsMenu:
 
         controller_button_x = cx - button_width // 2
         base_y = 240
-        row_gap = 70
+        row_gap = 58
         self.controller_buttons = {
             "confirm": {"rect": pygame.Rect(controller_button_x, base_y, button_width, button_height)},
             "back": {"rect": pygame.Rect(controller_button_x, base_y + row_gap, button_width, button_height)},
-            "start": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 2, button_width, button_height)},
-            "reset_controller": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 3 + 20, button_width, button_height)},
-            "controller_back": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 4 + 20, button_width, button_height)},
+            "screenshot": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 2, button_width, button_height)},
+            "start": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 3, button_width, button_height)},
+            "reset_controller": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 4 + 20, button_width, button_height)},
+            "controller_back": {"rect": pygame.Rect(controller_button_x, base_y + row_gap * 5 + 20, button_width, button_height)},
         }
 
         # Confirm dialog
@@ -463,7 +464,7 @@ class SettingsMenu:
             self._adjust_slider(selected_item, SETTINGS_SLIDER_STEP_FINE * new_dir)
 
     def _controller_button_order(self) -> list[str]:
-        return ["confirm", "back", "start", "reset_controller", "controller_back"]
+        return ["confirm", "back", "screenshot", "start", "reset_controller", "controller_back"]
 
     def _controller_profile_options(self) -> list[dict]:
         return InputManager.instance().get_binding_profile_options()
@@ -546,7 +547,7 @@ class SettingsMenu:
     def _activate_controller_button(self, button_name: str) -> None:
         input_manager = InputManager.instance()
         profile_key = self._current_controller_profile()["profile_key"]
-        if button_name in {"confirm", "back", "start"}:
+        if button_name in CONTROLLER_BINDING_LABELS:
             self.controller_capture_action = button_name
             current_profile = self._current_controller_profile()
             self.controller_capture_target = {

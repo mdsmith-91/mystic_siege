@@ -104,7 +104,7 @@ Weapon architecture rules:
 - Construction is centralized in `src/weapons/factory.py` via `WEAPON_CLASS_REGISTRY` / `create_weapon()`. No new `if/elif` chains in `GameScene` or `UpgradeSystem`.
 - `src/weapons/__init__.py` re-exports the registry and helper for package-level imports.
 - **Ownership split:** `settings.py` owns gameplay values · `factory.py` owns id→class resolution · `upgrade_system.py` owns player-facing card metadata (`WEAPON_META`, `WEAPON_CLASSES`). Hero `starting_weapon` and upgrade rewards reference string ids only.
-- HUD weapon slots: `HUD_EMPTY_SLOT_BG_COLOR` drives empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment clockwise border tracker (levels 2–5). The HUD renderer caches stable panel/slot geometry and icon/text surfaces; cull offscreen revive rings.
+- HUD weapon slots: `HUD_EMPTY_SLOT_BG_COLOR` drives empty slots and HP/XP bar backgrounds. Occupied slots show a 4-segment clockwise border tracker (levels 2–5). The HUD renderer caches stable panel/slot geometry and icon/text surfaces; cull offscreen revive rings. The optional FPS readout uses settings-driven smoothing and a throttled display refresh cadence so the number remains readable without changing gameplay timing.
 
 ### Enemies
 
@@ -142,7 +142,7 @@ Menu → Lobby → Class Select (queued per slot) → Game → Game Over → Lob
 - World pickups: Health potions require missing HP; timed buffs affect only the collector; `Magnet` retargets active orbs to closest eligible player.
 - Unresolved controller disconnect keeps gameplay paused until the slot is reclaimed.
 - Controller bindings configurable from Settings; use semantic action names (`Confirm`, `Back`, `Start`) not raw button numbers in UI text.
-- Time stops on level-up. ESC / controller `Back` toggles pause. F3: FPS counter. F12: screenshot.
+- Time stops on level-up. ESC / controller `Start` toggles pause. F12 takes a screenshot. Controllers can trigger screenshots through the remappable `Screenshot / Select` binding. Successful screenshots briefly show a settings-driven `Screenshot Captured` notice below the FPS-counter area; the notice is drawn after saving so it is not included in the captured image.
 
 ### XP Formula
 
@@ -155,6 +155,7 @@ xp_to_next = int(BASE_XP_REQUIRED * (XP_SCALE_FACTOR ** current_level))
 
 - Player contact damage: 0.5s iframes per hit.
 - Projectiles: `enemies_hit` set tracks pierce. Sword: one hit per enemy per swing. HolyNova/FrostRing: `damage_done` set per ring.
+- Same-frame projectile pierce collisions are ordered by projectile travel direction before `on_hit()` runs. Hit effects such as Hex Orb curse, Longbow Pin Shot, Shadow Knives venom, Arcane Bolt kill explosions, and Throwing Axes ricochet stay tied to actual pierce-budget hits only.
 - `enemy.take_damage(amount, hit_direction=None, attacker=None)` — all weapons pass `hit_direction` (Vector2 from enemy toward attacker) so CursedKnight's frontal shield correctly reduces damage by 80%. `attacker` enables kill-credit attribution in multiplayer.
 
 ---
@@ -175,7 +176,7 @@ Always use the project singletons — never touch pygame subsystems directly.
 - **`AudioManager.instance()`** — `play_sfx(AudioManager.CONSTANT)`, `play_music(path)`. Fails silently if files or mixer are missing.
 - **`InputManager.instance()`** — `get_movement()`, `button_matches(..., joystick_id=...)`, `describe_binding(...)`, `get_confirm_for_joystick()`. Never hardcode controller button indices. Call `scan()` once after `pygame.init()`; hot-plug via `JOYDEVICEADDED`. Controller presses generate synthetic `pygame.KEYDOWN` events for global menus; owned multiplayer menus must explicitly route or reject those by device identity, or poll directly.
 
-Keyboard ownership: WASD (Space=confirm, Left Shift=back) and Arrows (Enter=confirm, Right Shift=back). Default controller: btn 0=confirm, btn 1=back, btn 7=pause.
+Keyboard ownership: WASD (Space=confirm, Left Shift=back) and Arrows (Enter=confirm, Right Shift=back). Default controller: btn 0=confirm, btn 1=back, btn 6=screenshot/select, btn 7=pause.
 
 Assets are drop-in: place PNG at `assets/sprites/<path>` or WAV/OGG at `assets/audio/sfx|music/` and they load automatically. Run `python src/utils/placeholder_assets.py` to regenerate missing placeholders.
 

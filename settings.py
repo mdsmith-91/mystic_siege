@@ -21,10 +21,18 @@ FPS = 60              # frames per second target; gameplay code still uses dt
 FPS_CAP_MIN = 30      # minimum user-selectable cap in Settings (UI/system setting)
 FPS_CAP_COARSE_STEP = 5   # FPS step when making larger cap adjustments in Settings
 FPS_CAP_FINE_STEP = 1     # FPS step for precise cap tuning in Settings
+HUD_FPS_SMOOTHING_ALPHA = 0.03  # EMA weight for HUD FPS display only; lower values make the readout calmer
+HUD_FPS_DISPLAY_UPDATE_INTERVAL = 0.5  # seconds between visible FPS number refreshes; higher values reduce flicker
+SCREENSHOT_NOTICE_TEXT = "Screenshot Captured"  # top-center confirmation after a screenshot is saved
+SCREENSHOT_NOTICE_DURATION = 3.0  # seconds the screenshot confirmation remains active
+SCREENSHOT_NOTICE_FADE_DURATION = 1.0  # seconds spent fading the screenshot confirmation out
+SCREENSHOT_NOTICE_Y = 72  # pixels from top; places confirmation below the FPS counter
+SCREENSHOT_NOTICE_FONT_SIZE = 16  # points; matches the compact HUD FPS counter style
 TITLE = "Mystic Siege"    # window title text (UI-only)
 TILE_SIZE = 32            # pixels per world tile; shared by map and spatial placement
 WORLD_WIDTH = 3000        # world width in pixels; larger values increase traversal space
 WORLD_HEIGHT = 3000       # world height in pixels; larger values increase traversal space
+SCREENSHOT_DIR = "screenshots"  # repo-relative folder for keyboard/controller screenshots
 
 
 # ============================================================================
@@ -1255,12 +1263,14 @@ CONTROLLER_AXIS_REPEAT_DELAY = 0.4     # seconds before held axis starts repeati
 CONTROLLER_AXIS_REPEAT_RATE = 0.15     # seconds between repeated axis navigation events
 CONTROLLER_CONFIRM_BUTTON = 0          # default confirm button index (A / Cross)
 CONTROLLER_BACK_BUTTON = 1             # default back button index (B / Circle)
+CONTROLLER_SCREENSHOT_BUTTON = 6       # default screenshot button index (Select / View)
 CONTROLLER_START_BUTTONS = (7,)        # tuple of default pause/start buttons; extend only for broader controller support
 
 # Default binding payloads persisted by SaveSystem/InputManager.
 CONTROLLER_BINDINGS_DEFAULT = {
     "confirm": CONTROLLER_CONFIRM_BUTTON,
     "back": CONTROLLER_BACK_BUTTON,
+    "screenshot": CONTROLLER_SCREENSHOT_BUTTON,
     "start": list(CONTROLLER_START_BUTTONS),
 }
 CONTROLLER_BINDINGS_SETTINGS_DEFAULT = {
@@ -1272,11 +1282,13 @@ CONTROLLER_BINDINGS_SETTINGS_DEFAULT = {
 CONTROLLER_BINDING_LABELS = {
     "confirm": "Confirm",
     "back": "Back",
+    "screenshot": "Screenshot / Select",
     "start": "Pause / Start",
 }
 CONTROLLER_HELP_LABELS = {
     "confirm": "Confirm",
     "back": "Back",
+    "screenshot": "Screenshot",
     "start": "Start",
 }
 

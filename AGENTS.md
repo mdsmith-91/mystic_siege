@@ -33,7 +33,12 @@ render path allocation-aware as well: cache stable panel/weapon-slot geometry in
 `HUD`, reuse icon/text surfaces where practical, and cull offscreen revive-indicator
 draws instead of rebuilding equivalent screen-space work every frame. Timed pickup
 buff readouts belong in the optional stat-bonus area rather than the main panel
-chrome, and right-side panels should mirror that buff column inward.
+chrome, and right-side panels should mirror that buff column inward. The optional
+FPS readout should remain display-only: smooth/throttle the visible number through
+`settings.py` tunables without changing gameplay `dt` or the FPS cap. Screenshot
+feedback is global UI chrome; after a successful keyboard or controller screenshot,
+`Game` draws the settings-driven `Screenshot Captured` notice below the FPS-counter
+area and fades it out after the image has already been saved.
 
 Weapon architecture note: weapon tunables should follow the same settings-driven
 pattern as heroes and enemies. Keep weapon stats, upgrade deltas, and relevant

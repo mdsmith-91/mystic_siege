@@ -119,8 +119,7 @@ class UpgradeMenu:
     def _keyboard_hint_text(self) -> str:
         cfg = self._input_config()
         if cfg is None:
-            hotkeys = " / ".join(str(index) for index in range(1, len(self.choices) + 1))
-            return f"{hotkeys}, Arrow keys, A/D, or click  -  Enter confirms"
+            return "Arrow keys, A/D, or click  -  Enter confirms"
 
         if cfg["type"] != "keyboard":
             return "Use the owning input device to choose and confirm"
@@ -167,10 +166,6 @@ class UpgradeMenu:
                 pygame.K_d,
                 pygame.K_RETURN,
                 pygame.K_KP_ENTER,
-                pygame.K_1,
-                pygame.K_2,
-                pygame.K_3,
-                pygame.K_4,
             }
 
         if cfg["type"] != "keyboard":
@@ -206,18 +201,6 @@ class UpgradeMenu:
             self.hovered = min(len(self.choices) - 1, self.hovered + 1)
         elif event.key in confirm_keys:
             self._apply_choice(self.hovered)
-            self.done = True
-        elif cfg is None and event.key == pygame.K_1:
-            self._apply_choice(0)
-            self.done = True
-        elif cfg is None and event.key == pygame.K_2:
-            self._apply_choice(1)
-            self.done = True
-        elif cfg is None and event.key == pygame.K_3:
-            self._apply_choice(2)
-            self.done = True
-        elif cfg is None and event.key == pygame.K_4:
-            self._apply_choice(3)
             self.done = True
 
     def _handle_controller_button(self, event: pygame.event.Event) -> None:

@@ -1,6 +1,10 @@
 # MYSTIC SIEGE — AI CODING PROMPTS (Optimized for qwen-coder via Ollama)
 # Python 3.12.13 | pygame-ce | Ollama + qwen2.5-coder
 # ============================================================
+# Historical note: this file is an archived bootstrap prompt set and does not
+# reflect the current implementation or current controls. Use README.md,
+# CLAUDE.md, AGENTS.md, and settings.py as current authority.
+#
 # HOW TO USE THIS FILE:
 #   1. Paste the SYSTEM CONTEXT block into your Ollama system prompt field
 #      (in Open WebUI: the "System" field | CLI: your Modelfile)
