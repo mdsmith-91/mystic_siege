@@ -463,7 +463,7 @@ class GameScene:
     def _activate_pause_button(self, index: int):
         """Fire the action for the pause menu button at the given index."""
         if index == 0:
-            self.paused = False
+            self._set_paused(False)
         elif index == 1:
             from src.ui.settings_menu import SettingsMenu
             self._settings_menu = SettingsMenu()
@@ -630,17 +630,26 @@ class GameScene:
                     controller_ids.add(joystick_id)
         return controller_ids
 
-    def _toggle_pause(self) -> None:
+    def _set_paused(self, paused: bool) -> None:
         was_paused = self.paused
-        self.paused = not self.paused
-        if not was_paused and self.paused:
+        self.paused = paused
+        if was_paused == paused:
+            return
+
+        audio_manager = AudioManager.instance()
+        if paused:
+            audio_manager.pause_music()
             self.pause_selected = 0
             self.pause_keyboard_active = False
             self._pause_controller_nav_dir.clear()
             self._pause_controller_nav_timer.clear()
             self._close_pause_confirm()
-        elif was_paused and not self.paused:
+        else:
+            audio_manager.resume_music()
             self._close_pause_confirm()
+
+    def _toggle_pause(self) -> None:
+        self._set_paused(not self.paused)
 
     def _set_show_fps(self, value: bool) -> None:
         self.show_fps = value
@@ -809,7 +818,7 @@ class GameScene:
                     # Click on pause menu buttons
                     resume_rect, settings_rect, restart_rect, menu_rect = self._pause_button_rects()
                     if resume_rect.collidepoint(event.pos):
-                        self.paused = False
+                        self._set_paused(False)
                     elif settings_rect.collidepoint(event.pos):
                         from src.ui.settings_menu import SettingsMenu
                         self._settings_menu = SettingsMenu()

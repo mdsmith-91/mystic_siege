@@ -256,6 +256,38 @@ mystic_siege/
 - Wide-spread party positions near map edges may still need spawn fairness tuning under high player counts.
 - `docs/MULTIPLAYER_READINESS_AUDIT.md` is a historical planning doc written at 0% multiplayer implementation. Do not treat it as current implementation status.
 
+## Audio Credits
+
+Audio assets are still being finalized. Add music and sound-effect attributions here before shipping or distributing builds that include third-party audio.
+
+### Music
+
+- [Chiptune] Medieval: The Old Tower Inn by RandomMind
+  - Source: [URL](https://opengameart.org/content/chiptune-medieval-the-old-tower-inn)
+  - License: CC0 / [URL](http://creativecommons.org/publicdomain/zero/1.0/)
+  - Used for: Main menu
+  - Changes: Converted to OGG
+
+- [Chiptune] Medieval: The Bard's Tale by RandomMind
+  - Source: [URL](https://opengameart.org/content/chiptune-medieval-the-bards-tale)
+  - License: CC0 / [URL](http://creativecommons.org/publicdomain/zero/1.0/)
+  - Used for: Gameplay music
+  - Changes: Converted to OGG
+
+- _Placeholder_: Track Title by Artist Name
+  - Source: URL
+  - License: License Name / URL
+  - Used for: Main menu or gameplay music
+  - Changes: Converted to OGG, trimmed, looped, normalized, or none
+
+### Sound Effects
+
+- _Placeholder_: Sound Effect Title by Artist Name
+  - Source: URL
+  - License: License Name / URL
+  - Used for: Weapon, pickup, UI, enemy, or player sound
+  - Changes: Converted to WAV/OGG, trimmed, normalized, or none
+
 ## License
 
 See [LICENSE](LICENSE).

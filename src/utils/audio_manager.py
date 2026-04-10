@@ -42,6 +42,8 @@ class AudioManager:
             self._sfx_volume = self._load_saved_volume("sfx_volume")
             self._music_volume = self._load_saved_volume("music_volume")
             self._music_playing = False
+            self._music_paused = False
+            self._current_music_path: str | None = None
 
     @staticmethod
     def _load_saved_volume(setting_name: str) -> float:
@@ -106,6 +108,9 @@ class AudioManager:
             if pygame.mixer.get_init() is None:
                 return
 
+            if self._current_music_path == path and self._music_playing and not self._music_paused:
+                return
+
             full_path = os.path.join(_get_base_path(), path)
             if not os.path.exists(full_path):
                 return
@@ -117,7 +122,9 @@ class AudioManager:
             pygame.mixer.music.load(full_path)
             pygame.mixer.music.set_volume(self._music_volume)
             pygame.mixer.music.play(-1 if loop else 0, fade_ms=fade_ms)
+            self._current_music_path = path
             self._music_playing = True
+            self._music_paused = False
         except Exception:
             # Fail silently as requested
             pass
@@ -129,7 +136,9 @@ class AudioManager:
                 return
 
             pygame.mixer.music.stop()
+            self._current_music_path = None
             self._music_playing = False
+            self._music_paused = False
         except Exception:
             # Fail silently as requested
             pass
@@ -142,6 +151,7 @@ class AudioManager:
 
             pygame.mixer.music.pause()
             self._music_playing = False
+            self._music_paused = self._current_music_path is not None
         except Exception:
             # Fail silently as requested
             pass
@@ -153,7 +163,9 @@ class AudioManager:
                 return
 
             pygame.mixer.music.unpause()
-            self._music_playing = True
+            if self._current_music_path is not None:
+                self._music_playing = True
+            self._music_paused = False
         except Exception:
             # Fail silently as requested
             pass
