@@ -24,15 +24,14 @@ class StoneGolem(Enemy):
     ):
         super().__init__(pos, player_list, all_groups, STONE_GOLEM_ENEMY_DATA, xp_orb_group, effect_group, pickup_group)
 
-        # Load 4-direction spritesheet: cols = [down, left, right, up]
-        # Scale to the settings-driven size to reflect the golem's mini-boss stature
-        sheet = Spritesheet("assets/sprites/enemies/golem.png", 32, 32)
-        _scale = STONE_GOLEM_ENEMY_DATA.get("sprite_scale", (32, 32))
+        # Load the native 4-direction spritesheet: cols = [down, left, right, up]
+        frame_width, frame_height = STONE_GOLEM_ENEMY_DATA["spritesheet_frame_size"]
+        sheet = Spritesheet("assets/sprites/enemies/golem.png", frame_width, frame_height)
         self._frames = {
-            _DIR_DOWN:  pygame.transform.scale(sheet.get_frame(0, 0), _scale),
-            _DIR_LEFT:  pygame.transform.scale(sheet.get_frame(1, 0), _scale),
-            _DIR_RIGHT: pygame.transform.scale(sheet.get_frame(2, 0), _scale),
-            _DIR_UP:    pygame.transform.scale(sheet.get_frame(3, 0), _scale),
+            _DIR_DOWN:  sheet.get_frame(0, 0),
+            _DIR_LEFT:  sheet.get_frame(1, 0),
+            _DIR_RIGHT: sheet.get_frame(2, 0),
+            _DIR_UP:    sheet.get_frame(3, 0),
         }
 
         self.image = self._frames[_DIR_DOWN]

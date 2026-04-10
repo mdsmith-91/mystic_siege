@@ -227,7 +227,7 @@ def _weapon_bg(surface: pygame.Surface, color: tuple[int, int, int]) -> None:
 
 
 def _draw_throwing_hatchet_icon(surface: pygame.Surface) -> None:
-    """Draw a simple hatchet silhouette readable at 32x32."""
+    """Draw a compact throwing hatchet shown diagonal mid-flight."""
     handle_shadow = (78, 48, 18)
     handle_color = (170, 122, 72)
     handle_highlight = (208, 166, 112)
@@ -236,29 +236,32 @@ def _draw_throwing_hatchet_icon(surface: pygame.Surface) -> None:
     steel_shadow = (136, 140, 148)
     steel_highlight = (234, 236, 240)
 
-    # Straight wooden haft.
-    haft_outline = [(16, 25), (19, 25), (19, 13), (16, 13)]
-    haft_fill = [(16, 24), (18, 24), (18, 14), (16, 14)]
-    pygame.draw.polygon(surface, handle_shadow, haft_outline)
-    pygame.draw.polygon(surface, handle_color, haft_fill)
-    pygame.draw.line(surface, handle_highlight, (17, 15), (17, 23), 1)
+    # Diagonal handle — all three lines share the same spine endpoints so the
+    # shaft reads as a single straight rod rather than three diverging strokes.
+    pygame.draw.line(surface, handle_shadow,    (5, 25), (20, 13), 3)
+    pygame.draw.line(surface, handle_color,     (5, 25), (20, 13), 2)
+    pygame.draw.line(surface, handle_highlight, (4, 24), (19, 12), 1)
 
-    # Hatchet eye/socket around the top of the handle.
-    eye_outline = [(15, 12), (20, 12), (20, 15), (15, 15)]
-    eye_fill = [(16, 12), (19, 12), (19, 14), (16, 14)]
-    pygame.draw.polygon(surface, steel_outline, eye_outline)
-    pygame.draw.polygon(surface, steel_shadow, eye_fill)
+    # Butt knob (r=2 keeps it inside the icon border).
+    pygame.draw.circle(surface, handle_shadow, (5, 25), 2)
+    pygame.draw.circle(surface, handle_color,  (5, 25), 1)
 
-    # Broad single-bit hatchet head.
-    head_outline = [(7, 10), (16, 8), (20, 10), (20, 15), (16, 17), (10, 16), (6, 13)]
-    head_fill = [(8, 10), (16, 9), (19, 10), (19, 14), (16, 16), (11, 15), (7, 13)]
+    # Narrow single-bit blade; cutting edge at x≤26 stays clear of the border.
+    head_outline = [(17, 10), (22, 8), (26, 12), (26, 17), (22, 19), (17, 16)]
+    head_fill    = [(18, 11), (22, 9), (25, 13), (25, 16), (22, 18), (18, 15)]
     pygame.draw.polygon(surface, steel_outline, head_outline)
-    pygame.draw.polygon(surface, steel_fill, head_fill)
+    pygame.draw.polygon(surface, steel_fill,    head_fill)
 
-    # Underside shadow and cutting-edge highlight keep it reading as a hatchet.
-    pygame.draw.polygon(surface, steel_shadow, [(11, 15), (16, 16), (18, 15), (16, 14), (12, 14)])
-    pygame.draw.line(surface, steel_highlight, (9, 10), (16, 9), 1)
-    pygame.draw.line(surface, steel_highlight, (7, 11), (7, 13), 1)
+    # Eye socket where handle enters the blade.
+    eye_outline = [(17, 13), (21, 13), (21, 16), (17, 16)]
+    eye_fill    = [(18, 14), (20, 14), (20, 15), (18, 15)]
+    pygame.draw.polygon(surface, steel_outline, eye_outline)
+    pygame.draw.polygon(surface, steel_shadow,  eye_fill)
+
+    # Cutting-edge highlight and back-bevel shadow.
+    pygame.draw.line(surface, steel_highlight, (26, 13), (26, 16), 1)
+    pygame.draw.line(surface, steel_highlight, (25, 12), (22, 9), 1)
+    pygame.draw.polygon(surface, steel_shadow, [(18, 11), (22, 9), (21, 13), (18, 13)])
 
 
 def _draw_weapon_icon(surface: pygame.Surface, weapon_key: str, color: tuple[int, int, int]) -> None:
@@ -507,11 +510,12 @@ def generate_enemy_assets():
     ]
 
     for filename, color, label in enemies:
-        # Create surface
         if filename == "golem.png":
-            # Larger 48x48 surface for golem
-            surface = pygame.Surface((48, 48), pygame.SRCALPHA)
-            pygame.draw.rect(surface, color, (0, 0, 48, 48))
+            surface = pygame.Surface((256, 64), pygame.SRCALPHA)
+            for index in range(4):
+                frame_rect = pygame.Rect(index * 64, 0, 64, 64)
+                pygame.draw.rect(surface, color, frame_rect)
+                pygame.draw.rect(surface, _shade(color, 35), frame_rect, 2)
         else:
             surface = pygame.Surface((32, 32), pygame.SRCALPHA)
             pygame.draw.rect(surface, color, (0, 0, 32, 32))
@@ -527,8 +531,13 @@ def generate_enemy_assets():
         # Draw label
         font = pygame.font.SysFont(None, 24)
         text = font.render(label, True, (255, 255, 255))
-        text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
-        surface.blit(text, text_rect)
+        if filename == "golem.png":
+            for index in range(4):
+                text_rect = text.get_rect(center=(index * 64 + 32, 32))
+                surface.blit(text, text_rect)
+        else:
+            text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
+            surface.blit(text, text_rect)
 
         # Only write if no real asset exists
         filepath = f"assets/sprites/enemies/{filename}"
@@ -590,7 +599,7 @@ def generate_weapon_icon_assets():
         ("caltrops.png", (170, 120, 60)),
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
-        ("flail.png", (190, 195, 202)),
+        ("flail.png", (160, 160, 170)),
         ("hex.png", (95, 35, 145)),
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
@@ -598,7 +607,7 @@ def generate_weapon_icon_assets():
         ("sword.png", (160, 160, 170)),  # Sword placeholder icon — use the darker neutral metal frame family
         ("longbow.png", (170, 120, 60)),
         ("knife.png", (170, 120, 60)),   # Shadow knives — same frame palette as longbow/caltrops
-        ("spear.png", (160, 160, 170)),   # Spear — same frame palette as axe, blade, and flail
+        ("spear.png", (160, 160, 170)),   # Spear/axe/flail/sword share this steel-gray frame palette
         ("axe.png", (160, 160, 170)),    # Throwing axes — steel-gray
     ]
 
@@ -716,6 +725,7 @@ def generate_audio_placeholders():
     maybe_write_sweep("spear.wav",          freq_start=600, freq_end=200, duration_s=0.12)
     maybe_write_sine("throwing_axes.wav",   freq_hz=330,  duration_s=0.08)
     maybe_write_chord("pickup_collect.wav", freqs=[520, 780, 1040], duration_s=0.18)
+    maybe_write_sweep("game_over.wav",      freq_start=400, freq_end=80, duration_s=0.8)
 
 
 def main():

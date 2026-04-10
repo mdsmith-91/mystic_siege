@@ -1,5 +1,5 @@
 import random
-from settings import HERO_CLASSES, MAX_WEAPON_SLOTS
+from settings import HERO_CLASSES, MAX_WEAPON_SLOTS, UPGRADE_MENU_CARD_COUNT
 from src.weapons.factory import create_weapon
 
 # Define PASSIVE_UPGRADES as a module-level list of dicts
@@ -209,7 +209,9 @@ class UpgradeSystem:
         self.effect_group = effect_group
 
     def get_random_choices(self, player) -> list[dict]:
-        """Get 3 random upgrade choices for the player."""
+        """Get the configured number of random upgrade choices for the player."""
+        choice_count = UPGRADE_MENU_CARD_COUNT
+
         # Build candidate list
         candidates = []
 
@@ -269,19 +271,19 @@ class UpgradeSystem:
                 "type": "passive"
             })
 
-        # If player has all weapons at max level: return 3 passives
+        # If player has all weapons at max level: return configured-count passives
         if all(weapon.level >= 5 for weapon in player.weapons if hasattr(weapon, 'level')):
             # Filter to only passives
             candidates = [c for c in candidates if c["type"] == "passive"]
-            if len(candidates) >= 3:
-                return random.sample(candidates, 3)
+            if len(candidates) >= choice_count:
+                return random.sample(candidates, choice_count)
             else:
                 # Fill with passives not already in candidates
                 existing_names = {c["name"] for c in candidates}
                 remaining = [p for p in PASSIVE_UPGRADES if p["name"] not in existing_names]
                 random.shuffle(remaining)
                 for p in remaining:
-                    if len(candidates) >= 3:
+                    if len(candidates) >= choice_count:
                         break
                     candidates.append({
                         "stat": p["stat"], "value": p["value"], "name": p["name"],
@@ -289,9 +291,9 @@ class UpgradeSystem:
                         "type": "passive"
                     })
 
-        # Return 3 randomly selected without duplicates
-        if len(candidates) >= 3:
-            return random.sample(candidates, 3)
+        # Return the configured number randomly selected without duplicates
+        if len(candidates) >= choice_count:
+            return random.sample(candidates, choice_count)
         else:
             # If not enough candidates, return all available
             return candidates

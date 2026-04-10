@@ -27,6 +27,7 @@ class AudioManager:
     WEAPON_SPEAR = "spear"
     WEAPON_THROWING_AXES = "throwing_axes"
     PICKUP_COLLECT = "pickup_collect"
+    GAME_OVER = "game_over"
 
     def __new__(cls):
         if cls._instance is None:
