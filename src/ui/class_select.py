@@ -600,11 +600,11 @@ class ClassSelect:
                 name_font = self.font_small
                 name_lines = self._wrap_text_to_pixel_width(hero["name"], name_font, content_width)
 
+            name_surfaces = [name_font.render(line, True, (255, 255, 255)) for line in name_lines]
             name_line_height = name_font.get_linesize()
-            name_block_height = len(name_lines) * name_line_height
+            name_block_height = (len(name_surfaces) - 1) * name_line_height + name_surfaces[0].get_height()
             name_top = color_band.y + (color_band.height - name_block_height) // 2
-            for j, line in enumerate(name_lines):
-                line_surface = name_font.render(line, True, (255, 255, 255))
+            for j, line_surface in enumerate(name_surfaces):
                 screen.blit(
                     line_surface,
                     (center_x - line_surface.get_width() // 2, name_top + j * name_line_height),
