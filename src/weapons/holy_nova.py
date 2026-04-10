@@ -121,7 +121,7 @@ class HolyNova(BaseWeapon):
                 # Consecration: leave a persistent damage zone when the ring expires.
                 if self.consecrate:
                     self.consecrate_zones.append({
-                        "center": ring["center"].copy(),
+                        "center": Vector2(self.owner.pos),
                         "radius": ring["max_radius"],
                         "remaining": HOLY_NOVA_CONSECRATE_DURATION,
                         "tick_timer": 0.0,
