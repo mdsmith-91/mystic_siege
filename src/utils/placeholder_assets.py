@@ -600,7 +600,7 @@ def generate_weapon_icon_assets():
         ("nova.png", (212, 175, 55)),
         ("fire.png", (255, 100, 20)),
         ("flail.png", (160, 160, 170)),
-        ("hex.png", (95, 35, 145)),
+        ("hex.png", (135, 75, 190)),
         ("bramble.png", (82, 190, 95)),
         ("frost.png", (80, 200, 255)),
         ("lightning.png", (255, 240, 60)),

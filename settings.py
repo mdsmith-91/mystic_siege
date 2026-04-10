@@ -1079,6 +1079,8 @@ WAVE_VICTORY_TIME = 1800                  # seconds; run victory at 30:00
 HUD_FONT_SIZE = 24             # points; primary in-run HUD font size
 SMALL_FONT_SIZE = 16           # points; supporting UI/body text size
 TITLE_FONT_SIZE = 72           # points; large menu/title text size
+HUD_READOUT_FONT_PATH = "assets/fonts/AtkinsonHyperlegibleNext-Medium.ttf"  # bundled font for compact HUD labels
+HUD_DISPLAY_FONT_PATH = "assets/fonts/Cinzel-SemiBold.ttf"  # bundled font for large HUD timer/warning text
 
 # Main menu ember particles (visual-only).
 MAIN_MENU_PARTICLE_INITIAL_COUNT = 60     # particles spawned on menu load
@@ -1117,8 +1119,8 @@ UPGRADE_MENU_CARD_DESC_FONT_SIZE = 13 # points; supports 4-card layout without c
 UPGRADE_MENU_SYMBOL_FONT_SIZE = 34    # points; icon-area symbol text size
 UPGRADE_MENU_HINT_FONT_SIZE = 16      # points; bottom ownership hint
 
-# Upgrade card icon bands and matching HUD stat text. These are deliberately
-# darker than the original card colors so white lettering remains readable.
+# Upgrade card icon bands. These are deliberately darker than the original card
+# colors so white lettering remains readable.
 UPGRADE_CARD_STAT_COLORS = {
     "max_hp": (35, 125, 55),
     "speed_pct": (35, 115, 155),
@@ -1134,6 +1136,25 @@ UPGRADE_CARD_STAT_COLORS = {
     "dot_damage_bonus_pct": (150, 65, 30),
     "area_size_bonus_pct": (35, 135, 125),
     "base_damage_bonus_pct": (145, 45, 45),
+}
+
+# Optional in-run HUD stat bonus text. These keep the upgrade-card hue families
+# but are brighter so small text remains readable over gameplay backgrounds.
+HUD_STAT_TEXT_COLORS = {
+    "max_hp": (95, 235, 125),
+    "speed_pct": (95, 220, 255),
+    "pickup_radius_pct": (255, 215, 95),
+    "armor": (220, 220, 230),
+    "regen_rate": (105, 245, 135),
+    "xp_multiplier_pct": (95, 225, 255),
+    "cooldown_reduction": (255, 165, 85),
+    "crit_chance": (255, 230, 95),
+    "spell_damage_multiplier_pct": (185, 135, 255),
+    "physical_damage_multiplier_pct": (230, 165, 125),
+    "projectile_pierce_bonus": (145, 185, 255),
+    "dot_damage_bonus_pct": (255, 135, 85),
+    "area_size_bonus_pct": (95, 235, 220),
+    "base_damage_bonus_pct": (255, 115, 115),
 }
 UPGRADE_CARD_WEAPON_COLORS = {
     "ArcaneBolt": (75, 40, 130),
