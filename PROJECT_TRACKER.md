@@ -1,6 +1,21 @@
 # Mystic Siege — Project Tracker
 
-This file is the repo-level planning guide for issues, board usage, and day-to-day tracking.
+This file is the repo-level planning guide for a lightweight GitHub Issues workflow.
+It intentionally avoids GitHub Projects and focuses on issue reporting, labeling,
+milestones, and simple status tracking inside issues themselves.
+
+## Lightweight Issue Setup
+
+Use these five planning/reporting files together:
+
+1. `PROJECT_TRACKER.md`
+2. `.github/ISSUE_TEMPLATE/bug_report.yml`
+3. `.github/ISSUE_TEMPLATE/feature_or_content.yml`
+4. `.github/ISSUE_TEMPLATE/balance_tuning.yml`
+5. `.github/ISSUE_TEMPLATE/tech_debt_or_docs.yml`
+
+Goal: keep tracking simple enough to use consistently while still capturing the
+information that matters for Mystic Siege.
 
 ## Project Snapshot
 
@@ -68,6 +83,17 @@ Current known state:
 - `scope:co-op`
 - `scope:both`
 
+### Optional Status Labels
+If you want lightweight status tracking without GitHub Projects, use labels such as:
+- `status:ready`
+- `status:in-progress`
+- `status:blocked`
+- `status:in-review`
+- `status:verify`
+
+These are optional. If they feel like overhead, skip them and rely on open/closed state,
+milestones, and comments.
+
 ## Milestones
 
 Use milestones for bigger outcome buckets, not every small task.
@@ -98,62 +124,53 @@ An issue is done when:
 - `python run_check.py` passes for non-trivial code changes
 - manual verification is listed when gameplay/UI/input changed
 - remaining risks or unverified paths are called out
+- the issue is closed with a short summary of what changed
 
-## Board Workflow
+## Issue Reporting Workflow
 
-Status flow:
-`Inbox -> Ready -> In Progress -> Blocked -> In Review -> Verify -> Done`
+### 1. Pick the right issue form
+Use the closest matching issue file:
+- `bug_report.yml` for defects and regressions
+- `feature_or_content.yml` for heroes, weapons, enemies, pickups, UI additions, and gameplay features
+- `balance_tuning.yml` for tuning-only work such as scaling, spawn fairness, pacing, and difficulty
+- `tech_debt_or_docs.yml` for cleanup, documentation, refactors, and repo hygiene
 
-Status meanings:
-- **Inbox**: newly captured, not yet triaged
-- **Ready**: scoped, labeled, and ready to implement
-- **In Progress**: actively being worked on
-- **Blocked**: waiting on decision, art, testing, or another issue
-- **In Review**: implementation exists and needs review
-- **Verify**: merged or near-merge, waiting on runtime/manual confirmation
-- **Done**: accepted and verified as complete
+### 2. Apply a small label set
+Try to keep each issue to a few useful labels:
+- one `type:*`
+- one `priority:*`
+- one `area:*`
+- one `scope:*`
+- one `verify:*` if helpful
 
-## Required Fields For Every Issue
+### 3. Add a milestone only when it helps
+Attach a milestone when the issue belongs to a bigger outcome bucket.
+Do not force milestones onto every small issue.
 
-Minimum recommended fields:
-- Title
-- Type label
-- Priority label
-- Area label
-- Scope label (`solo`, `co-op`, or `both`)
-- Status
-- Verification expectation
-- Milestone when part of a larger goal
+### 4. Track progress in the issue itself
+Use issue comments and, if desired, a lightweight `status:*` label.
+A simple comment trail is enough:
+- what was found
+- what changed
+- what was verified
+- what remains risky or unverified
 
-## Suggested Project Views
+### 5. Close issues with verification notes
+When closing an issue, add a short closing note with:
+- fix summary
+- verification performed
+- remaining follow-up, if any
 
-### 1. Triage Board
-Group by `Status`.
-Use this as the default working board.
+## Minimum Information For Every Issue
 
-### 2. Bugs View
-Filter:
-`label:"type:bug"`
-Sort by priority descending.
-
-### 3. Balance / Tuning View
-Filter:
-`label:"type:balance"`
-Useful for multiplayer scaling and spawn fairness work.
-
-### 4. Content Pipeline View
-Filter:
-`label:"type:content" OR label:"type:feature"`
-Good for heroes, weapons, enemies, pickups, and visuals.
-
-### 5. Docs + Refactor View
-Filter:
-`label:"type:docs" OR label:"type:refactor" OR label:"type:chore"`
-
-### 6. Verification Queue
-Filter:
-`label:"verify:needs-retest" OR status:Verify`
-Use this to avoid “done but not truly checked.”
+Recommended minimum issue content:
+- clear title
+- player-facing problem or goal
+- relevant constraints or design notes
+- acceptance criteria or expected outcome
+- verification expectation
+- labels
+- milestone if part of larger work
 
 ## Initial Backlog Recommendations
 
@@ -202,7 +219,7 @@ When opening issues:
 Good issue title examples:
 - `Balance enemy density for 3P and 4P runs`
 - `Fix controller input bleed in owned upgrade menus`
-- `Add new enemy issue template labels and verification workflow`
+- `Add weapon issue labels and verification workflow`
 - `Document content pipeline for heroes / weapons / enemies`
 
 Bad issue title examples:
@@ -211,13 +228,30 @@ Bad issue title examples:
 - `cleanup`
 - `weapon bugs and ui and balance`
 
-## Release Buckets
+## Simple Working Rhythm
 
-When you want a lightweight release rhythm, use three active buckets:
-- **Now**: current sprint / immediate work
-- **Next**: important queued work
-- **Later**: useful, but not worth interrupting current priorities
+Use three planning buckets inside this file and your milestones:
+- **Now**: current priority work
+- **Next**: queued important work
+- **Later**: useful but not urgent
+
+Suggested current focus:
+
+### Now
+- multiplayer balance/scaling
+- spawn fairness
+- regression-safe bug fixing
+
+### Next
+- UI / HUD polish
+- documentation cleanup
+- targeted content additions
+
+### Later
+- deeper performance profiling
+- release prep and packaging cleanup
 
 ## Notes
 
 This tracker should reflect the codebase as it exists now, not older planning docs.
+Keep the workflow lightweight enough that opening and closing issues stays easy.
