@@ -107,6 +107,7 @@ class GameScene:
         _am.load_sfx(AudioManager.WEAPON_SPEAR,         "assets/audio/sfx/spear.wav")
         _am.load_sfx(AudioManager.WEAPON_THROWING_AXES, "assets/audio/sfx/throwing_axes.wav")
         _am.load_sfx(AudioManager.PICKUP_COLLECT, "assets/audio/sfx/pickup_collect.wav")
+        _am.load_sfx(AudioManager.GAME_OVER,      "assets/audio/sfx/game_over.wav")
 
         # 7. collision_system = CollisionSystem()
         self.collision_system = CollisionSystem()
@@ -302,6 +303,8 @@ class GameScene:
         return player_results
 
     def _trigger_gameover(self, victory: bool) -> None:
+        if not victory:
+            AudioManager.instance().play_sfx(AudioManager.GAME_OVER)
         self.next_scene = STATE_GAMEOVER
         stats = self._build_gameover_stats()
         player_results = self._build_player_results()
