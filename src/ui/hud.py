@@ -374,37 +374,40 @@ class HUD:
         stat_lines = []
         if player.speed > player.base_speed:
             spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
-            stat_lines.append((f"SPD  {spd_pct}%", (200, 200, 200)))
+            stat_lines.append((f"SPD  {spd_pct}%", (100, 200, 255)))
         if player.armor > 0:
-            stat_lines.append((f"ARM  {int(player.armor)}%", (192, 200, 215)))
+            stat_lines.append((f"ARM  {int(player.armor)}%", (160, 160, 160)))
         if player.damage_taken_multiplier < player.base_damage_taken_multiplier:
             damage_reduction = 1.0 - (player.damage_taken_multiplier / player.base_damage_taken_multiplier)
             stat_lines.append((f"DR  {round(damage_reduction * 100)}%", (180, 205, 225)))
         if player.cooldown_reduction > 0:
-            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
+            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (255, 140, 60)))
         if player.damage_multiplier > 1.0:
             damage_pct = round((player.damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DMG  +{damage_pct}%", (255, 200, 120)))
+            stat_lines.append((f"DMG  +{damage_pct}%", (210, 50, 50)))
         if player.crit_chance > CRIT_CHANCE_BASE:
-            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 230, 80)))
+            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 220, 60)))
         if player.regen_rate > 0:
-            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 160)))
+            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 120)))
         if player.spell_damage_multiplier > 1.0:
             spell_pct = round((player.spell_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"SPELL  +{spell_pct}%", (180, 140, 255)))
+            stat_lines.append((f"SPELL  +{spell_pct}%", (160, 80, 255)))
         if player.physical_damage_multiplier > 1.0:
             physical_pct = round((player.physical_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"PHYS  +{physical_pct}%", (215, 170, 120)))
+            stat_lines.append((f"PHYS  +{physical_pct}%", (180, 120, 80)))
         if getattr(player, "dot_damage_multiplier", 1.0) > 1.0:
             dot_pct = round((player.dot_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DOT  +{dot_pct}%", (150, 230, 130)))
+            stat_lines.append((f"DOT  +{dot_pct}%", (220, 80, 30)))
+        if getattr(player, "area_size_bonus_pct", 0.0) > 0.0:
+            aoe_pct = round(player.area_size_bonus_pct * 100)
+            stat_lines.append((f"AOE  +{aoe_pct}%", (80, 200, 180)))
         if player.projectile_pierce_bonus > 0:
             stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", (150, 180, 255)))
         if player.xp_multiplier > 1.0:
             xp_pct = round((player.xp_multiplier - 1.0) * 100)
-            stat_lines.append((f"XP  +{xp_pct}%", (200, 255, 200)))
+            stat_lines.append((f"XP  +{xp_pct}%", (80, 220, 255)))
         if player.pickup_radius > PICKUP_RADIUS:
-            stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
+            stat_lines.append((f"RAD  {int(player.pickup_radius)}", (212, 175, 55)))
         return stat_lines
 
     def _buff_lines(self, player) -> list[tuple[str, tuple[int, int, int]]]:

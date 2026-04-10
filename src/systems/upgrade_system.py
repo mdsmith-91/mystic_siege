@@ -170,7 +170,7 @@ WEAPON_META = {
         "new_description": "Blasts a cone of fire toward the nearest enemy, applying burn over time.",
         "upgrade_description": "L2 +15 damage. L3 +40 range. L4 +1.5s burn duration. L5 +20 damage; blast leaves a lingering fire pool.",
         "icon_color": (240, 100, 30),
-        "symbol": "FW",
+        "symbol": "FB",
     },
     "FrostRing": {
         "name": "Frost Ring",

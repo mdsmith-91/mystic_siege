@@ -366,9 +366,9 @@ class UpgradeMenu:
             elif "stat" in choice:
                 # Simple stat symbol based on stat type
                 stat_symbols = {
-                    "max_hp": "+HP",
+                    "max_hp": "HP",
                     "speed_pct": "SPD",
-                    "pickup_radius_pct": "RNG",
+                    "pickup_radius_pct": "RAD",
                     "armor": "ARM",
                     "regen_rate": "REG",
                     "xp_multiplier_pct": "XP",
