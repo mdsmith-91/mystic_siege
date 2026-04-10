@@ -20,6 +20,9 @@ from settings import (
     FROST_RING_SHARD_COLOR,
     FROST_RING_SHARD_COUNT,
     FROST_RING_SHARD_LENGTH,
+    FROST_RING_SHATTER_COLOR,
+    FROST_RING_SHATTER_DAMAGE_PCT,
+    FROST_RING_SHATTER_RADIUS,
     FROST_RING_SPEED,
     FROST_RING_UPGRADE_LEVELS,
 )
@@ -51,6 +54,10 @@ class FrostRing(BaseWeapon):
 
         # Active rings list: each ring is {radius, damage_done, center, motes, shard_offset}
         self.rings = []
+        # Track last-hit damage per frozen enemy so shatter has a value to scale from.
+        self._frozen_hit_damage: dict[object, float] = {}
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.shatter = 0
 
     @property
     def effective_max_radius(self) -> float:
@@ -88,8 +95,20 @@ class FrostRing(BaseWeapon):
         for enemy in list(self.frozen_enemies.keys()):
             remaining = self.frozen_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
+                # Shatter: a frozen enemy that dies bursts into ice-shard splash.
+                if self.shatter and not enemy.alive():
+                    shatter_dmg = self._frozen_hit_damage.get(enemy, self.base_damage) * FROST_RING_SHATTER_DAMAGE_PCT
+                    shatter_pos = enemy.pos.copy()
+                    radius_sq = FROST_RING_SHATTER_RADIUS * FROST_RING_SHATTER_RADIUS
+                    for nearby in list(self.enemy_group):
+                        if nearby.alive() and (nearby.pos - shatter_pos).length_squared() <= radius_sq:
+                            nearby.take_damage(shatter_dmg, hit_direction=None, attacker=self.owner)
+                    if self.effect_group is not None:
+                        from src.entities.effects import DeathExplosion
+                        DeathExplosion(shatter_pos, FROST_RING_SHATTER_RADIUS, FROST_RING_SHATTER_COLOR, [self.effect_group])
                 if enemy.alive() and hasattr(enemy, "_refresh_speed"):
                     enemy._refresh_speed()
+                self._frozen_hit_damage.pop(enemy, None)
                 del self.frozen_enemies[enemy]
                 continue
 
@@ -128,6 +147,7 @@ class FrostRing(BaseWeapon):
                         # Freeze enemy through the shared enemy status timer so
                         # lunge/boss movement modifiers can coexist safely.
                         self.frozen_enemies[enemy] = self.freeze_duration
+                        self._frozen_hit_damage[enemy] = damage
                         enemy.freeze_timer = max(getattr(enemy, "freeze_timer", 0.0), self.freeze_duration)
                         if hasattr(enemy, "_refresh_speed"):
                             enemy._refresh_speed()
@@ -141,6 +161,7 @@ class FrostRing(BaseWeapon):
 
     def on_owner_inactive(self):
         self.frozen_enemies.clear()
+        self._frozen_hit_damage.clear()
         self.rings.clear()
 
     def draw(self, surface, camera_offset):

@@ -366,9 +366,9 @@ class UpgradeMenu:
             elif "stat" in choice:
                 # Simple stat symbol based on stat type
                 stat_symbols = {
-                    "max_hp": "+HP",
+                    "max_hp": "HP",
                     "speed_pct": "SPD",
-                    "pickup_radius_pct": "RNG",
+                    "pickup_radius_pct": "RAD",
                     "armor": "ARM",
                     "regen_rate": "REG",
                     "xp_multiplier_pct": "XP",
@@ -377,6 +377,9 @@ class UpgradeMenu:
                     "spell_damage_multiplier_pct": "SPL",
                     "physical_damage_multiplier_pct": "PHYS",
                     "projectile_pierce_bonus": "PRC",
+                    "dot_damage_bonus_pct": "DOT",
+                    "area_size_bonus_pct": "AOE",
+                    "base_damage_bonus_pct": "DMG",
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 

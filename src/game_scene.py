@@ -32,6 +32,7 @@ from src.ui.upgrade_menu import UpgradeMenu
 from src.utils.audio_manager import AudioManager
 from src.utils.input_manager import InputManager
 from src.weapons.factory import create_weapon
+from src.entities.effects import set_damage_numbers_enabled
 
 class GameScene:
     def __init__(self, slots: list[PlayerSlot]):
@@ -145,6 +146,7 @@ class GameScene:
         self.save_system = SaveSystem()
         self.show_fps = self.save_system.get_setting("show_fps")
         self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
+        set_damage_numbers_enabled(self.save_system.get_setting("show_damage_numbers"))
         self._smooth_dt = 1 / 60  # exponential moving average of dt for stable FPS display
 
         # 14. background — use Gemini-generated image if available, else procedural tiles
@@ -769,6 +771,7 @@ class GameScene:
                 self._settings_open = False
                 self.show_fps = self._settings_menu.show_fps
                 self.show_stat_bonuses = self._settings_menu.show_stat_bonuses
+                set_damage_numbers_enabled(self._settings_menu.show_damage_numbers)
                 self._settings_menu.next_scene = None
             return
 

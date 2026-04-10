@@ -3,7 +3,7 @@ from pygame.math import Vector2
 from src.entities.enemy import Enemy
 from src.entities.effects import DamageNumber, ExpandingRingEffect
 from src.utils.spritesheet import Spritesheet
-from settings import STONE_GOLEM_ENEMY_DATA
+from settings import PLAYER_HIT_IFRAME_DURATION, STONE_GOLEM_ENEMY_DATA
 
 # Column indices matching direction order in golem_meta.json
 _DIR_DOWN  = 0
@@ -98,6 +98,7 @@ class StoneGolem(Enemy):
             if (player.pos - self.pos).length_squared() > radius_sq:
                 continue
             actual_damage = player.take_damage(self.shockwave_damage)
+            player.iframes = PLAYER_HIT_IFRAME_DURATION
             if self.effect_group is not None:
                 DamageNumber(
                     player.pos - Vector2(0, 30),

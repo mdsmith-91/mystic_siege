@@ -39,6 +39,8 @@ class ArcaneBolt(BaseWeapon):
         # Each entry: {"delay": float, "direction": Vector2, "target": enemy}
         self.pending_bolts: list[dict] = []
         self.upgrade_levels = [dict(upgrade) for upgrade in ARCANE_BOLT_UPGRADE_LEVELS]
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.explode_on_kill = 0
 
     def _spawn_bolt(self, direction: Vector2, target) -> None:
         """Spawn a single arcane bolt projectile in the given direction."""
@@ -56,6 +58,7 @@ class ArcaneBolt(BaseWeapon):
             target_enemy=target,
             owner_crit_chance=self.owner.crit_chance,
             owner=self.owner,
+            explode_on_kill=bool(self.explode_on_kill),
         )
 
     def fire(self):

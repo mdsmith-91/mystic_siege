@@ -9,11 +9,12 @@ from settings import (
     CRIT_CHANCE_BASE, PICKUP_RADIUS, THREAT_ARROW_COLOR,
     HUD_SAFE_TOP, HUD_SAFE_BOTTOM, HUD_SAFE_LEFT, HUD_SAFE_RIGHT,
     WHITE, BLACK, GOLD, UI_BG, REVIVE_DURATION,
-    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE, HUD_PANEL_WEAPON_SLOT_WIDTH,
+    HUD_PANEL_PADDING, HUD_PANEL_BAR_HEIGHT, HUD_PANEL_WEAPON_SLOT_SIZE,
     HUD_PANEL_WEAPON_SLOT_GAP, HUD_PANEL_CORNER_RADIUS, HUD_REVIVE_RING_RADIUS, HUD_REVIVE_RING_WIDTH,
     HUD_WARNING_COLOR, HUD_REVIVE_RING_BG_COLOR, HUD_DOWNED_HP_BAR_COLOR,
     HUD_PANEL_TUPLES,
     PICKUP_BATTLE_RAGE, PICKUP_HASTE, PICKUP_IRON_SKIN,
+    HUD_STAT_TEXT_COLORS, HUD_READOUT_FONT_PATH, HUD_DISPLAY_FONT_PATH,
 )
 from src.utils.resource_loader import ResourceLoader
 
@@ -47,11 +48,12 @@ _BUFF_COLUMN_GAP = 18
 
 class HUD:
     def __init__(self):
-        self.font_16 = pygame.font.SysFont("serif", 16)
-        self.font_14 = pygame.font.SysFont("serif", 14)
-        self.font_32 = pygame.font.SysFont("serif", 32)
-        self.font_20 = pygame.font.SysFont("serif", 20)
-        self.font_48 = pygame.font.SysFont("serif", 48)
+        loader = ResourceLoader.instance()
+        self.font_16 = loader.load_font(HUD_READOUT_FONT_PATH, 16)
+        self.font_14 = loader.load_font(HUD_READOUT_FONT_PATH, 14)
+        self.font_32 = loader.load_font(HUD_DISPLAY_FONT_PATH, 32)
+        self.font_20 = loader.load_font(HUD_READOUT_FONT_PATH, 20)
+        self.font_48 = loader.load_font(HUD_DISPLAY_FONT_PATH, 48)
         self._text_cache: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
         self._panel_surface_cache: dict[tuple[int, int], pygame.Surface] = {}
         self._weapon_icon_cache: dict[tuple[str, int], pygame.Surface] = {}
@@ -98,10 +100,10 @@ class HUD:
         return cached
 
     def _get_weapon_slot_offsets(self, slot_size: int) -> tuple[int, tuple[int, ...]]:
-        cache_key = (slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+        cache_key = (slot_size, HUD_PANEL_WEAPON_SLOT_SIZE)
         cached = self._weapon_slot_offset_cache.get(cache_key)
         if cached is None:
-            slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_WIDTH)
+            slot_width = max(slot_size, HUD_PANEL_WEAPON_SLOT_SIZE)
             offsets = tuple(
                 index * (slot_width + HUD_PANEL_WEAPON_SLOT_GAP)
                 for index in range(MAX_WEAPON_SLOTS)
@@ -374,37 +376,40 @@ class HUD:
         stat_lines = []
         if player.speed > player.base_speed:
             spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
-            stat_lines.append((f"SPD  {spd_pct}%", (200, 200, 200)))
+            stat_lines.append((f"SPD  {spd_pct}%", HUD_STAT_TEXT_COLORS["speed_pct"]))
         if player.armor > 0:
-            stat_lines.append((f"ARM  {int(player.armor)}%", (192, 200, 215)))
+            stat_lines.append((f"ARM  {int(player.armor)}%", HUD_STAT_TEXT_COLORS["armor"]))
         if player.damage_taken_multiplier < player.base_damage_taken_multiplier:
             damage_reduction = 1.0 - (player.damage_taken_multiplier / player.base_damage_taken_multiplier)
-            stat_lines.append((f"DR  {round(damage_reduction * 100)}%", (180, 205, 225)))
+            stat_lines.append((f"DR  {round(damage_reduction * 100)}%", HUD_STAT_TEXT_COLORS["armor"]))
         if player.cooldown_reduction > 0:
-            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (180, 220, 255)))
+            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", HUD_STAT_TEXT_COLORS["cooldown_reduction"]))
         if player.damage_multiplier > 1.0:
             damage_pct = round((player.damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DMG  +{damage_pct}%", (255, 200, 120)))
+            stat_lines.append((f"DMG  +{damage_pct}%", HUD_STAT_TEXT_COLORS["base_damage_bonus_pct"]))
         if player.crit_chance > CRIT_CHANCE_BASE:
-            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 230, 80)))
+            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", HUD_STAT_TEXT_COLORS["crit_chance"]))
         if player.regen_rate > 0:
-            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 160)))
+            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", HUD_STAT_TEXT_COLORS["regen_rate"]))
         if player.spell_damage_multiplier > 1.0:
             spell_pct = round((player.spell_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"SPELL  +{spell_pct}%", (180, 140, 255)))
+            stat_lines.append((f"SPELL  +{spell_pct}%", HUD_STAT_TEXT_COLORS["spell_damage_multiplier_pct"]))
         if player.physical_damage_multiplier > 1.0:
             physical_pct = round((player.physical_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"PHYS  +{physical_pct}%", (215, 170, 120)))
+            stat_lines.append((f"PHYS  +{physical_pct}%", HUD_STAT_TEXT_COLORS["physical_damage_multiplier_pct"]))
         if getattr(player, "dot_damage_multiplier", 1.0) > 1.0:
             dot_pct = round((player.dot_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DOT  +{dot_pct}%", (150, 230, 130)))
+            stat_lines.append((f"DOT  +{dot_pct}%", HUD_STAT_TEXT_COLORS["dot_damage_bonus_pct"]))
+        if getattr(player, "area_size_bonus_pct", 0.0) > 0.0:
+            aoe_pct = round(player.area_size_bonus_pct * 100)
+            stat_lines.append((f"AOE  +{aoe_pct}%", HUD_STAT_TEXT_COLORS["area_size_bonus_pct"]))
         if player.projectile_pierce_bonus > 0:
-            stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", (150, 180, 255)))
+            stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", HUD_STAT_TEXT_COLORS["projectile_pierce_bonus"]))
         if player.xp_multiplier > 1.0:
             xp_pct = round((player.xp_multiplier - 1.0) * 100)
-            stat_lines.append((f"XP  +{xp_pct}%", (200, 255, 200)))
+            stat_lines.append((f"XP  +{xp_pct}%", HUD_STAT_TEXT_COLORS["xp_multiplier_pct"]))
         if player.pickup_radius > PICKUP_RADIUS:
-            stat_lines.append((f"RAD  {int(player.pickup_radius)}", (200, 200, 255)))
+            stat_lines.append((f"RAD  {int(player.pickup_radius)}", HUD_STAT_TEXT_COLORS["pickup_radius_pct"]))
         return stat_lines
 
     def _buff_lines(self, player) -> list[tuple[str, tuple[int, int, int]]]:

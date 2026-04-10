@@ -108,6 +108,7 @@ class SettingsMenu:
         self.sfx_volume   = self.save_system.get_setting("sfx_volume")
         self.show_fps     = self.save_system.get_setting("show_fps")
         self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
+        self.show_damage_numbers = self.save_system.get_setting("show_damage_numbers")
         self.fps_cap_limit = detect_refresh_rate()
         self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)
 
@@ -148,6 +149,7 @@ class SettingsMenu:
             "show_fps",
             "reset",
             "show_stat_bonuses",
+            "show_damage_numbers",
             "back",
         ]
 
@@ -157,8 +159,9 @@ class SettingsMenu:
             "controller_bindings": {"up": "fps_cap", "down": "reset", "right": "show_fps"},
             "show_fps": {"up": "fps_cap", "down": "show_stat_bonuses", "left": "controller_bindings"},
             "reset": {"up": "controller_bindings", "down": "back", "right": "show_stat_bonuses"},
-            "show_stat_bonuses": {"up": "show_fps", "down": "back", "left": "reset"},
-            "back": {"up": "reset"},
+            "show_stat_bonuses": {"up": "show_fps", "down": "show_damage_numbers", "left": "reset"},
+            "show_damage_numbers": {"up": "show_stat_bonuses", "down": "back", "left": "back"},
+            "back": {"up": "reset", "right": "show_damage_numbers"},
         }
 
     def _init_ui_elements(self):
@@ -206,8 +209,18 @@ class SettingsMenu:
                 button_width,
                 button_height,
             ),
-            "text":  "Show Stat Bonuses: " + ("ON" if self.show_stat_bonuses else "OFF"),
+            "text":  "Show Stats: " + ("ON" if self.show_stat_bonuses else "OFF"),
             "value": self.show_stat_bonuses,
+        }
+        self.buttons["show_damage_numbers"] = {
+            "rect":  pygame.Rect(
+                right_button_x,
+                SETTINGS_BUTTON_START_Y + SETTINGS_BUTTON_ROW_GAP * 2,
+                button_width,
+                button_height,
+            ),
+            "text":  "Damage Numbers: " + ("ON" if self.show_damage_numbers else "OFF"),
+            "value": self.show_damage_numbers,
         }
         self.buttons["controller_bindings"] = {
             "rect":  pygame.Rect(left_button_x, SETTINGS_BUTTON_START_Y, button_width, button_height),
@@ -281,9 +294,15 @@ class SettingsMenu:
         elif button_name == "show_stat_bonuses":
             new_value = not self.buttons["show_stat_bonuses"]["value"]
             self.buttons["show_stat_bonuses"]["value"] = new_value
-            self.buttons["show_stat_bonuses"]["text"] = "Show Stat Bonuses: " + ("ON" if new_value else "OFF")
+            self.buttons["show_stat_bonuses"]["text"] = "Show Stats: " + ("ON" if new_value else "OFF")
             self.show_stat_bonuses = new_value
             self.save_system.set_setting("show_stat_bonuses", new_value)
+        elif button_name == "show_damage_numbers":
+            new_value = not self.buttons["show_damage_numbers"]["value"]
+            self.buttons["show_damage_numbers"]["value"] = new_value
+            self.buttons["show_damage_numbers"]["text"] = "Damage Numbers: " + ("ON" if new_value else "OFF")
+            self.show_damage_numbers = new_value
+            self.save_system.set_setting("show_damage_numbers", new_value)
 
     def _slider_min_value(self, slider_name: str) -> float:
         if slider_name == "fps_cap":

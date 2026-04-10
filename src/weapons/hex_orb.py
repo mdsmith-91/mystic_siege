@@ -6,6 +6,7 @@ from pygame.math import Vector2
 
 from settings import (
     CRIT_MULTIPLIER,
+    DOT_DISPLAY_TICK_INTERVAL,
     HEX_ORB_BASE_COOLDOWN,
     HEX_ORB_BASE_DAMAGE,
     HEX_ORB_BASE_PIERCE,
@@ -29,6 +30,7 @@ from settings import (
     HEX_ORB_PROJECTILE_SIZE,
     HEX_ORB_PROJECTILE_SPEED,
     HEX_ORB_SPREAD,
+    HEX_ORB_STAGGER,
     HEX_ORB_TARGETING_RANGE,
     HEX_ORB_TRAIL_COLOR,
     HEX_ORB_TRAIL_LENGTH,
@@ -162,12 +164,17 @@ class HexOrb(BaseWeapon):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in HEX_ORB_UPGRADE_LEVELS]
         self.cursed_enemies: dict[object, float] = {}
+        self._curse_display_timers: dict[object, float] = {}
+        self._curse_crit_states: dict[object, bool] = {}
+        self.pending_orbs: list[dict] = []
+        self._trail_draw_surface: pygame.Surface | None = None
 
     def apply_curse(self, enemy, effect_group=None) -> None:
         if not enemy.alive():
             return
 
         self.cursed_enemies[enemy] = self.curse_duration
+        self._curse_crit_states[enemy] = random.random() < self.owner.crit_chance
         if effect_group is not None:
             from src.entities.effects import HitSpark
             HitSpark(enemy.pos, HEX_ORB_CURSE_TICK_COLOR, [effect_group])
@@ -183,26 +190,44 @@ class HexOrb(BaseWeapon):
                 continue
             if (nearby_enemy.pos - enemy.pos).length_squared() <= radius_sq:
                 self.cursed_enemies[nearby_enemy] = self.curse_duration
+                self._curse_crit_states[nearby_enemy] = random.random() < self.owner.crit_chance
 
     def _tick_curses(self, dt: float) -> None:
-        tick_damage = self._scaled_dot_damage(self.curse_damage) * dt
+        curse_damage_rate = self._scaled_dot_damage(self.curse_damage)
         for enemy in list(self.cursed_enemies.keys()):
             remaining = self.cursed_enemies[enemy] - dt
             if remaining <= 0.0 or not enemy.alive():
                 del self.cursed_enemies[enemy]
+                self._curse_display_timers.pop(enemy, None)
+                self._curse_crit_states.pop(enemy, None)
                 continue
 
             self.cursed_enemies[enemy] = remaining
+            is_crit = self._curse_crit_states.get(enemy, False)
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                tick_damage,
+                curse_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
             )
             if not enemy.alive():
                 self.cursed_enemies.pop(enemy, None)
+                self._curse_display_timers.pop(enemy, None)
+                self._curse_crit_states.pop(enemy, None)
+                continue
+
+            if self.effect_group is not None:
+                elapsed = self._curse_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._curse_crit_states[enemy] = new_crit
+                    display_damage = curse_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._curse_display_timers[enemy] = elapsed
 
     def _spawn_orb(self, direction: Vector2) -> None:
         HexOrbProjectile(
@@ -250,24 +275,46 @@ class HexOrb(BaseWeapon):
             else:
                 angle_offset = (index - (self.projectile_count - 1) / 2) * HEX_ORB_SPREAD
                 direction = base_direction.rotate(angle_offset)
-            self._spawn_orb(direction)
+            delay = index * HEX_ORB_STAGGER
+            if delay == 0:
+                self._spawn_orb(direction)
+            else:
+                self.pending_orbs.append({"delay": delay, "direction": direction})
 
     def update(self, dt: float) -> None:
         super().update(dt)
+        i = 0
+        while i < len(self.pending_orbs):
+            orb = self.pending_orbs[i]
+            orb["delay"] -= dt
+            if orb["delay"] <= 0.0:
+                self._spawn_orb(orb["direction"])
+                self.pending_orbs.pop(i)
+            else:
+                i += 1
         self._tick_curses(dt)
 
     def on_owner_inactive(self):
+        self.pending_orbs.clear()
         self.cursed_enemies.clear()
+        self._curse_display_timers.clear()
+        self._curse_crit_states.clear()
         for projectile in list(self.projectile_group):
             if isinstance(projectile, HexOrbProjectile) and projectile.owner is self.owner:
                 projectile.kill()
 
     def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
-        trail_surface = None
+        has_trails = any(
+            isinstance(p, HexOrbProjectile) and p.owner is self.owner and p._trail
+            for p in self.projectile_group
+        )
+        if not has_trails:
+            return
+        size = surface.get_size()
+        if self._trail_draw_surface is None or self._trail_draw_surface.get_size() != size:
+            self._trail_draw_surface = pygame.Surface(size, pygame.SRCALPHA)
+        self._trail_draw_surface.fill((0, 0, 0, 0))
         for projectile in self.projectile_group:
             if isinstance(projectile, HexOrbProjectile) and projectile.owner is self.owner and projectile._trail:
-                if trail_surface is None:
-                    trail_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-                projectile.draw_trail(trail_surface, camera_offset)
-        if trail_surface is not None:
-            surface.blit(trail_surface, (0, 0))
+                projectile.draw_trail(self._trail_draw_surface, camera_offset)
+        surface.blit(self._trail_draw_surface, (0, 0))

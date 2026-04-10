@@ -31,12 +31,8 @@ class DarkGoblin(Enemy):
             _DIR_UP:    sheet.get_frame(3, 0),
         }
 
-        # Clear edge bleed on the down-facing frame — artwork shadow bleeds into cell boundary
-        _f = self._frames[_DIR_DOWN]
-        for _y in range(32):
-            _f.set_at((31, _y), (0, 0, 0, 0))
-        for _x in range(32):
-            _f.set_at((_x, 31), (0, 0, 0, 0))
+        sprite_scale = DARK_GOBLIN_ENEMY_DATA["sprite_scale"]
+        self._frames = {k: pygame.transform.scale(v, sprite_scale) for k, v in self._frames.items()}
 
         self.image = self._frames[_DIR_DOWN]
         self.rect = self.image.get_rect(center=pos)

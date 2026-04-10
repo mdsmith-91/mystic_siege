@@ -99,6 +99,7 @@ WARLOCK_DOT_DAMAGE_BONUS = 0.20      # fraction added to damage-over-time effect
 WARLOCK_SPELL_DAMAGE_BONUS = 0.10    # fraction added to spell damage by Warlock passive
 DRUID_AREA_SIZE_BONUS_PCT = 0.20     # fraction added to area-based effects by Druid passive
 DRUID_MAX_HP_BONUS_PCT = 0.10        # fraction added to max HP by Druid passive
+DOT_DISPLAY_TICK_INTERVAL = 0.5      # seconds between damage-number pops for continuous DoTs
 
 BASE_XP_REQUIRED = 50                # XP needed for the first level-up; higher values slow early progression
 XP_SCALE_FACTOR = 1.12               # exponential growth factor per level; higher values steepen later leveling
@@ -184,6 +185,7 @@ PICKUP_DROP_WEIGHTS_BY_CATEGORY = {
     },
 }
 
+# Visual-only. These colors do not affect pickup behavior or gameplay.
 PICKUP_ICON_COLORS = {
     PICKUP_MAGNET: (120, 220, 255),
     PICKUP_HEALTH_POTION: (220, 70, 90),
@@ -249,14 +251,19 @@ ARCANE_BOLT_PROJECTILE_SPEED = 400    # pixels/second; higher values reduce trav
 ARCANE_BOLT_HITBOX_SIZE = (10, 10)    # pixels; gameplay collision rect for each bolt despite its visual-focused name
 
 # Upgrade Levels
-# Levels 2-5: +damage, +1 bolt, +1 pierce, then +1 bolt with another damage bump.
+# Levels 2-5: +damage, +1 bolt, +1 pierce, then +1 bolt / +damage / kill-explosion capstone.
 ARCANE_BOLT_UPGRADE_LEVELS = [
     {},
     {"base_damage": 10},
     {"bolt_count": 1},
     {"pierce": 1},
-    {"bolt_count": 1, "base_damage": 15},
+    {"bolt_count": 1, "base_damage": 15, "explode_on_kill": 1},
 ]
+
+# Kill-Explosion (L5 capstone)
+ARCANE_BOLT_EXPLOSION_RADIUS = 80           # pixels; AoE splash radius when a bolt kills an enemy
+ARCANE_BOLT_EXPLOSION_DAMAGE_PCT = 0.5      # fraction of bolt damage dealt to splash targets
+ARCANE_BOLT_EXPLOSION_COLOR = (180, 80, 255)  # RGB; arcane purple burst visual
 
 # Visual
 # Projectile presentation only. Trail and glow knobs affect readability, not damage or targeting.
@@ -290,14 +297,20 @@ HOLY_NOVA_EXPAND_SPEED = 200          # pixels/second; higher values make the ri
 HOLY_NOVA_RING_WIDTH = 8              # pixels; damaging band width, so this affects actual hit coverage
 
 # Upgrade Levels
-# Levels 2-5: +damage, +radius, faster cooldown, then more damage with a thinner ring.
+# Levels 2-5: +damage, +radius, faster cooldown, then +damage and consecrated-ground capstone.
 HOLY_NOVA_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"base_radius": 40},
     {"base_cooldown": -0.4},
-    {"base_damage": 20, "ring_width": -4},
+    {"base_damage": 20, "consecrate": 1},
 ]
+
+# Consecration (L5 capstone)
+HOLY_NOVA_CONSECRATE_DURATION = 3.0          # seconds the zone persists after the ring expires
+HOLY_NOVA_CONSECRATE_DAMAGE = 8.0            # damage per tick to enemies standing in the zone
+HOLY_NOVA_CONSECRATE_TICK = 0.5              # seconds between zone damage ticks
+HOLY_NOVA_CONSECRATE_COLOR = (255, 245, 120) # RGB; golden glow for consecrated ground
 
 # Visual
 # Cast accents for the ring effect. These change readability and style, not ring damage or radius.
@@ -374,14 +387,20 @@ FLAME_BLAST_BURN_DAMAGE = 5.0          # damage dealt per burn tick source
 FLAME_BLAST_BURN_DURATION = 2.0        # seconds; longer values keep DOT active longer
 
 # Upgrade Levels
-# Levels 2-5: +damage, +range, longer burn, then wider cone with another damage bump.
+# Levels 2-5: +damage, +range, longer burn, then +damage and inferno-pool capstone.
 FLAME_BLAST_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"cone_range": 40},
     {"burn_duration": 1.5},
-    {"cone_angle": 30, "base_damage": 20},
+    {"base_damage": 20, "inferno_pool": 1},
 ]
+
+# Inferno Pool (L5 capstone)
+FLAME_BLAST_POOL_DURATION = 2.5          # seconds the fire pool lingers
+FLAME_BLAST_POOL_RADIUS = 50             # pixels; AoE radius of the lingering pool
+FLAME_BLAST_POOL_TICK_INTERVAL = 0.5     # seconds between pool damage ticks
+FLAME_BLAST_POOL_COLOR = (255, 100, 0)   # RGB; deep orange lingering fire
 
 # Visual
 # Flame particles and color accents. These do not change cone size, burn duration, or damage.
@@ -409,6 +428,7 @@ HEX_ORB_PROJECTILE_LIFETIME = 2.2     # seconds before despawn
 HEX_ORB_BASE_PROJECTILE_COUNT = 1     # orbs per cast at level 1
 HEX_ORB_BASE_PIERCE = 0               # enemies pierced per orb before upgrades/passives
 HEX_ORB_SPREAD = 12                   # degrees between multiple orbs
+HEX_ORB_STAGGER = 0.14                # seconds between orbs in a volley; separates upgraded casts visually
 HEX_ORB_CURSE_DAMAGE = 6.0            # damage per second while cursed
 HEX_ORB_CURSE_DURATION = 3.0          # seconds curse remains after application/refresh
 HEX_ORB_CURSE_RADIUS = 0              # pixels; 0 keeps curse single-target until upgraded
@@ -466,14 +486,17 @@ BRAMBLE_SEEDS_HITBOX_SIZE = (10, 10)  # pixels; gameplay collision rect for each
 
 # Upgrade Levels
 # Levels 2-5: larger patch, stronger ticks, longer patch duration, then faster
-# cooldown with an extra seed.
+# cooldown and overgrowth capstone (kills bloom a second patch).
 BRAMBLE_SEEDS_UPGRADE_LEVELS = [
     {},
     {"patch_radius": 14},
     {"base_damage": 3.0},
     {"patch_duration": 1.0},
-    {"base_cooldown": -0.35, "projectile_count": 1},
+    {"base_cooldown": -0.35, "overgrowth": 1},
 ]
+
+# Overgrowth (L5 capstone)
+BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT = 0.5  # fraction of patch_duration applied to the bonus patch that spawns on a kill inside an existing bramble
 
 # Visual
 # Seed and bramble patch presentation only. Collision, damage, and slow use the
@@ -510,14 +533,20 @@ FROST_RING_FREEZE_DURATION = 1.0       # seconds enemies stay frozen; higher val
 FROST_RING_HALF_WIDTH = 5              # pixels; damaging band half-width, so this changes actual hit coverage
 
 # Upgrade Levels
-# Levels 2-5: longer freeze, +damage, faster ring travel, then faster cooldown with larger radius.
+# Levels 2-5: longer freeze, +damage, longer freeze again, then faster cooldown /
+# larger radius plus shatter capstone (frozen kills burst into ice AoE).
 FROST_RING_UPGRADE_LEVELS = [
     {},
     {"freeze_duration": 0.5},
     {"base_damage": 10},
-    {"ring_speed": 30},
-    {"base_cooldown": -0.8, "max_radius": 80},
+    {"freeze_duration": 0.5},
+    {"base_cooldown": -0.8, "max_radius": 80, "shatter": 1},
 ]
+
+# Shatter (L5 capstone)
+FROST_RING_SHATTER_RADIUS = 70            # pixels; ice-shard AoE radius on frozen kill
+FROST_RING_SHATTER_DAMAGE_PCT = 0.6       # fraction of ring hit-damage dealt as shatter splash
+FROST_RING_SHATTER_COLOR = (180, 230, 255) # RGB; icy blue burst visual
 
 # Visual
 # Ring styling and secondary particles. These tune clarity and atmosphere, not freeze logic.
@@ -548,14 +577,20 @@ LIGHTNING_CHAIN_STUN_DURATION = 0.5    # seconds; longer values increase control
 LIGHTNING_CHAIN_HOP_DAMAGE_MULTIPLIER = 0.8   # multiplier per hop; lower values increase damage falloff
 
 # Upgrade Levels
-# Levels 2-5: +damage, +2 chain targets, longer hop range, then +1 chain target with stun chance.
+# Levels 2-5: +damage, +2 chain targets, longer hop range, then +1 chain target /
+# stronger stun plus overload capstone (stunned kills arc to all nearby enemies).
 LIGHTNING_CHAIN_UPGRADE_LEVELS = [
     {},
     {"base_damage": 15},
     {"chain_count": 2},
     {"chain_range": 50},
-    {"chain_count": 1, "stun_chance": 0.25},
+    {"chain_count": 1, "stun_chance": 0.30, "overload": 1},
 ]
+
+# Overload (L5 capstone)
+LIGHTNING_CHAIN_OVERLOAD_RADIUS = 100        # pixels; radius of the static burst on a stunned kill
+LIGHTNING_CHAIN_OVERLOAD_DAMAGE_PCT = 0.4    # fraction of hit damage dealt to nearby enemies
+LIGHTNING_CHAIN_OVERLOAD_COLOR = (255, 235, 60)  # RGB; electric-yellow burst visual
 
 # Visual
 # Arc rendering and endpoint flashes. These affect the look and persistence of chain visuals only.
@@ -591,14 +626,18 @@ LONGBOW_SPREAD = 5                     # degrees between multiple arrows; higher
 LONGBOW_BASE_CRIT_BONUS = 0.05         # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, faster cooldown, +1 pierce, then +1 arrow with extra crit chance.
+# Levels 2-5: +damage, faster cooldown, +1 pierce, then pin-shot capstone (+crit bonus,
+# crits briefly root the target).
 LONGBOW_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},
     {"base_cooldown": -0.15},
     {"pierce": 1},
-    {"projectile_count": 2, "crit_bonus": 0.10},
+    {"pin_shot": 1, "crit_bonus": 0.10},
 ]
+
+# Pin Shot (L5 capstone)
+LONGBOW_PIN_SHOT_DURATION = 0.6   # seconds target is rooted when struck by a crit arrow
 
 # Visual
 # Arrow appearance only. Collision and reach are driven by projectile speed/lifetime, not these draw settings.
@@ -621,14 +660,19 @@ THROWING_AXES_SPREAD = 12              # degrees between extra axes; higher valu
 THROWING_AXES_BASE_CRIT_BONUS = 0.05   # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, faster cooldown, +1 pierce, then +2 axes with extra crit chance.
+# Levels 2-5: +damage, faster cooldown, +1 pierce, then ricochet capstone (+crit bonus,
+# killing axes bounce to a nearby enemy).
 THROWING_AXES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 12.0},
     {"base_cooldown": -0.20},
     {"pierce": 1},
-    {"projectile_count": 2, "crit_bonus": 0.10},
+    {"ricochet": 1, "crit_bonus": 0.10},
 ]
+
+# Ricochet (L5 capstone)
+THROWING_AXES_RICOCHET_RANGE = 140        # pixels; max distance to the next ricochet target
+THROWING_AXES_RICOCHET_DAMAGE_PCT = 0.65  # fraction of axe damage dealt on the bounce
 
 # Visual
 # Axe silhouette and tumble presentation only. These do not change projectile travel, pierce, or crit behavior.
@@ -660,14 +704,19 @@ SHADOW_KNIVES_SPREAD = 9               # degrees between knives in a volley
 SHADOW_KNIVES_BASE_CRIT_BONUS = 0.10   # additive crit chance from the weapon itself
 
 # Upgrade Levels
-# Levels 2-5: +damage, +1 knife, faster cooldown with more crit, then +1 pierce with +damage.
+# Levels 2-5: +damage, +1 knife, faster cooldown with more crit, then venom capstone
+# (+damage, knife hits apply a poison DOT).
 SHADOW_KNIVES_UPGRADE_LEVELS = [
     {},
     {"base_damage": 6.0},
     {"projectile_count": 1},
     {"base_cooldown": -0.10, "crit_bonus": 0.05},
-    {"pierce": 1, "base_damage": 8.0},
+    {"venom": 1, "base_damage": 8.0},
 ]
+
+# Venom (L5 capstone)
+SHADOW_KNIVES_VENOM_DAMAGE = 8.0    # damage per second while venom is active
+SHADOW_KNIVES_VENOM_DURATION = 2.0  # seconds venom lasts after a knife hit
 
 # Visual
 # Knife silhouette and return-trail tuning only. These do not change targeting,
@@ -693,6 +742,7 @@ CALTROPS_THROW_SPEED = 540              # pixels/second; flight speed of thrown 
 CALTROPS_PROJECTILE_LIFETIME = 0.35     # seconds before caltrops settle into hazards
 CALTROPS_BASE_PROJECTILE_COUNT = 3      # caltrops thrown per cast at level 1
 CALTROPS_SPREAD = 18                    # degrees across the thrown fan
+CALTROPS_EXTRA_PROJECTILE_SPREAD_BONUS = 4  # degrees added per extra caltrop so upgraded fans do not stack
 CALTROPS_PATCH_RADIUS = 28              # pixels; catch zone for enemies stepping into hazard
 CALTROPS_PATCH_DURATION = 6.0           # seconds each hazard remains active
 CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
@@ -704,14 +754,19 @@ CALTROPS_HITBOX_SIZE = (10, 10)         # pixels; thrown-caltrop collision rect
 
 # Upgrade Levels
 # Levels 2-5: +trap damage, +1 caltrop, longer hazard life with stronger bleed,
-# then faster cooldown and larger trap radius.
+# then faster cooldown and nail-bomb capstone (kills inside traps burst for AoE).
 CALTROPS_UPGRADE_LEVELS = [
     {},
     {"base_damage": 2.0},
     {"projectile_count": 1},
     {"patch_duration": 1.0, "bleed_damage": 1.0},
-    {"base_cooldown": -0.3, "patch_radius": 6},
+    {"base_cooldown": -0.3, "nail_bomb": 1},
 ]
+
+# Nail Bomb (L5 capstone)
+CALTROPS_NAIL_BOMB_RADIUS = 50            # pixels; AoE burst radius on a kill inside a trap
+CALTROPS_NAIL_BOMB_DAMAGE_PCT = 1.5       # multiplier on trap tick damage for the burst hit
+CALTROPS_NAIL_BOMB_COLOR = (255, 160, 0)  # RGB; orange-hot burst visual
 
 # Visual
 # Ground hazard styling only. These do not change damage, slow, or bleed logic.
@@ -742,15 +797,19 @@ CHAIN_FLAIL_KNOCKBACK_FORCE = 230       # pixels/second impulse applied on hit
 CHAIN_FLAIL_CHAIN_SAMPLE_COUNT = 5      # points along the chain used for light body collision checks
 
 # Upgrade Levels
-# Levels 2-5: +damage, longer reach, longer spin, then faster cooldown with a
-# slightly larger head for consistency.
+# Levels 2-5: +damage, longer reach, longer spin, then faster cooldown and
+# rebound capstone (flail snaps back for a second reverse arc after the main sweep).
 CHAIN_FLAIL_UPGRADE_LEVELS = [
     {},
     {"base_damage": 8.0},
     {"chain_length": 24},
     {"sweep_duration": 0.08},
-    {"base_cooldown": -0.2, "head_radius": 4},
+    {"base_cooldown": -0.2, "rebound": 1},
 ]
+
+# Rebound (L5 capstone)
+CHAIN_FLAIL_REBOUND_ANGLE = 140.0        # degrees swept in the reverse arc
+CHAIN_FLAIL_REBOUND_DAMAGE_PCT = 0.5     # fraction of base damage dealt by the rebound arc
 
 # Visual
 # Chain and flail-head styling only. These do not change spin timing or damage.
@@ -767,42 +826,45 @@ CHAIN_FLAIL_HIT_SPARK_COLOR = (220, 200, 120)   # RGB hit-feedback tint
 # strong pierce identity. Heavier per-hit than Longbow, slower cadence, tighter
 # coverage than ChainFlail.
 # Gameplay
-SPEAR_BASE_DAMAGE        = 32.0          # damage per hit
-SPEAR_BASE_COOLDOWN      = 1.5           # seconds between thrusts
-SPEAR_TARGETING_RANGE    = 400           # pixels; keeps Spear meaningfully farther-reaching than Sword
-SPEAR_THRUST_LENGTH      = 108           # pixels from hand position to spear tip
-SPEAR_HAND_OFFSET        = 8            # px perpendicular right of thrust direction — right-hand grip position
-SPEAR_BASE_PIERCE        = 1             # enemies hit per thrust: pierce+1 total
-SPEAR_KNOCKBACK_FORCE    = 180           # pixels/second impulse applied on hit
+SPEAR_BASE_DAMAGE = 32.0              # damage per hit
+SPEAR_BASE_COOLDOWN = 1.5             # seconds between thrusts
+SPEAR_TARGETING_RANGE = 160           # pixels; slightly farther reach than Sword (155 px), matched to thrust length
+SPEAR_THRUST_LENGTH = 108             # pixels from hand position to spear tip
+SPEAR_HAND_OFFSET = 8                 # pixels perpendicular right of thrust direction — right-hand grip position
+SPEAR_BASE_PIERCE = 1                 # enemies hit per thrust: pierce+1 total
+SPEAR_KNOCKBACK_FORCE = 180           # pixels/second impulse applied on hit
 
 # Thrust timing phases (extend → hold → retract)
-SPEAR_EXTEND_DURATION    = 0.10          # seconds to push the spear to full extension
-SPEAR_HOLD_DURATION      = 0.06          # seconds held at full extension
-SPEAR_RETRACT_DURATION   = 0.09          # seconds to pull the spear back
+SPEAR_EXTEND_DURATION = 0.10          # seconds to push the spear to full extension
+SPEAR_HOLD_DURATION = 0.06            # seconds held at full extension
+SPEAR_RETRACT_DURATION = 0.09         # seconds to pull the spear back
 
 # L5 double-thrust: a follow-up stab fires this many seconds after the first
-SPEAR_L5_SECOND_DELAY    = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
+SPEAR_L5_SECOND_DELAY = 0.25          # seconds after primary fire before follow-up; matches total first-thrust duration so the second stab begins as the first fully retracts
+SPEAR_SAMPLE_COUNT = 6                # sample points along the shaft used for collision checks; more = more accurate narrow-angle hits
 
+# Upgrade Levels
+# Levels 2-5: +damage, longer reach with faster cooldown, +1 pierce, then double thrust + crit bonus.
 SPEAR_UPGRADE_LEVELS = [
-    {},                                               # L1 baseline
-    {"base_damage": 10.0},                            # L2 +10 damage
-    {"thrust_length": 24, "base_cooldown": -0.15},    # L3 longer reach + faster cooldown
-    {"pierce": 1},                                    # L4 +1 pierce
-    {"double_thrust_count": 1, "crit_bonus": 0.08},    # L5 double thrust + crit bonus
+    {},
+    {"base_damage": 10.0},
+    {"thrust_length": 24, "base_cooldown": -0.15},
+    {"pierce": 1},
+    {"double_thrust_count": 1, "crit_bonus": 0.08},
 ]
 
 # Visual
-SPEAR_HEAD_COLOR         = (190, 195, 205)   # RGB steel blue-grey
-SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)      # RGB silhouette outline
-SPEAR_HIGHLIGHT_COLOR    = (235, 240, 250)   # RGB blade edge highlight
-SPEAR_SHAFT_COLOR        = (110, 75, 40)     # RGB wooden shaft brown
-SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)     # RGB shaft silhouette
-SPEAR_BUTT_COLOR         = (155, 158, 168)   # RGB metal butt cap
-SPEAR_HEAD_LENGTH        = 28                # px length from socket to tip
-SPEAR_HEAD_HALF_WIDTH    = 5                 # px half-width at the widest point of the head
-SPEAR_SHAFT_HALF_WIDTH   = 3                 # px half-width of the shaft
-SPEAR_HIT_SPARK_COLOR    = (220, 200, 120)   # RGB hit-feedback spark tint
-SPEAR_SAMPLE_COUNT       = 6                 # sample points along shaft for collision checks
+# Spear geometry and coloring only. These do not change thrust timing, pierce, or collision.
+SPEAR_HEAD_COLOR = (190, 195, 205)          # RGB steel blue-grey head tint
+SPEAR_HEAD_OUTLINE_COLOR = (45, 45, 55)     # RGB silhouette outline tint
+SPEAR_HIGHLIGHT_COLOR = (235, 240, 250)     # RGB blade edge highlight tint
+SPEAR_SHAFT_COLOR = (110, 75, 40)           # RGB wooden shaft tint
+SPEAR_SHAFT_OUTLINE_COLOR = (60, 40, 20)    # RGB shaft silhouette tint
+SPEAR_BUTT_COLOR = (155, 158, 168)          # RGB metal butt cap tint
+SPEAR_HEAD_LENGTH = 28                      # pixels; length from socket to tip
+SPEAR_HEAD_HALF_WIDTH = 5                   # pixels; half-width at the widest point of the head
+SPEAR_SHAFT_HALF_WIDTH = 3                  # pixels; half-width of the shaft
+SPEAR_HIT_SPARK_COLOR = (220, 200, 120)     # RGB hit-feedback spark tint
 
 
 # ============================================================================
@@ -841,8 +903,8 @@ SKELETON_ENEMY_DATA = {
     "damage": 10,
     "xp_value": 3,
     "behavior": "chase",
-    "wander_angle_max": 5.0,
-    "wander_angle_change_interval": 0.5,
+    "wander_angle_max": 5.0,          # degrees; max random angular offset per wander step
+    "wander_angle_change_interval": 0.5,  # seconds between wander direction changes
 }
 
 # Goblin: fast melee chaser intended to pressure movement with pack spawns.
@@ -853,6 +915,7 @@ DARK_GOBLIN_ENEMY_DATA = {
     "damage": 8,
     "xp_value": 3,
     "behavior": "chase",
+    "sprite_scale": (24, 24),
 }
 
 # Wraith: medium-speed chaser with a periodic lunge burst.
@@ -863,9 +926,9 @@ WRAITH_ENEMY_DATA = {
     "damage": 15,
     "xp_value": 5,
     "behavior": "chase",
-    "lunge_cooldown": 3.0,
-    "lunge_duration": 0.4,
-    "lunge_speed_multiplier": 3.0,
+    "lunge_cooldown": 3.0,            # seconds between lunge attempts
+    "lunge_duration": 0.4,            # seconds the lunge speed boost is active
+    "lunge_speed_multiplier": 3.0,    # multiplier applied to base speed during a lunge
 }
 
 # Plague Bat: fragile fast chaser with wave motion and death splitting.
@@ -876,10 +939,10 @@ PLAGUE_BAT_ENEMY_DATA = {
     "damage": 8,
     "xp_value": 3,
     "behavior": "chase",
-    "split_chance": 0.4,
-    "split_count": 2,
-    "wave_frequency": 4.0,
-    "wave_amplitude": 0.5,
+    "split_chance": 0.4,              # fraction; probability of spawning mini bats on death
+    "split_count": 2,                 # number of mini bats spawned if split triggers
+    "wave_frequency": 4.0,            # Hz; oscillation rate of the arc movement
+    "wave_amplitude": 0.5,            # pixels perpendicular to travel per oscillation cycle
     "sprite_scale": (20, 20),
 }
 
@@ -906,8 +969,8 @@ CURSED_KNIGHT_ENEMY_DATA = {
     "damage": 20,
     "xp_value": 10,
     "behavior": "chase",
-    "shield_block_angle": 60.0,
-    "shield_damage_multiplier": 0.2,
+    "shield_block_angle": 60.0,           # degrees; total frontal arc protected by the shield (±30° from facing)
+    "shield_damage_multiplier": 0.2,      # fraction of incoming damage that passes through the shield (0.2 = 80% reduction)
 }
 
 # Lich Familiar: orbiting ranged threat that fires slow enemy projectiles.
@@ -918,17 +981,19 @@ LICH_FAMILIAR_ENEMY_DATA = {
     "damage": 12,
     "xp_value": 10,
     "behavior": "orbit",
-    "orbit_radius": 200,
-    "orbit_angular_speed": 45.0,
-    "fire_interval": 2.5,
-    "projectile_speed": 120,
-    "projectile_damage": 12,
-    "projectile_lifetime": 4.0,
-    "projectile_color": (187, 0, 0),
-    "fire_range": 450,
+    "orbit_radius": 200,              # pixels; distance maintained while orbiting the target
+    "orbit_angular_speed": 45.0,      # degrees/second; higher values orbit faster
+    "fire_interval": 2.5,             # seconds between projectile shots
+    "projectile_speed": 120,          # pixels/second; intentionally slow for dodgeable threat
+    "projectile_damage": 12,          # damage per projectile hit
+    "projectile_lifetime": 4.0,       # seconds before projectile despawns
+    "projectile_color": (187, 0, 0),  # RGB; blood-red enemy projectile tint (visual-only)
+    "fire_range": 450,                # pixels; must be within this range to fire
 }
 
 # Stone Golem: high-HP mini-boss with low movement speed and heavy contact damage.
+# Shockwave mechanic: when a player is within trigger range, the Golem telegraphs then
+# fires an expanding ring AoE. Immune to CC and knockback so players must dodge cleanly.
 STONE_GOLEM_ENEMY_DATA = {
     "name": "Golem",
     "hp": 500,
@@ -937,20 +1002,20 @@ STONE_GOLEM_ENEMY_DATA = {
     "xp_value": 80,
     "behavior": "chase",
     "spritesheet_frame_size": (64, 64),
-    "cc_immune": True,
-    "knockback_immune": True,
-    "shockwave_cooldown": 6.0,
-    "shockwave_windup": 1.1,
-    "shockwave_trigger_range": 220,
-    "shockwave_radius": 170,
-    "shockwave_damage": 32,
-    "shockwave_ring_width": 8,
-    "shockwave_telegraph_color": (210, 120, 70),
-    "shockwave_blast_color": (185, 110, 70),
-    "shockwave_telegraph_alpha": 120,
-    "shockwave_blast_alpha": 170,
-    "shockwave_telegraph_lifetime": 1.1,
-    "shockwave_blast_lifetime": 0.45,
+    "cc_immune": True,                          # immune to freeze/stun effects
+    "knockback_immune": True,                   # weapons and contact cannot move the Golem
+    "shockwave_cooldown": 6.0,                  # seconds between shockwave attempts
+    "shockwave_windup": 1.1,                    # seconds of telegraph before the blast fires
+    "shockwave_trigger_range": 220,             # pixels; player must be within this range to trigger the shockwave
+    "shockwave_radius": 170,                    # pixels; outer edge of the expanding blast ring
+    "shockwave_damage": 32,                     # damage dealt to players caught in the blast
+    "shockwave_ring_width": 8,                  # pixels; width of the damaging ring band
+    "shockwave_telegraph_color": (210, 120, 70),  # RGB; warning circle tint (visual-only)
+    "shockwave_blast_color": (185, 110, 70),      # RGB; expanding ring tint (visual-only)
+    "shockwave_telegraph_alpha": 120,           # alpha 0-255 for the warning circle
+    "shockwave_blast_alpha": 170,               # alpha 0-255 for the expanding ring
+    "shockwave_telegraph_lifetime": 1.1,        # seconds the warning circle is shown (matches windup)
+    "shockwave_blast_lifetime": 0.45,           # seconds the expanding ring is visible
 }
 
 # Shared lookup used by the enemy registry/spawner. Keep ids stable because wave
@@ -1020,6 +1085,8 @@ WAVE_VICTORY_TIME = 1800                  # seconds; run victory at 30:00
 HUD_FONT_SIZE = 24             # points; primary in-run HUD font size
 SMALL_FONT_SIZE = 16           # points; supporting UI/body text size
 TITLE_FONT_SIZE = 72           # points; large menu/title text size
+HUD_READOUT_FONT_PATH = "assets/fonts/AtkinsonHyperlegibleNext-Medium.ttf"  # bundled font for compact HUD labels
+HUD_DISPLAY_FONT_PATH = "assets/fonts/Cinzel-SemiBold.ttf"  # bundled font for large HUD timer/warning text
 
 # Main menu ember particles (visual-only).
 MAIN_MENU_PARTICLE_INITIAL_COUNT = 60     # particles spawned on menu load
@@ -1041,6 +1108,8 @@ CLASS_SELECT_CARD_GAP_Y = 26          # pixels between card rows
 CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping — 4-wide grid gives a 4+4 layout for up to 8 heroes
 CLASS_SELECT_CARD_PADDING_X = 16      # pixels; inner horizontal card padding
 CLASS_SELECT_COLOR_BAND_HEIGHT = 32   # pixels; color accent band height on each card
+CLASS_SELECT_HERO_SPRITE_SIZE = (48, 48)  # pixels; front-facing hero preview on each card
+CLASS_SELECT_HERO_SPRITE_MARGIN = 10      # pixels; inset from card bottom/right edges
 
 # Upgrade menu layout (UI-only). These are sized to keep 4 cards clear of the
 # shared 1P–4P HUD panel rectangles, including the 2x2 4-player corner layout.
@@ -1051,10 +1120,64 @@ UPGRADE_MENU_CARDS_Y = 188            # pixels from top; keeps 4-card row below 
 UPGRADE_MENU_CARD_WIDTH = 220         # pixels; narrowed from the original 3-card layout to fit 4 choices comfortably
 UPGRADE_MENU_CARD_HEIGHT = 320        # pixels; shortened so the hovered card stays clear of bottom HUD panels
 UPGRADE_MENU_CARD_GAP = 12            # pixels between upgrade cards
-UPGRADE_MENU_CARD_NAME_FONT_SIZE = 22 # points; keeps long weapon names inside narrower cards
+UPGRADE_MENU_CARD_NAME_FONT_SIZE = 17        # points; fits the longest passive names within 220px cards
 UPGRADE_MENU_CARD_DESC_FONT_SIZE = 13 # points; supports 4-card layout without clipping
 UPGRADE_MENU_SYMBOL_FONT_SIZE = 34    # points; icon-area symbol text size
 UPGRADE_MENU_HINT_FONT_SIZE = 16      # points; bottom ownership hint
+
+# Upgrade card icon bands. These are deliberately darker than the original card
+# colors so white lettering remains readable.
+UPGRADE_CARD_STAT_COLORS = {
+    "max_hp": (35, 125, 55),
+    "speed_pct": (35, 115, 155),
+    "pickup_radius_pct": (145, 112, 35),
+    "armor": (105, 105, 115),
+    "regen_rate": (45, 135, 65),
+    "xp_multiplier_pct": (35, 130, 155),
+    "cooldown_reduction": (160, 80, 35),
+    "crit_chance": (150, 125, 35),
+    "spell_damage_multiplier_pct": (95, 55, 165),
+    "physical_damage_multiplier_pct": (125, 80, 55),
+    "projectile_pierce_bonus": (80, 110, 170),
+    "dot_damage_bonus_pct": (150, 65, 30),
+    "area_size_bonus_pct": (35, 135, 125),
+    "base_damage_bonus_pct": (145, 45, 45),
+}
+
+# Optional in-run HUD stat bonus text. These keep the upgrade-card hue families
+# but are brighter so small text remains readable over gameplay backgrounds.
+HUD_STAT_TEXT_COLORS = {
+    "max_hp": (95, 235, 125),
+    "speed_pct": (95, 220, 255),
+    "pickup_radius_pct": (255, 215, 95),
+    "armor": (220, 220, 230),
+    "regen_rate": (105, 245, 135),
+    "xp_multiplier_pct": (95, 225, 255),
+    "cooldown_reduction": (255, 165, 85),
+    "crit_chance": (255, 230, 95),
+    "spell_damage_multiplier_pct": (185, 135, 255),
+    "physical_damage_multiplier_pct": (230, 165, 125),
+    "projectile_pierce_bonus": (145, 185, 255),
+    "dot_damage_bonus_pct": (255, 135, 85),
+    "area_size_bonus_pct": (95, 235, 220),
+    "base_damage_bonus_pct": (255, 115, 115),
+}
+UPGRADE_CARD_WEAPON_COLORS = {
+    "ArcaneBolt": (75, 40, 130),
+    "BrambleSeeds": (30, 95, 45),
+    "Caltrops": (105, 65, 25),
+    "ChainFlail": (95, 92, 105),
+    "HolyNova": (125, 92, 20),
+    "Sword": (82, 90, 105),
+    "FlameBlast": (170, 70, 20),
+    "FrostRing": (30, 105, 165),
+    "HexOrb": (55, 30, 95),
+    "LightningChain": (110, 105, 20),
+    "Longbow": (115, 70, 30),
+    "ShadowKnives": (85, 65, 55),
+    "Spear": (85, 96, 112),
+    "ThrowingAxes": (90, 88, 98),
+}
 
 # Shared HUD chrome. HUD_EMPTY_SLOT_BG_COLOR is intentionally reused by empty
 # weapon slots and HP/XP bar backgrounds so the slot-panel treatment stays matched.
@@ -1069,8 +1192,7 @@ WEAPON_SLOT_LEVEL_BORDER_EMPTY_COLOR = (80, 80, 80)     # RGB unearned segment c
 # shared slot-panel renderer is used for all player counts.
 HUD_PANEL_PADDING = 10              # pixels; inner panel padding
 HUD_PANEL_BAR_HEIGHT = 12           # pixels; HP/XP bar height
-HUD_PANEL_WEAPON_SLOT_SIZE = 40     # pixels; square slot footprint
-HUD_PANEL_WEAPON_SLOT_WIDTH = 40    # pixels; kept separate for compatibility with current HUD code
+HUD_PANEL_WEAPON_SLOT_SIZE = 40     # pixels; square slot footprint used for both icon drawing and column spacing
 HUD_PANEL_WEAPON_SLOT_GAP = 4       # pixels between weapon slots
 HUD_PANEL_CORNER_RADIUS = 6         # pixels; rounded panel corners
 HUD_REVIVE_RING_RADIUS = 28         # pixels; on-screen revive progress ring size
@@ -1081,8 +1203,8 @@ HUD_DOWNED_HP_BAR_COLOR = (110, 110, 110) # RGB HP bar fill when player is downe
 
 # Settings menu controls (UI-only). Slider step sizes here should stay readable
 # with the FPS cap steps defined earlier in the file.
-SETTINGS_SLIDER_STEP_COARSE = 0.05          # normalized slider value step for larger adjustments
-SETTINGS_SLIDER_STEP_FINE = 0.02            # normalized slider value step for smaller adjustments
+SETTINGS_SLIDER_STEP_COARSE = 0.05          # normalized 0-1 slider delta for larger adjustments
+SETTINGS_SLIDER_STEP_FINE = 0.02            # normalized 0-1 slider delta for smaller adjustments
 SETTINGS_ANALOG_ADJUST_REPEAT_DELAY = 0.2   # seconds before held analog adjustment repeats
 SETTINGS_ANALOG_ADJUST_REPEAT_RATE = 0.08   # seconds between repeated analog adjustments
 SETTINGS_SLIDER_VALUE_X_OFFSET = 24         # pixels; spacing between slider and displayed value
@@ -1226,7 +1348,7 @@ SPAWN_OFFSETS = [
 # Shared camera framing. Primarily multiplayer-facing, but solo camera behavior
 # also reads these values through the same system.
 CAMERA_ZOOM_MIN = 0.45     # minimum zoom scale; lower values zoom farther out for wider parties
-CAMERA_ZOOM_LERP = 2.0     # interpolation speed; higher values make zoom react faster
+CAMERA_ZOOM_LERP = 2.0     # unitless lerp factor; higher values make zoom react faster to party spread changes
 CAMERA_PLAYER_MARGIN = 200  # pixels of padding around tracked players; larger values zoom out sooner
 
 # Downed/revive runtime. These are gameplay/multiplayer settings used by Player
@@ -1343,7 +1465,7 @@ HERO_CLASSES = [
         "name": "Wizard",
         "hp": 80,
         "speed": 240,
-        "armor": 0,
+        "armor": 2,
         "passive_desc": "+20% spell damage.\n+10% crit chance.",
         "starting_weapon": "ArcaneBolt",
         "color": (60, 120, 220),

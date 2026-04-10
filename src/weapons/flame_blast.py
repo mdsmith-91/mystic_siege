@@ -5,6 +5,7 @@ from pygame.math import Vector2
 
 from settings import (
     CRIT_MULTIPLIER,
+    DOT_DISPLAY_TICK_INTERVAL,
     FLAME_BLAST_BASE_COOLDOWN,
     FLAME_BLAST_BASE_DAMAGE,
     FLAME_BLAST_BURN_DAMAGE,
@@ -21,6 +22,10 @@ from settings import (
     FLAME_BLAST_PARTICLE_RADIUS_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MAX,
     FLAME_BLAST_PARTICLE_SPEED_MIN,
+    FLAME_BLAST_POOL_COLOR,
+    FLAME_BLAST_POOL_DURATION,
+    FLAME_BLAST_POOL_RADIUS,
+    FLAME_BLAST_POOL_TICK_INTERVAL,
     FLAME_BLAST_UPGRADE_LEVELS,
 )
 from src.utils.audio_manager import AudioManager
@@ -49,6 +54,17 @@ class FlameBlast(BaseWeapon):
 
         # Live explosion particles — each dict holds pos, vel, life, max_life, radius, color
         self.effect_particles: list[dict] = []
+
+        # Inferno pools: each dict holds center, remaining, tick_timer
+        self.pools: list[dict] = []
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.inferno_pool = 0
+        self._burn_display_timers: dict[object, float] = {}
+        self._burn_crit_states: dict[object, bool] = {}
+        # Cached draw surfaces — recreated only when size or resolution changes.
+        self._pool_draw_surface: pygame.Surface | None = None
+        self._particle_draw_surface: pygame.Surface | None = None
+        self._particle_draw_size: int = 0
 
     @property
     def effective_cone_range(self) -> float:
@@ -97,10 +113,20 @@ class FlameBlast(BaseWeapon):
                 damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
                 enemy.take_damage(damage, hit_direction=-direction_to_enemy, attacker=self.owner)
                 self.burning_enemies[enemy] = self.burn_duration
+                self._burn_crit_states[enemy] = random.random() < self.owner.crit_chance
                 if self.effect_group is not None:
                     from src.entities.effects import DamageNumber, HitSpark
                     DamageNumber(enemy.pos - Vector2(0, 20), damage, [self.effect_group], is_crit=is_crit)
                     HitSpark(enemy.pos, FLAME_BLAST_HIT_SPARK_COLOR, [self.effect_group])
+
+        # Inferno Pool: leave a lingering fire zone at the far end of the cone.
+        if self.inferno_pool:
+            pool_center = self.owner.pos + self.fire_direction * self.effective_cone_range * 0.7
+            self.pools.append({
+                "center": pool_center,
+                "remaining": FLAME_BLAST_POOL_DURATION,
+                "tick_timer": 0.0,
+            })
 
         # Spawn explosion particles spreading within the cone
         base_angle = math.degrees(math.atan2(-self.fire_direction.y, self.fire_direction.x))
@@ -133,35 +159,101 @@ class FlameBlast(BaseWeapon):
                 'color': color,
             })
 
+    def _tick_pools(self, dt: float) -> None:
+        pool_damage = self._scaled_dot_damage(self.burn_damage)
+        radius_sq = FLAME_BLAST_POOL_RADIUS * FLAME_BLAST_POOL_RADIUS
+        i = 0
+        while i < len(self.pools):
+            pool = self.pools[i]
+            pool["remaining"] -= dt
+            pool["tick_timer"] -= dt
+            if pool["remaining"] <= 0:
+                self.pools.pop(i)
+                continue
+            if pool["tick_timer"] <= 0:
+                pool["tick_timer"] = FLAME_BLAST_POOL_TICK_INTERVAL
+                center = pool["center"]
+                for enemy in self.enemy_group:
+                    if enemy.alive() and (enemy.pos - center).length_squared() <= radius_sq:
+                        is_crit = random.random() < self.owner.crit_chance
+                        actual_pool_damage = pool_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
+                        enemy.take_damage(actual_pool_damage, hit_direction=None, attacker=self.owner, knockback_force=0)
+                        self.burning_enemies[enemy] = self.burn_duration
+                        self._burn_crit_states[enemy] = random.random() < self.owner.crit_chance
+                        if self.effect_group is not None:
+                            from src.entities.effects import DamageNumber
+                            DamageNumber(enemy.pos - Vector2(0, 20), actual_pool_damage, [self.effect_group], is_crit=is_crit)
+            i += 1
+
     def update(self, dt):
         """Update the flame blast effect."""
         super().update(dt)
 
-        # Advance explosion particles and cull expired ones
-        for p in self.effect_particles:
+        # Advance explosion particles and cull expired ones in-place.
+        i = len(self.effect_particles) - 1
+        while i >= 0:
+            p = self.effect_particles[i]
             p['pos'] += p['vel'] * dt
             p['life'] -= dt
-        self.effect_particles = [p for p in self.effect_particles if p['life'] > 0]
+            if p['life'] <= 0:
+                self.effect_particles.pop(i)
+            i -= 1
 
         # Tick burn timers and apply burn damage each frame
+        burn_damage_rate = self._scaled_dot_damage(self.burn_damage)
         for enemy in list(self.burning_enemies.keys()):
             remaining = self.burning_enemies[enemy] - dt
             if remaining <= 0 or not enemy.alive():
                 del self.burning_enemies[enemy]
+                self._burn_display_timers.pop(enemy, None)
+                self._burn_crit_states.pop(enemy, None)
                 continue
             self.burning_enemies[enemy] = remaining
+            is_crit = self._burn_crit_states.get(enemy, False)
             to_attacker = self.owner.pos - enemy.pos
             hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
             enemy.take_damage(
-                self._scaled_dot_damage(self.burn_damage) * dt,
+                burn_damage_rate * dt * (CRIT_MULTIPLIER if is_crit else 1.0),
                 hit_direction=hit_dir,
                 attacker=self.owner,
                 knockback_force=0,
             )
+            if self.effect_group is not None:
+                elapsed = self._burn_display_timers.get(enemy, DOT_DISPLAY_TICK_INTERVAL) + dt
+                if elapsed >= DOT_DISPLAY_TICK_INTERVAL:
+                    new_crit = random.random() < self.owner.crit_chance
+                    self._burn_crit_states[enemy] = new_crit
+                    display_damage = burn_damage_rate * DOT_DISPLAY_TICK_INTERVAL * (CRIT_MULTIPLIER if new_crit else 1.0)
+                    from src.entities.effects import DamageNumber
+                    DamageNumber(enemy.pos - Vector2(0, 20), display_damage, [self.effect_group], is_crit=new_crit)
+                    elapsed -= DOT_DISPLAY_TICK_INTERVAL
+                self._burn_display_timers[enemy] = elapsed
+
+        self._tick_pools(dt)
 
     def on_owner_inactive(self):
         self.burning_enemies.clear()
+        self._burn_display_timers.clear()
+        self._burn_crit_states.clear()
         self.effect_particles.clear()
+        self.pools.clear()
+
+    def draw_under(self, surface: pygame.Surface, camera_offset: Vector2) -> None:
+        """Draw lingering inferno pools beneath all sprites."""
+        if not self.pools:
+            return
+        size = surface.get_size()
+        if self._pool_draw_surface is None or self._pool_draw_surface.get_size() != size:
+            self._pool_draw_surface = pygame.Surface(size, pygame.SRCALPHA)
+        tmp = self._pool_draw_surface
+        tmp.fill((0, 0, 0, 0))
+        for pool in self.pools:
+            cx = int(pool["center"].x - camera_offset.x)
+            cy = int(pool["center"].y - camera_offset.y)
+            alpha = int(160 * (pool["remaining"] / FLAME_BLAST_POOL_DURATION))
+            pygame.draw.circle(tmp, (*FLAME_BLAST_POOL_COLOR, alpha), (cx, cy), FLAME_BLAST_POOL_RADIUS)
+            pygame.draw.circle(tmp, (255, 200, 50, min(255, alpha + 40)), (cx, cy), FLAME_BLAST_POOL_RADIUS // 2)
+        surface.blit(tmp, (0, 0))
 
     def draw_effect(self, surface, camera_offset):
         """Draw the particle explosion blast.
@@ -181,7 +273,11 @@ class FlameBlast(BaseWeapon):
         origin_x = int(center_sx - half)
         origin_y = int(center_sy - half)
 
-        temp = pygame.Surface((size, size), pygame.SRCALPHA)
+        if self._particle_draw_surface is None or self._particle_draw_size != size:
+            self._particle_draw_surface = pygame.Surface((size, size), pygame.SRCALPHA)
+            self._particle_draw_size = size
+        temp = self._particle_draw_surface
+        temp.fill((0, 0, 0, 0))
 
         for p in self.effect_particles:
             # Hold full alpha for first 60% of lifetime; fade in the last 40%

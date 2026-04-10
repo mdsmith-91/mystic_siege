@@ -18,6 +18,8 @@ from settings import (
     CHAIN_FLAIL_HEAD_RADIUS,
     CHAIN_FLAIL_HIT_SPARK_COLOR,
     CHAIN_FLAIL_KNOCKBACK_FORCE,
+    CHAIN_FLAIL_REBOUND_ANGLE,
+    CHAIN_FLAIL_REBOUND_DAMAGE_PCT,
     CHAIN_FLAIL_RETRACT_DURATION,
     CHAIN_FLAIL_SWEEP_ANGLE,
     CHAIN_FLAIL_SWEEP_DURATION,
@@ -46,6 +48,8 @@ class ChainFlail(BaseWeapon):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in CHAIN_FLAIL_UPGRADE_LEVELS]
         self.active_swings: list[dict] = []
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.rebound = 0
 
     @property
     def effective_chain_length(self) -> float:
@@ -108,20 +112,23 @@ class ChainFlail(BaseWeapon):
             swing["previous_head_pos"] = Vector2(swing["head_pos"])
 
             phase_time = swing["timer"]
-            extend_end = self.extend_duration
-            sweep_end = extend_end + self.sweep_duration
+            extend_dur = swing.get("extend_duration", self.extend_duration)
+            sweep_dur = swing.get("sweep_duration", self.sweep_duration)
+            retract_dur = swing.get("retract_duration", self.retract_duration)
+            extend_end = extend_dur
+            sweep_end = extend_end + sweep_dur
             total_duration = swing["total_duration"]
 
             if phase_time < extend_end:
-                progress = phase_time / self.extend_duration if self.extend_duration > 0 else 1.0
+                progress = phase_time / extend_dur if extend_dur > 0 else 1.0
                 radius = self.effective_chain_length * progress
                 angle = swing["start_angle"]
             elif phase_time < sweep_end:
-                progress = (phase_time - extend_end) / self.sweep_duration if self.sweep_duration > 0 else 1.0
+                progress = (phase_time - extend_end) / sweep_dur if sweep_dur > 0 else 1.0
                 radius = self.effective_chain_length
                 angle = swing["start_angle"] + (swing["end_angle"] - swing["start_angle"]) * progress
             else:
-                progress = (phase_time - sweep_end) / self.retract_duration if self.retract_duration > 0 else 1.0
+                progress = (phase_time - sweep_end) / retract_dur if retract_dur > 0 else 1.0
                 radius = self.effective_chain_length * max(0.0, 1.0 - progress)
                 angle = swing["end_angle"]
 
@@ -130,6 +137,23 @@ class ChainFlail(BaseWeapon):
             self._damage_enemies(swing)
 
             if phase_time >= total_duration:
+                # Rebound: append a reverse arc after the main sweep completes.
+                if self.rebound > 0 and not swing.get("is_rebound"):
+                    rebound_sweep_dur = self.sweep_duration * (CHAIN_FLAIL_REBOUND_ANGLE / max(1, self.sweep_angle))
+                    self.active_swings.append({
+                        "timer": 0.0,
+                        "total_duration": rebound_sweep_dur + self.retract_duration,
+                        "start_angle": swing["end_angle"],
+                        "end_angle": swing["end_angle"] - CHAIN_FLAIL_REBOUND_ANGLE,
+                        "hit_enemies": set(),
+                        "head_pos": Vector2(swing["head_pos"]),
+                        "previous_head_pos": Vector2(swing["head_pos"]),
+                        "is_rebound": True,
+                        "extend_duration": 0.0,
+                        "sweep_duration": rebound_sweep_dur,
+                        "retract_duration": self.retract_duration,
+                        "damage_pct": CHAIN_FLAIL_REBOUND_DAMAGE_PCT,
+                    })
                 self.active_swings.pop(i)
             else:
                 i += 1
@@ -165,7 +189,7 @@ class ChainFlail(BaseWeapon):
                 continue
 
             is_crit = random.random() < self.owner.crit_chance
-            damage = self._scaled_damage(self.base_damage) * (CRIT_MULTIPLIER if is_crit else 1.0)
+            damage = self._scaled_damage(self.base_damage) * swing.get("damage_pct", 1.0) * (CRIT_MULTIPLIER if is_crit else 1.0)
             diff = self.owner.pos - enemy.pos
             hit_dir = diff.normalize() if diff.length_squared() > 0 else Vector2(1, 0)
             enemy.take_damage(

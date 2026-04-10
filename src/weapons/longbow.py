@@ -34,6 +34,8 @@ class Longbow(BaseWeapon):
     def __init__(self, owner, projectile_group, enemy_group, effect_group=None):
         super().__init__(owner, projectile_group, enemy_group, effect_group)
         self.upgrade_levels = [dict(upgrade) for upgrade in LONGBOW_UPGRADE_LEVELS]
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.pin_shot = 0
 
     def _spawn_arrow(self, direction: Vector2) -> None:
         Projectile(
@@ -51,6 +53,7 @@ class Longbow(BaseWeapon):
             size=LONGBOW_PROJECTILE_SIZE,
             draw_shape="arrow",
             rotate_to_direction=True,
+            pin_shot=bool(self.pin_shot),
         )
 
     def fire(self):

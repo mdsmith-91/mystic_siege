@@ -10,6 +10,7 @@ from settings import (
     BRAMBLE_SEEDS_BASE_PROJECTILE_COUNT,
     BRAMBLE_SEEDS_HITBOX_SIZE,
     BRAMBLE_SEEDS_HIT_SPARK_COLOR,
+    BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT,
     BRAMBLE_SEEDS_PATCH_ALPHA,
     BRAMBLE_SEEDS_PATCH_DURATION,
     BRAMBLE_SEEDS_PATCH_FILL_COLOR,
@@ -38,6 +39,7 @@ from settings import (
     BRAMBLE_SEEDS_TARGETING_RANGE,
     BRAMBLE_SEEDS_TICK_INTERVAL,
     BRAMBLE_SEEDS_UPGRADE_LEVELS,
+    CRIT_MULTIPLIER,
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
@@ -126,6 +128,8 @@ class BrambleSeeds(BaseWeapon):
         self.patches: list[dict] = []
         self._enemy_hit_cooldowns: dict[int, float] = {}
         self._draw_surface: pygame.Surface | None = None
+        # Stored as int so the generic upgrade() += delta path works; truthy at L5.
+        self.overgrowth = 0
 
     @property
     def effective_patch_radius(self) -> float:
@@ -155,13 +159,14 @@ class BrambleSeeds(BaseWeapon):
             tendrils.append(points)
         return thorn_angles, tendrils
 
-    def spawn_patch(self, center: Vector2) -> None:
+    def spawn_patch(self, center: Vector2, duration_override: float | None = None) -> None:
+        duration = duration_override if duration_override is not None else self.patch_duration
         thorn_angles, tendrils = self._build_patch_visuals()
         self.patches.append({
             "center": Vector2(center),
             "radius": self.effective_patch_radius,
-            "remaining": self.patch_duration,
-            "duration": self.patch_duration,
+            "remaining": duration,
+            "duration": duration,
             "tick_timer": 0.0,
             "damage": self._scaled_dot_damage(self.base_damage),
             "thorn_angles": thorn_angles,
@@ -221,15 +226,21 @@ class BrambleSeeds(BaseWeapon):
                 continue
             can_damage = self._enemy_hit_cooldowns.get(enemy.sprite_id, 0.0) <= 0.0
             if can_damage:
+                is_crit = random.random() < self.owner.crit_chance
+                actual_damage = tick_damage * (CRIT_MULTIPLIER if is_crit else 1.0)
                 to_attacker = self.owner.pos - enemy.pos
                 hit_dir = to_attacker.normalize() if to_attacker.length_squared() > 0 else None
                 enemy.take_damage(
-                    tick_damage,
+                    actual_damage,
                     hit_direction=hit_dir,
                     attacker=self.owner,
                     knockback_force=0,
                 )
                 self._enemy_hit_cooldowns[enemy.sprite_id] = BRAMBLE_SEEDS_TICK_INTERVAL
+                # Overgrowth: a killed enemy blooms a short-lived secondary patch.
+                if self.overgrowth and not enemy.alive():
+                    bloom_dur = self.patch_duration * BRAMBLE_SEEDS_OVERGROWTH_DURATION_PCT
+                    self.spawn_patch(enemy.pos.copy(), duration_override=bloom_dur)
             if enemy.alive() and hasattr(enemy, "apply_slow"):
                 enemy.apply_slow(
                     BRAMBLE_SEEDS_SLOW_MULTIPLIER,
@@ -238,7 +249,7 @@ class BrambleSeeds(BaseWeapon):
                 )
             if can_damage and self.effect_group is not None:
                 from src.entities.effects import DamageNumber, HitSpark
-                DamageNumber(enemy.pos - Vector2(0, 20), tick_damage, [self.effect_group])
+                DamageNumber(enemy.pos - Vector2(0, 20), actual_damage, [self.effect_group], is_crit=is_crit)
                 HitSpark(enemy.pos, BRAMBLE_SEEDS_HIT_SPARK_COLOR, [self.effect_group])
 
     def _tick_patches(self, dt: float) -> None:

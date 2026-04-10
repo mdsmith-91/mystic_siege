@@ -36,7 +36,7 @@ class BaseWeapon(ABC):
 
     def _scaled_dot_damage(self, base_damage: float) -> float:
         """Apply owner scaling for damage-over-time effects."""
-        return base_damage * getattr(self.owner, "dot_damage_multiplier", 1.0)
+        return base_damage * self.owner.damage_multiplier * getattr(self.owner, "dot_damage_multiplier", 1.0)
 
     def _get_effective_projectile_pierce(self) -> int:
         """Compose weapon, projectile-family, and arrow-family pierce bonuses."""
