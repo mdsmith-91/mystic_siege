@@ -1,0 +1,114 @@
+name: Bug report
+description: Report a gameplay, UI, input, performance, or progression bug.
+title: "[Bug]: "
+labels:
+  - type:bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for concrete breakage, regressions, or incorrect behavior.
+        For gameplay bugs, include the exact path used to reproduce it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+      placeholder: Example - Controller-owned upgrade menu accepts input from the wrong device.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Gameplay
+        - Multiplayer
+        - Weapons
+        - Heroes
+        - Enemies
+        - UI / HUD
+        - Input / Controller
+        - Performance
+        - Audio
+        - Save / Progression
+        - Docs
+        - Tooling
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Which run mode is affected?
+      options:
+        - Solo
+        - Co-op
+        - Both
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Normal
+        - P3 - Nice to have
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Give exact steps.
+      placeholder: |
+        1. Start a 2P run from Lobby
+        2. Pick two heroes
+        3. Level up Player 2
+        4. Press confirm on Player 1 controller
+        5. Observe input bleed
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: regression-risk
+    attributes:
+      label: Regression risk / related systems
+      description: Note if this touches solo behavior, HUD, camera, input, saves, or scene flow.
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification expectation
+      options:
+        - label: Requires `python run_check.py`
+        - label: Requires manual solo verification
+        - label: Requires manual multiplayer verification
+        - label: Requires controller-specific verification
+        - label: Requires save/progression verification
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes / screenshots / logs

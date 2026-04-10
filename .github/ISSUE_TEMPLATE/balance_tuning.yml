@@ -1,0 +1,91 @@
+name: Balance / tuning task
+description: Track multiplayer scaling, spawn fairness, weapon tuning, pacing, or difficulty changes.
+title: "[Balance]: "
+labels:
+  - type:balance
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for tuning work.
+        Include the exact mode, scenario, and target behavior.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What feels off or unbalanced?
+      placeholder: Example - 3P and 4P runs feel under-pressured after early waves.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options:
+        - Enemy density / wave pressure
+        - Spawn fairness
+        - Hero balance
+        - Weapon balance
+        - Pickup balance
+        - Camera / HUD readability
+        - Progression / XP pacing
+        - Difficulty scaling
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Run mode
+      options:
+        - Solo
+        - 2P
+        - 3P
+        - 4P
+        - Mixed / multiple
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: Target outcome
+      description: What should the experience feel like after the change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: knobs
+    attributes:
+      label: Candidate knobs / systems to inspect
+      description: Prefer `settings.py` tunables and centralized systems.
+      placeholder: |
+        - wave_manager spawn counts
+        - enemy stat multipliers
+        - spawn retry / edge placement logic
+        - pickup drop rates
+
+  - type: textarea
+    id: test-plan
+    attributes:
+      label: Test plan
+      description: Describe how you will judge the tuning.
+      placeholder: |
+        - 1P smoke test
+        - 2P comparison run
+        - 4P edge-spread run
+        - record time-to-death or wave pressure notes
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification expectation
+      options:
+        - label: Requires repeat manual runs
+        - label: Requires 1P baseline comparison
+        - label: Requires multiplayer comparison
+        - label: Requires follow-up issue if only partially tuned

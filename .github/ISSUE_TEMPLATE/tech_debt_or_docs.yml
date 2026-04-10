@@ -1,0 +1,77 @@
+name: Tech debt / docs / workflow
+description: Track documentation cleanup, repo hygiene, refactors, and developer workflow tasks.
+title: "[Maintenance]: "
+labels:
+  - type:chore
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for technical debt, documentation updates, workflow improvements, and low-risk maintenance work.
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: What needs to be cleaned up or clarified?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Documentation
+        - Refactor
+        - Repo hygiene
+        - Planning / issue workflow
+        - Tooling
+        - Testing
+        - Performance cleanup
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Docs
+        - Tooling
+        - Gameplay
+        - Multiplayer
+        - UI / HUD
+        - Input / Controller
+        - Weapons
+        - Enemies
+        - Save / Progression
+        - Audio
+        - Performance
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this matters
+      description: What confusion, risk, or maintenance burden does this remove?
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done means
+      description: Define the expected final state.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification expectation
+      options:
+        - label: Requires `python run_check.py`
+        - label: Requires doc review against current codebase
+        - label: Requires manual smoke test because behavior may be affected

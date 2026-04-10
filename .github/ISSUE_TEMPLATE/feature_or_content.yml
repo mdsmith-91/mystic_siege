@@ -1,0 +1,107 @@
+name: Feature or content request
+description: Track a new feature, hero, weapon, enemy, pickup, or player-facing improvement.
+title: "[Feature]: "
+labels:
+  - type:feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for new gameplay features or content additions.
+        Keep one issue focused on one outcome.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be added or improved?
+      placeholder: Example - Add a new enemy with a distinct role that fits current wave pacing.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature category
+      options:
+        - Hero
+        - Weapon
+        - Enemy
+        - Pickup / Consumable
+        - UI / HUD
+        - Input / Controller
+        - Progression
+        - Audio / Visual
+        - Tooling / Workflow
+        - Documentation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Main area
+      options:
+        - Gameplay
+        - Multiplayer
+        - Weapons
+        - Heroes
+        - Enemies
+        - UI / HUD
+        - Input / Controller
+        - Performance
+        - Audio
+        - Save / Progression
+        - Docs
+        - Tooling
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope impact
+      options:
+        - Solo
+        - Co-op
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: player-value
+    attributes:
+      label: Player value
+      description: Why is this worth adding?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true for this to be done?
+      placeholder: |
+        - Added to the correct registry/factory path
+        - Tunables live in settings.py
+        - Upgrade metadata is wired if needed
+        - README/docs updated if player-facing
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints / design rules
+      description: Note project-specific constraints like preserving 1P behavior or avoiding hardcoded values.
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification expectation
+      options:
+        - label: Requires `python run_check.py`
+        - label: Requires manual solo verification
+        - label: Requires manual multiplayer verification
+        - label: Requires HUD/UI verification
+        - label: Requires balance follow-up issue

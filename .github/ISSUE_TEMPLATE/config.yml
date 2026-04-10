@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project documentation and setup
+    url: https://github.com/mdsmith-91/mystic_siege/blob/main/README.md
+    about: Read the README and project docs before opening setup or usage issues.
