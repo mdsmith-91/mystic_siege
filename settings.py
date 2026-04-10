@@ -908,6 +908,7 @@ DARK_GOBLIN_ENEMY_DATA = {
     "damage": 8,
     "xp_value": 3,
     "behavior": "chase",
+    "sprite_scale": (24, 24),
 }
 
 # Wraith: medium-speed chaser with a periodic lunge burst.

@@ -377,6 +377,9 @@ class UpgradeMenu:
                     "spell_damage_multiplier_pct": "SPL",
                     "physical_damage_multiplier_pct": "PHYS",
                     "projectile_pierce_bonus": "PRC",
+                    "dot_damage_bonus_pct": "DOT",
+                    "area_size_bonus_pct": "AOE",
+                    "base_damage_bonus_pct": "DMG",
                 }
                 symbol_text = stat_symbols.get(choice["stat"], "?")
 
