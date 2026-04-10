@@ -14,6 +14,7 @@ from settings import (
     HUD_WARNING_COLOR, HUD_REVIVE_RING_BG_COLOR, HUD_DOWNED_HP_BAR_COLOR,
     HUD_PANEL_TUPLES,
     PICKUP_BATTLE_RAGE, PICKUP_HASTE, PICKUP_IRON_SKIN,
+    UPGRADE_CARD_STAT_COLORS,
 )
 from src.utils.resource_loader import ResourceLoader
 
@@ -374,40 +375,40 @@ class HUD:
         stat_lines = []
         if player.speed > player.base_speed:
             spd_pct = int(player.speed / player.base_speed * 100) if player.base_speed else 100
-            stat_lines.append((f"SPD  {spd_pct}%", (100, 200, 255)))
+            stat_lines.append((f"SPD  {spd_pct}%", UPGRADE_CARD_STAT_COLORS["speed_pct"]))
         if player.armor > 0:
-            stat_lines.append((f"ARM  {int(player.armor)}%", (160, 160, 160)))
+            stat_lines.append((f"ARM  {int(player.armor)}%", UPGRADE_CARD_STAT_COLORS["armor"]))
         if player.damage_taken_multiplier < player.base_damage_taken_multiplier:
             damage_reduction = 1.0 - (player.damage_taken_multiplier / player.base_damage_taken_multiplier)
-            stat_lines.append((f"DR  {round(damage_reduction * 100)}%", (180, 205, 225)))
+            stat_lines.append((f"DR  {round(damage_reduction * 100)}%", UPGRADE_CARD_STAT_COLORS["armor"]))
         if player.cooldown_reduction > 0:
-            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", (255, 140, 60)))
+            stat_lines.append((f"CDR  {int(player.cooldown_reduction * 100)}%", UPGRADE_CARD_STAT_COLORS["cooldown_reduction"]))
         if player.damage_multiplier > 1.0:
             damage_pct = round((player.damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DMG  +{damage_pct}%", (210, 50, 50)))
+            stat_lines.append((f"DMG  +{damage_pct}%", UPGRADE_CARD_STAT_COLORS["base_damage_bonus_pct"]))
         if player.crit_chance > CRIT_CHANCE_BASE:
-            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", (255, 220, 60)))
+            stat_lines.append((f"CRIT  {round(player.crit_chance * 100)}%", UPGRADE_CARD_STAT_COLORS["crit_chance"]))
         if player.regen_rate > 0:
-            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", (120, 255, 120)))
+            stat_lines.append((f"REGEN  {player.regen_rate:.1f}/s", UPGRADE_CARD_STAT_COLORS["regen_rate"]))
         if player.spell_damage_multiplier > 1.0:
             spell_pct = round((player.spell_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"SPELL  +{spell_pct}%", (160, 80, 255)))
+            stat_lines.append((f"SPELL  +{spell_pct}%", UPGRADE_CARD_STAT_COLORS["spell_damage_multiplier_pct"]))
         if player.physical_damage_multiplier > 1.0:
             physical_pct = round((player.physical_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"PHYS  +{physical_pct}%", (180, 120, 80)))
+            stat_lines.append((f"PHYS  +{physical_pct}%", UPGRADE_CARD_STAT_COLORS["physical_damage_multiplier_pct"]))
         if getattr(player, "dot_damage_multiplier", 1.0) > 1.0:
             dot_pct = round((player.dot_damage_multiplier - 1.0) * 100)
-            stat_lines.append((f"DOT  +{dot_pct}%", (220, 80, 30)))
+            stat_lines.append((f"DOT  +{dot_pct}%", UPGRADE_CARD_STAT_COLORS["dot_damage_bonus_pct"]))
         if getattr(player, "area_size_bonus_pct", 0.0) > 0.0:
             aoe_pct = round(player.area_size_bonus_pct * 100)
-            stat_lines.append((f"AOE  +{aoe_pct}%", (80, 200, 180)))
+            stat_lines.append((f"AOE  +{aoe_pct}%", UPGRADE_CARD_STAT_COLORS["area_size_bonus_pct"]))
         if player.projectile_pierce_bonus > 0:
-            stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", (150, 180, 255)))
+            stat_lines.append((f"PRC  +{int(player.projectile_pierce_bonus)}", UPGRADE_CARD_STAT_COLORS["projectile_pierce_bonus"]))
         if player.xp_multiplier > 1.0:
             xp_pct = round((player.xp_multiplier - 1.0) * 100)
-            stat_lines.append((f"XP  +{xp_pct}%", (80, 220, 255)))
+            stat_lines.append((f"XP  +{xp_pct}%", UPGRADE_CARD_STAT_COLORS["xp_multiplier_pct"]))
         if player.pickup_radius > PICKUP_RADIUS:
-            stat_lines.append((f"RAD  {int(player.pickup_radius)}", (212, 175, 55)))
+            stat_lines.append((f"RAD  {int(player.pickup_radius)}", UPGRADE_CARD_STAT_COLORS["pickup_radius_pct"]))
         return stat_lines
 
     def _buff_lines(self, player) -> list[tuple[str, tuple[int, int, int]]]:

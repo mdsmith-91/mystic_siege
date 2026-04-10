@@ -209,7 +209,7 @@ class SettingsMenu:
                 button_width,
                 button_height,
             ),
-            "text":  "Show Stat Bonuses: " + ("ON" if self.show_stat_bonuses else "OFF"),
+            "text":  "Show Stats: " + ("ON" if self.show_stat_bonuses else "OFF"),
             "value": self.show_stat_bonuses,
         }
         self.buttons["show_damage_numbers"] = {
@@ -294,7 +294,7 @@ class SettingsMenu:
         elif button_name == "show_stat_bonuses":
             new_value = not self.buttons["show_stat_bonuses"]["value"]
             self.buttons["show_stat_bonuses"]["value"] = new_value
-            self.buttons["show_stat_bonuses"]["text"] = "Show Stat Bonuses: " + ("ON" if new_value else "OFF")
+            self.buttons["show_stat_bonuses"]["text"] = "Show Stats: " + ("ON" if new_value else "OFF")
             self.show_stat_bonuses = new_value
             self.save_system.set_setting("show_stat_bonuses", new_value)
         elif button_name == "show_damage_numbers":

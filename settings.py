@@ -1113,6 +1113,41 @@ UPGRADE_MENU_CARD_DESC_FONT_SIZE = 13 # points; supports 4-card layout without c
 UPGRADE_MENU_SYMBOL_FONT_SIZE = 34    # points; icon-area symbol text size
 UPGRADE_MENU_HINT_FONT_SIZE = 16      # points; bottom ownership hint
 
+# Upgrade card icon bands and matching HUD stat text. These are deliberately
+# darker than the original card colors so white lettering remains readable.
+UPGRADE_CARD_STAT_COLORS = {
+    "max_hp": (35, 125, 55),
+    "speed_pct": (35, 115, 155),
+    "pickup_radius_pct": (145, 112, 35),
+    "armor": (105, 105, 115),
+    "regen_rate": (45, 135, 65),
+    "xp_multiplier_pct": (35, 130, 155),
+    "cooldown_reduction": (160, 80, 35),
+    "crit_chance": (150, 125, 35),
+    "spell_damage_multiplier_pct": (95, 55, 165),
+    "physical_damage_multiplier_pct": (125, 80, 55),
+    "projectile_pierce_bonus": (80, 110, 170),
+    "dot_damage_bonus_pct": (150, 65, 30),
+    "area_size_bonus_pct": (35, 135, 125),
+    "base_damage_bonus_pct": (145, 45, 45),
+}
+UPGRADE_CARD_WEAPON_COLORS = {
+    "ArcaneBolt": (75, 40, 130),
+    "BrambleSeeds": (30, 95, 45),
+    "Caltrops": (105, 65, 25),
+    "ChainFlail": (95, 92, 105),
+    "HolyNova": (125, 92, 20),
+    "Sword": (82, 90, 105),
+    "FlameBlast": (170, 70, 20),
+    "FrostRing": (30, 105, 165),
+    "HexOrb": (55, 30, 95),
+    "LightningChain": (110, 105, 20),
+    "Longbow": (115, 70, 30),
+    "ShadowKnives": (85, 65, 55),
+    "Spear": (85, 96, 112),
+    "ThrowingAxes": (90, 88, 98),
+}
+
 # Shared HUD chrome. HUD_EMPTY_SLOT_BG_COLOR is intentionally reused by empty
 # weapon slots and HP/XP bar backgrounds so the slot-panel treatment stays matched.
 HUD_EMPTY_SLOT_BG_COLOR = (40, 40, 40)    # RGB shared panel/slot background tint
