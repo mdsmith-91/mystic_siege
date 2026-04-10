@@ -40,6 +40,11 @@ AUDIO_CHANNELS = 2              # channel count; 2 = stereo
 AUDIO_BUFFER = 512              # samples per chunk on Windows/macOS; lower = lower latency, higher = safer playback
 AUDIO_BUFFER_LINUX = 1024       # samples per chunk on Linux; tuned for 48kHz stability
 
+# Music routing. These paths are intentionally settings-driven so real loops can
+# be dropped in without changing scene code.
+MENU_MUSIC_PATH = "assets/audio/music/menu_loop.ogg"
+GAME_MUSIC_PATH = "assets/audio/music/game_loop.ogg"
+
 
 # ============================================================================
 # Shared Colors And Visual Tokens

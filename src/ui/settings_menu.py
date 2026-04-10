@@ -387,6 +387,8 @@ class SettingsMenu:
             self.confirm_dialog_open = False
             self.music_volume = self.save_system.get_setting("music_volume")
             self.sfx_volume = self.save_system.get_setting("sfx_volume")
+            AudioManager.instance().set_music_volume(self.music_volume)
+            AudioManager.instance().set_sfx_volume(self.sfx_volume)
             self.show_fps = self.save_system.get_setting("show_fps")
             self.show_stat_bonuses = self.save_system.get_setting("show_stat_bonuses")
             self.fps_cap = clamp_fps_cap(self.save_system.get_setting("fps_cap"), self.fps_cap_limit)

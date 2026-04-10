@@ -6,13 +6,23 @@ from src.game_scene import GameScene
 from src.ui.game_over import GameOver
 from src.ui.settings_menu import SettingsMenu
 from src.ui.stats_menu import StatsMenu
+from src.utils.audio_manager import AudioManager
 from settings import (
     STATE_MENU, STATE_CLASS_SELECT, STATE_PLAYING, STATE_GAMEOVER,
     STATE_SETTINGS, STATE_STATS, STATE_LOBBY,
+    MENU_MUSIC_PATH, GAME_MUSIC_PATH,
 )
 
 # Scenes recreated from scratch on every entry (never reuse stale instance)
 _ALWAYS_FRESH = frozenset({STATE_PLAYING, STATE_GAMEOVER, STATE_LOBBY, STATE_CLASS_SELECT})
+_MENU_MUSIC_SCENES = frozenset({
+    STATE_MENU,
+    STATE_LOBBY,
+    STATE_CLASS_SELECT,
+    STATE_GAMEOVER,
+    STATE_SETTINGS,
+    STATE_STATS,
+})
 
 
 class SceneManager:
@@ -33,6 +43,8 @@ class SceneManager:
         """Internal method to switch to a scene, creating it if needed."""
         if scene_name not in self.scenes:
             raise ValueError(f"Unknown scene: {scene_name}")
+
+        self._sync_music_for_scene(scene_name)
 
         # Always-fresh scenes are discarded before (re)creation
         if scene_name in _ALWAYS_FRESH:
@@ -56,6 +68,14 @@ class SceneManager:
                 self.scenes[scene_name] = StatsMenu()
 
         self.current_scene = self.scenes[scene_name]
+
+    @staticmethod
+    def _sync_music_for_scene(scene_name: str) -> None:
+        audio_manager = AudioManager.instance()
+        if scene_name == STATE_PLAYING:
+            audio_manager.play_music(GAME_MUSIC_PATH)
+        elif scene_name in _MENU_MUSIC_SCENES:
+            audio_manager.play_music(MENU_MUSIC_PATH)
 
     def switch_to(self, scene_name, **kwargs):
         """Switch to a new scene, passing kwargs to scene constructor if needed."""
