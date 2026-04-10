@@ -30,6 +30,7 @@ from settings import (
     HEX_ORB_PROJECTILE_SIZE,
     HEX_ORB_PROJECTILE_SPEED,
     HEX_ORB_SPREAD,
+    HEX_ORB_STAGGER,
     HEX_ORB_TARGETING_RANGE,
     HEX_ORB_TRAIL_COLOR,
     HEX_ORB_TRAIL_LENGTH,
@@ -165,6 +166,7 @@ class HexOrb(BaseWeapon):
         self.cursed_enemies: dict[object, float] = {}
         self._curse_display_timers: dict[object, float] = {}
         self._curse_crit_states: dict[object, bool] = {}
+        self.pending_orbs: list[dict] = []
 
     def apply_curse(self, enemy, effect_group=None) -> None:
         if not enemy.alive():
@@ -270,13 +272,27 @@ class HexOrb(BaseWeapon):
             else:
                 angle_offset = (index - (self.projectile_count - 1) / 2) * HEX_ORB_SPREAD
                 direction = base_direction.rotate(angle_offset)
-            self._spawn_orb(direction)
+            delay = index * HEX_ORB_STAGGER
+            if delay == 0:
+                self._spawn_orb(direction)
+            else:
+                self.pending_orbs.append({"delay": delay, "direction": direction})
 
     def update(self, dt: float) -> None:
         super().update(dt)
+        i = 0
+        while i < len(self.pending_orbs):
+            orb = self.pending_orbs[i]
+            orb["delay"] -= dt
+            if orb["delay"] <= 0.0:
+                self._spawn_orb(orb["direction"])
+                self.pending_orbs.pop(i)
+            else:
+                i += 1
         self._tick_curses(dt)
 
     def on_owner_inactive(self):
+        self.pending_orbs.clear()
         self.cursed_enemies.clear()
         self._curse_display_timers.clear()
         self._curse_crit_states.clear()

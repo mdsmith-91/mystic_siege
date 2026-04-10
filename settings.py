@@ -427,6 +427,7 @@ HEX_ORB_PROJECTILE_LIFETIME = 2.2     # seconds before despawn
 HEX_ORB_BASE_PROJECTILE_COUNT = 1     # orbs per cast at level 1
 HEX_ORB_BASE_PIERCE = 0               # enemies pierced per orb before upgrades/passives
 HEX_ORB_SPREAD = 12                   # degrees between multiple orbs
+HEX_ORB_STAGGER = 0.14                # seconds between orbs in a volley; separates upgraded casts visually
 HEX_ORB_CURSE_DAMAGE = 6.0            # damage per second while cursed
 HEX_ORB_CURSE_DURATION = 3.0          # seconds curse remains after application/refresh
 HEX_ORB_CURSE_RADIUS = 0              # pixels; 0 keeps curse single-target until upgraded
@@ -740,6 +741,7 @@ CALTROPS_THROW_SPEED = 540              # pixels/second; flight speed of thrown 
 CALTROPS_PROJECTILE_LIFETIME = 0.35     # seconds before caltrops settle into hazards
 CALTROPS_BASE_PROJECTILE_COUNT = 3      # caltrops thrown per cast at level 1
 CALTROPS_SPREAD = 18                    # degrees across the thrown fan
+CALTROPS_EXTRA_PROJECTILE_SPREAD_BONUS = 4  # degrees added per extra caltrop so upgraded fans do not stack
 CALTROPS_PATCH_RADIUS = 28              # pixels; catch zone for enemies stepping into hazard
 CALTROPS_PATCH_DURATION = 6.0           # seconds each hazard remains active
 CALTROPS_TICK_INTERVAL = 0.5            # seconds between repeated hazard hits
@@ -1098,6 +1100,8 @@ CLASS_SELECT_CARD_GAP_Y = 26          # pixels between card rows
 CLASS_SELECT_MAX_COLUMNS = 4          # card columns before wrapping — 4-wide grid gives a 4+4 layout for up to 8 heroes
 CLASS_SELECT_CARD_PADDING_X = 16      # pixels; inner horizontal card padding
 CLASS_SELECT_COLOR_BAND_HEIGHT = 32   # pixels; color accent band height on each card
+CLASS_SELECT_HERO_SPRITE_SIZE = (48, 48)  # pixels; front-facing hero preview on each card
+CLASS_SELECT_HERO_SPRITE_MARGIN = 10      # pixels; inset from card bottom/right edges
 
 # Upgrade menu layout (UI-only). These are sized to keep 4 cards clear of the
 # shared 1P–4P HUD panel rectangles, including the 2x2 4-player corner layout.

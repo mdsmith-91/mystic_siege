@@ -9,6 +9,8 @@ from settings import (
     CLASS_SELECT_COLOR_BAND_HEIGHT,
     CLASS_SELECT_GRID_BOTTOM_MARGIN,
     CLASS_SELECT_GRID_TOP_Y,
+    CLASS_SELECT_HERO_SPRITE_MARGIN,
+    CLASS_SELECT_HERO_SPRITE_SIZE,
     CLASS_SELECT_MAX_COLUMNS,
     CLASS_SELECT_PROMPT_MARGIN_TOP,
     CLASS_SELECT_TITLE_Y,
@@ -25,6 +27,7 @@ from settings import (
 )
 from src.core.player_slot import PlayerSlot
 from src.utils.input_manager import InputManager
+from src.utils.spritesheet import Spritesheet
 
 _WEAPON_DISPLAY_NAMES = {
     "ArcaneBolt": "Arcane Bolt",
@@ -59,6 +62,7 @@ class ClassSelect:
         self.keyboard_active = False
         self._controller_nav_vector = (0, 0)
         self._controller_nav_timer = 0.0
+        self._hero_card_sprites: dict[str, pygame.Surface] = {}
 
         self.font_title = pygame.font.SysFont("serif", TITLE_FONT_SIZE)
         self.font_large = pygame.font.SysFont("serif", 28)
@@ -444,6 +448,17 @@ class ClassSelect:
     def _weapon_display_name(self, weapon_id: str) -> str:
         return _WEAPON_DISPLAY_NAMES.get(weapon_id, weapon_id)
 
+    def _hero_card_sprite(self, hero: dict) -> pygame.Surface:
+        sprite_path = hero["sprite"]
+        if sprite_path not in self._hero_card_sprites:
+            sheet = Spritesheet(sprite_path, 32, 32)
+            front_frame = sheet.get_frame(0, 0)
+            self._hero_card_sprites[sprite_path] = pygame.transform.scale(
+                front_frame,
+                CLASS_SELECT_HERO_SPRITE_SIZE,
+            )
+        return self._hero_card_sprites[sprite_path]
+
     def _handle_controller_button(self, event: pygame.event.Event) -> None:
         if not self.slot_queue_active:
             return
@@ -661,6 +676,13 @@ class ClassSelect:
             for j, line in enumerate(weapon_lines):
                 weapon_surface = self.font_small.render(line, True, (255, 255, 255))
                 screen.blit(weapon_surface, (content_left, weapon_label_y + 18 + j * text_line_height))
+
+            hero_sprite = self._hero_card_sprite(hero)
+            sprite_pos = (
+                card_rect.right - CLASS_SELECT_HERO_SPRITE_MARGIN - hero_sprite.get_width(),
+                card_rect.bottom - CLASS_SELECT_HERO_SPRITE_MARGIN - hero_sprite.get_height(),
+            )
+            screen.blit(hero_sprite, sprite_pos)
 
             if is_locked:
                 overlay = pygame.Surface((card_rect.width, card_rect.height), pygame.SRCALPHA)

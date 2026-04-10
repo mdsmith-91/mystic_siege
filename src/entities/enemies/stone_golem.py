@@ -95,8 +95,6 @@ class StoneGolem(Enemy):
         for player in self.player_list:
             if not player.is_alive:
                 continue
-            if player.iframes > 0:
-                continue
             if (player.pos - self.pos).length_squared() > radius_sq:
                 continue
             actual_damage = player.take_damage(self.shockwave_damage)

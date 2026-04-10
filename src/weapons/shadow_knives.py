@@ -260,13 +260,22 @@ class ShadowKnives(BaseWeapon):
             weapon=self,
         )
 
+    def _effective_targeting_range_sq(self) -> float:
+        outward_reach = SHADOW_KNIVES_PROJECTILE_SPEED * SHADOW_KNIVES_OUTWARD_DURATION
+        projectile_allowance = max(SHADOW_KNIVES_PROJECTILE_SIZE) / 2
+        effective_range = min(
+            SHADOW_KNIVES_TARGETING_RANGE,
+            outward_reach + projectile_allowance,
+        )
+        return effective_range * effective_range
+
     def fire(self):
         if not self.enemy_group:
             return
 
         nearest_enemy = None
         nearest_distance_sq = float("inf")
-        max_range_sq = SHADOW_KNIVES_TARGETING_RANGE * SHADOW_KNIVES_TARGETING_RANGE
+        max_range_sq = self._effective_targeting_range_sq()
 
         for enemy in self.enemy_group:
             distance_sq = (enemy.pos - self.owner.pos).length_squared()

@@ -25,6 +25,7 @@ from settings import (
     CALTROPS_PROJECTILE_LIFETIME,
     CALTROPS_PROJECTILE_OUTLINE_COLOR,
     CALTROPS_PROJECTILE_SIZE,
+    CALTROPS_EXTRA_PROJECTILE_SPREAD_BONUS,
     CALTROPS_SLOW_DURATION,
     CALTROPS_SLOW_MULTIPLIER,
     CALTROPS_SPREAD,
@@ -177,6 +178,10 @@ class Caltrops(BaseWeapon):
             weapon=self,
         )
 
+    def _effective_spread(self) -> float:
+        extra_projectiles = max(0, self.projectile_count - CALTROPS_BASE_PROJECTILE_COUNT)
+        return CALTROPS_SPREAD + extra_projectiles * CALTROPS_EXTRA_PROJECTILE_SPREAD_BONUS
+
     def fire(self) -> None:
         if not self.enemy_group:
             return
@@ -200,12 +205,13 @@ class Caltrops(BaseWeapon):
         base_direction = base_direction.normalize()
 
         AudioManager.instance().play_sfx(AudioManager.WEAPON_CALTROPS)
+        spread = self._effective_spread()
 
         for index in range(self.projectile_count):
             if self.projectile_count == 1:
                 direction = base_direction
             else:
-                angle_offset = (index - (self.projectile_count - 1) / 2) * CALTROPS_SPREAD
+                angle_offset = (index - (self.projectile_count - 1) / 2) * spread
                 direction = base_direction.rotate(angle_offset)
             self._spawn_caltrop(direction)
 
