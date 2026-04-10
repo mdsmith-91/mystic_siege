@@ -16,7 +16,7 @@ Mystic Siege is a playable survivor-style action game with:
 - 8 hero classes with unique passives and starting weapons
 - 14 weapon types with 5 upgrade levels each
 - 7 enemy types with distinct behaviors
-- settings-driven world pickups and temporary buffs
+- settings-driven world pickups: Health Potion, Magnet, and three 10-second timed buffs (Battle Rage, Iron Skin, Haste)
 - 30-minute wave progression with victory at 30:00
 - persistent machine-local meta stats in `saves/progress.json`
 - controller support, hot-plug detection, and remappable controller confirm/back/pause bindings
@@ -75,7 +75,7 @@ Not yet verified:
 - Multiplayer balance is not tuned yet. Enemy density, wave pressure, and scaling are not finalized for larger parties.
 - Save/progression is machine-aggregated, not person-specific. Multiplayer runs still update one shared `saves/progress.json`.
 - XP orb collection is shared-pool. On equal-distance ties, the lower slot index wins.
-- World pickups are shared-world objects. The nearest eligible player collects them; health potions require missing HP, timed buffs stay on the collector, and `Magnet` retargets current XP orbs toward the closest eligible player per orb without changing shared-pool XP semantics.
+- World pickups are shared-world objects. The nearest eligible player collects them. Health Potion requires missing HP. Timed buffs (Battle Rage, Iron Skin, Haste) stay on the collector for 10 seconds. `Magnet` retargets current XP orbs toward the closest eligible player per orb without changing shared-pool XP semantics.
 - Automated gameplay regression coverage is minimal; most meaningful verification is still manual.
 
 ## Hero Classes
@@ -83,7 +83,7 @@ Not yet verified:
 | Hero | HP | Speed | Armor | Passive | Starting Weapon |
 |------|----|-------|-------|---------|-----------------|
 | Knight | 150 | 180 | 15 | +10% armor bonus, knockback immune | Sword |
-| Wizard | 80 | 240 | 0 | +20% spell damage, +10% crit chance | Arcane Bolt |
+| Wizard | 80 | 240 | 2 | +20% spell damage, +10% crit chance | Arcane Bolt |
 | Friar | 110 | 210 | 5 | 0.1 HP per XP gained, +20% area effect size | Holy Nova |
 | Ranger | 95 | 225 | 3 | +10% crit chance, arrows pierce +1 enemy | Longbow |
 | Barbarian | 120 | 205 | 8 | +20% physical damage, +10% max HP | Throwing Axes |
@@ -254,7 +254,7 @@ mystic_siege/
 
 - Multiplayer balance/scaling is not yet tuned for 2–4 player parties. Enemy density and wave pressure reflect the solo design.
 - Wide-spread party positions near map edges may still need spawn fairness tuning under high player counts.
-- Some older planning docs in the repo (e.g., `MULTIPLAYER_READINESS_AUDIT.md`) are partially historical and should not be treated as current implementation status.
+- `docs/MULTIPLAYER_READINESS_AUDIT.md` is a historical planning doc written at 0% multiplayer implementation. Do not treat it as current implementation status.
 
 ## License
 

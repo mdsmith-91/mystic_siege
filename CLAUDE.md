@@ -49,15 +49,17 @@ mystic_siege/
 │   ├── game.py                    # Main loop, delegates to SceneManager
 │   ├── scene_manager.py           # Scene switching (menu/lobby/class select/game/gameover)
 │   ├── game_scene.py              # Main gameplay — wires all systems together
-│   ├── core/                          # (created in Phase 10) Plain data types, no pygame dependency
+│   ├── core/                          # Plain data types, no pygame dependency
 │   │   └── player_slot.py         # PlayerSlot dataclass — slot index, input_config, hero_data, color
 │   ├── entities/
 │   │   ├── base_entity.py         # Base pygame.sprite.Sprite with hp/damage/movement
 │   │   ├── player.py              # Player — WASD movement, weapons list, passives
 │   │   ├── enemy.py               # Base enemy — chase/ranged behaviors, knockback
 │   │   ├── projectile.py          # Projectile — homing, pierce, lifetime
+│   │   ├── arcane_bolt_projectile.py  # Specialized ArcaneBolt projectile with layered visual and trail
 │   │   ├── xp_orb.py              # XP orb — bobbing animation, auto-collect
-│   │   ├── effects.py             # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect
+│   │   ├── pickup.py              # World pickup sprite — bob animation, collection trigger
+│   │   ├── effects.py             # DamageNumber, HitSpark, DeathExplosion, LevelUpEffect, PickupText
 │   │   └── enemies/
 │   │       ├── __init__.py        # Enemy registry + create_enemy helper for shared spawn construction
 │   │       ├── skeleton.py        # hp=30, slow, slight random wander; uses skeleton.png 4-dir sheet
@@ -74,16 +76,24 @@ mystic_siege/
 │   │   ├── arcane_bolt.py         # Homing projectiles, 1-3 bolts, pierce at L4
 │   │   ├── holy_nova.py           # Expanding ring, area damage, no projectile
 │   │   ├── sword.py               # Timed melee sword sweeps with active hit windows
+│   │   ├── spear.py               # Timed thrust with extend/hold/retract, pierce, knockback
 │   │   ├── flame_blast.py         # Cone sweep, burn DOT, swing visual
 │   │   ├── frost_ring.py          # Expanding freeze ring, immobilizes enemies
 │   │   ├── lightning_chain.py     # Chains between enemies, jagged arc visual
-│   │   └── longbow.py             # Physical arrow shots, straight-line ranged damage
+│   │   ├── longbow.py             # Physical arrow shots, straight-line ranged damage
+│   │   ├── caltrops.py            # Scattered physical traps with slow and bleed
+│   │   ├── chain_flail.py         # Tethered flail swing with extend/sweep/retract timing
+│   │   ├── hex_orb.py             # Slow curse projectile with damage over time
+│   │   ├── bramble_seeds.py       # Thrown seeds creating lingering thorn patches
+│   │   ├── shadow_knives.py       # Fast returning knives with strong crit identity
+│   │   └── throwing_axes.py       # Spinning thrown axes with shorter range and heavier hits
 │   ├── systems/
 │   │   ├── wave_manager.py        # Enemy spawning timeline, elite mode, multiplayer spawn anchoring
 │   │   ├── xp_system.py           # XP collection, leveling, orb pickup radius
 │   │   ├── upgrade_system.py      # Upgrade card pool, passive/weapon choices
 │   │   ├── collision.py           # All collision detection — iframes, knockback, multiplayer player loops
 │   │   ├── camera.py              # Single-target follow + multi-target zoomed camera
+│   │   ├── pickup_system.py       # World pickup spawning, drop rates, and collection logic
 │   │   └── save_system.py         # JSON meta-progression + controller binding persistence in saves/progress.json
 │   ├── ui/
 │   │   ├── hud.py                 # Shared in-run HUD panels, revive indicators, threat arrows
@@ -100,7 +110,8 @@ mystic_siege/
 │       ├── spritesheet.py         # Spritesheet frame/animation extractor
 │       ├── audio_manager.py       # Singleton audio with silent fallback
 │       ├── input_manager.py       # Singleton controller input — owned routing, synthetic menu keys, per-profile bindings
-│       └── placeholder_assets.py  # Generates stylized placeholder sprites/icons and sine-wave WAVs for missing assets
+│       ├── placeholder_assets.py  # Generates stylized placeholder sprites/icons and sine-wave WAVs for missing assets
+│       └── fps_cap.py             # Refresh-rate detection and FPS cap clamping helper
 └── assets/
     ├── sprites/heroes|enemies|projectiles|effects|ui/
     ├── audio/sfx|music/
@@ -145,7 +156,7 @@ mystic_siege/
 | Hero | HP | Speed | Armor | Starting Weapon |
 |---|---:|---:|---:|---|
 | Knight | 150 | 180 | 15 | Sword |
-| Wizard | 80 | 240 | 0 | ArcaneBolt |
+| Wizard | 80 | 240 | 2 | ArcaneBolt |
 | Friar | 110 | 210 | 5 | HolyNova |
 | Ranger | 95 | 225 | 3 | Longbow |
 | Barbarian | 120 | 205 | 8 | ThrowingAxes |
@@ -169,10 +180,9 @@ Current hero architecture rules:
 - Base stats, sprite path, starting weapon, passive text, and passive gameplay config
   should all be authored in the hero record first.
 - Hero passive behavior is now declarative via each hero dict's `passives` mapping.
-  Current passive keys include `armor_bonus_pct`, `damage_taken_multiplier`,
-  `knockback_immune`, `crit_chance_bonus`, `spell_damage_bonus_pct`,
-  `physical_damage_bonus_pct`, `projectile_pierce_bonus`, `arrow_pierce_bonus`,
-  `dot_damage_bonus_pct`, `heal_per_xp`, `max_hp_bonus`, and `max_hp_bonus_pct`.
+  Passive keys are defined alongside their constants in `settings.py`; the current
+  set covers armor, crit, pierce, spell/physical/DOT bonuses, heal-per-xp,
+  area-size, knockback immunity, and max-HP modifiers.
 - Do not add new hero-name `if/elif` passive branches in gameplay systems when a
   passive can be expressed as hero config and read by `Player`, `XPSystem`, or
   collision/runtime code.
@@ -191,6 +201,7 @@ Current hero architecture rules:
 - LightningChain — chains to up to 6 enemies
 - Longbow — fast physical arrows, cadence/pierce/crit upgrades
 - ShadowKnives — fast physical returning knives with strong crit identity
+- Spear — timed thrust with extend/hold/retract timing, pierce, and knockback
 - ThrowingAxes (`Throwing Axes`) — spinning thrown axes with shorter range and heavier hits
 
 The weapon roster can exceed the simultaneous carry cap. `MAX_WEAPON_SLOTS` still
@@ -222,13 +233,13 @@ Current weapon architecture rules:
 
 ### Enemies
 
-- Skeleton — slow melee, slight random wander
-- Goblin — fast melee, spawns in packs
-- Wraith — phases walls, periodic lunge
-- PlagueBat — arc movement, can split into mini bats
-- CursedKnight — frontal shield reduces incoming damage
-- LichFamiliar — orbits the target and fires slow enemy projectiles
-- StoneGolem — high-HP mini-boss
+- Skeleton (`Skeleton`) — slow melee, slight random wander
+- Goblin (`Goblin`) — fast melee, spawns in packs
+- Wraith (`Wraith`) — phases walls, periodic lunge
+- Plague Bat (`Bat`) — arc movement, can split into mini bats
+- Cursed Knight (`Knight`) — frontal shield reduces incoming damage
+- Lich Familiar (`Lich`) — orbits the target and fires slow enemy projectiles
+- Stone Golem (`Golem`) — high-HP mini-boss
 
 Current enemy architecture rules:
 
@@ -556,20 +567,20 @@ the coding rules above.
 
 ---
 
-## Multiplayer Migration Rules
+## Multiplayer Architecture Rules
 
-These rules apply to all multiplayer-related changes.
+These rules apply to all multiplayer-related changes. The local co-op migration is
+complete; these are ongoing constraints for new content and system work.
 
 1. **No new hard-coded P1/P2 architecture.** Do not introduce new parameters or fields such as
    `hero_p1`, `hero_p2`, `p1_config`, `p2_config`, or logic branches tied to exactly two players.
 
 2. **Prefer collections over named players.** Multiplayer systems should pass
-   `list[PlayerSlot]`. The central abstraction is **`PlayerSlot`** (defined in
-   docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1). All systems pass `list[PlayerSlot]`.
-   Do not invent alternatives.
+   `list[PlayerSlot]`. The central abstraction is **`PlayerSlot`** (`src/core/player_slot.py`).
+   All systems pass `list[PlayerSlot]`. Do not invent alternatives.
 
-3. **Keep 1P as the baseline verification path.** Every multiplayer refactor must preserve
-   the current single-player gameplay loop before expanding to 2P+.
+3. **Keep 1P as the baseline verification path.** Every change to multiplayer systems must
+   preserve the current single-player gameplay loop before expanding to 2P+.
 
 4. **Scene transition data must stay lightweight and serialization-friendly.** See the Scene
    Transition Pattern section — the same constraint applies to multiplayer flows.
@@ -577,16 +588,12 @@ These rules apply to all multiplayer-related changes.
 5. **Input must stay decoupled from player identity.** Do not assume a player is defined by
    keyboard, controller, or slot alone. Input device, slot, and hero choice are separate concepts.
 
-6. **Do not add networking systems yet.** No `NetworkManager`, rollback, peer discovery,
+6. **Do not add networking systems.** No `NetworkManager`, rollback, peer discovery,
    or netcode stubs unless explicitly requested.
 
-7. **Be ruthless about removing single-player-only assumptions** from systems that are being
-   generalized, but do not break the actual single-player runtime behavior while doing so.
-
-> For concrete data structures (`PlayerSlot`, `input_config`), per-phase file lists,
-> HUD layout, camera, revive mechanics, and the full verification checklist, see
-> **docs/MULTIPLAYER_IMPLEMENTATION_V2.md** — it is the authoritative design document for
-> Phases 10–14. CLAUDE.md carries the principles; V2 carries the implementation detail.
+> For original `PlayerSlot`/`input_config` design rationale, HUD layout decisions, and
+> revive/camera intent, see **docs/MULTIPLAYER_IMPLEMENTATION_V2.md** — the reference design
+> doc for the multiplayer migration. It is a design reference, not a current-status authority.
 
 ---
 
@@ -598,8 +605,7 @@ These rules apply to all multiplayer-related changes.
    the game still works in 1P:
 
    ```text
-   Current 1P: Menu → Lobby → Class Select → Game → Level Up → Death/Game Over
-   Planned multiplayer-capable path: Menu → Lobby → Class Select (queued) → Game → Level Up → Death/Game Over
+   Menu → Lobby → Class Select → Game → Level Up → Death/Game Over
    ```
 
 3. **For multiplayer-related changes, verification order is mandatory:**
@@ -735,16 +741,10 @@ For audit/planning tasks, prefer this output order:
 - Pause/menu ownership should be explicit, not accidental
 - **Revive/downed depends on `Player.take_damage()` intercepting lethal damage before `BaseEntity.kill()` runs.**
   `BaseEntity.take_damage()` calls `self.kill()` immediately when HP hits 0. The current
-  `Player.take_damage()` override now branches by runtime mode: multiplayer players use
-  the downed/revive path, while solo players enter the legacy dying/fade flow without
-  delegating lethal damage to `BaseEntity.take_damage()`. Treat this override as a
-  requirement whenever player death logic is touched.
-- **InputManager synthetic events now carry source metadata, but owned-menu filtering is still
-  required.** `_post_key()` / `_post_keyup()` include `synthetic_controller_event` and
-  `source_instance_id` in the payload, but menu code must still reject or explicitly route those
-  events to preserve ownership semantics. `ClassSelect` and `UpgradeMenu` currently protect their
-  owned flows by filtering keyboard paths and using per-joystick polling / `JOYBUTTONDOWN` for the
-  active controller instead of trusting global synthetic confirm events.
+  `Player.take_damage()` override branches by runtime mode: multiplayer players use the
+  downed/revive path, while solo players enter the legacy dying/fade flow without delegating
+  lethal damage to `BaseEntity.take_damage()`. Treat this override as a requirement whenever
+  player death logic is touched.
 - **SceneManager caches ClassSelect — slot-queue routing requires a fresh instance per pass.**
   `STATE_CLASS_SELECT` is now in the always-create-fresh set, which is required for the slot-queue flow
   (ClassSelect visited N times, once per player). Keep it that way unless the scene is redesigned.
@@ -760,13 +760,12 @@ For audit/planning tasks, prefer this output order:
 - Don't restructure the scene graph or game loop unless explicitly asked — it touches everything
 - Don't add `settings.py` constants speculatively — only add a constant when code actually needs it
 - Don't silently change gameplay feel (speeds, damage, timing) while fixing unrelated bugs — those are separate PRs
-- Don't add new hard-coded P1/P2 code while working on multiplayer migration
+- Don't add new hard-coded P1/P2 code — use `list[PlayerSlot]` for all multiplayer-facing systems
 - Don't introduce networking architecture unless explicitly requested
 - Don't leave temporary debug prints or cheat toggles in finished code
 - Don't claim manual testing happened unless it actually happened
 - Don't change save-data shape casually or without noting compatibility impact
-- Don't implement `PlayerSlot` or `input_config` differently from the shape defined in
-  docs/MULTIPLAYER_IMPLEMENTATION_V2.md Section 4.1 — consistency across phases is critical
+- Don't implement `PlayerSlot` or `input_config` differently from the shape in `src/core/player_slot.py`
 
 ---
 
@@ -784,8 +783,7 @@ Track progress here as phases are completed:
 - [x] Phase 8 — Additional enemies & effects
 - [x] Phase 9 — Polish & meta (save system, settings menu)
 
-### Planned Multiplayer Phases
-*(See docs/MULTIPLAYER_IMPLEMENTATION_V2.md for per-phase file lists, pseudocode, and verification steps)*
+### Multiplayer Phases
 
 - [x] Phase 10 — Multiplayer foundation (V2 Phase 1: PlayerSlot + input abstraction)
 - [x] Phase 11 — Lobby scene (V2 Phase 2: LobbyScene + SceneManager wiring)

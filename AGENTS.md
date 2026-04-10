@@ -4,8 +4,7 @@
 
 This file is the neutral agent-facing project guide for Mystic Siege. It is the
 Codex-friendly entry point for repository rules and should stay aligned with
-`CLAUDE.md`, `MULTIPLAYER_IMPLEMENTATION_V2.md`, and
-`MULTIPLAYER_READINESS_AUDIT.md`.
+`CLAUDE.md` and `MULTIPLAYER_IMPLEMENTATION_V2.md`.
 
 ## Project Summary
 
@@ -81,9 +80,12 @@ recomputing `self.vel` in a way that the parent class then overwrites.
 
 ## Authoritative References
 
-- `MULTIPLAYER_IMPLEMENTATION_V2.md`: authoritative multiplayer design and phase plan
-- `MULTIPLAYER_READINESS_AUDIT.md`: codebase audit (partially historical — written at 0% multiplayer implementation); current risk inventory and migration guidance
+- `MULTIPLAYER_IMPLEMENTATION_V2.md`: reference design doc for the multiplayer migration — `PlayerSlot`/`input_config` design rationale, HUD layout, revive/camera intent. Design reference, not current-status authority.
 - `CLAUDE.md`: expanded project context and developer guidance
+
+## Historical Docs
+
+- `docs/MULTIPLAYER_READINESS_AUDIT.md`: codebase audit written at 0% multiplayer implementation. The migration is now complete; this doc is historical context only and should not be treated as a current risk inventory.
 
 ## Current Multiplayer Clarifications
 
