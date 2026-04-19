@@ -44,3 +44,4 @@ secrets.*
 test_debug.py
 test_xp_orbs.py
 final_test.py
+.aider*
