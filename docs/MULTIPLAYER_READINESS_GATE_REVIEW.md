@@ -149,7 +149,7 @@ The code places player 3 in the bottom-left, not in the V2 guide’s top-row arr
 4. Remove remaining temporary compatibility branches once the unified lobby path is stable.
 5. Update the authoritative docs so they match the code.
 6. Only then resume content additions.
-7. ~~Add a 4th hero before treating 4P as a practical gameplay target.~~ **Resolved:** the roster now has 5 heroes (Knight, Wizard, Friar, Ranger, Barbarian). 4P is unblocked.
+7. ~~Add a 4th hero before treating 4P as a practical gameplay target.~~ **Resolved:** the roster now has 8 heroes, so 4P is unblocked by roster size.
 
 ## Verification Appendix
 

@@ -132,10 +132,12 @@ class ClassSelect:
         return True
 
     def _mouse_input_enabled(self) -> bool:
-        return True
+        if not self.slot_queue_active:
+            return True
+        return len(self.slots) + len(self.confirmed_slots) == 1
 
     def _mouse_button_input_enabled(self) -> bool:
-        return True
+        return self._mouse_input_enabled()
 
     def _locked_hero_slots(self) -> dict[str, PlayerSlot]:
         locked: dict[str, PlayerSlot] = {}
@@ -328,18 +330,18 @@ class ClassSelect:
 
         cfg = self.current_slot.input_config
         if cfg is None or cfg["type"] != "keyboard":
-            return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
+            return "Use your assigned controls to choose  -  Confirm selects  -  Back or ESC returns"
 
         total_slots = len(self.slots) + len(self.confirmed_slots)
         if cfg.get("scheme") == "wasd":
             if total_slots == 1:
                 return "WASD to move  -  Space, Enter, or click confirms  -  ESC, Left Shift, or Back click backs"
-            return "WASD or click to choose  -  Space or click confirms  -  ESC, Left Shift, or Back click backs"
+            return "WASD to choose  -  Space confirms  -  ESC or Left Shift returns"
 
         if cfg.get("scheme") == "arrows":
-            return "Arrow keys or click to choose  -  Enter or click confirms  -  ESC, Right Shift, or Back click backs"
+            return "Arrow keys to choose  -  Enter confirms  -  ESC or Right Shift returns"
 
-        return "Use your assigned keyboard controls or click to choose  -  Click Confirm/Back or press ESC"
+        return "Use your assigned keyboard controls to choose  -  Confirm selects  -  Back or ESC returns"
 
     def _controller_hint_text(self) -> str:
         cfg = self.current_slot.input_config
@@ -353,11 +355,11 @@ class ClassSelect:
                     f"  -  reconnect and press {input_manager.describe_help_binding('confirm')} or {input_manager.describe_help_binding('start')} to reclaim"
                 )
             return (
-                f"Controller {joystick_id + 1}: stick, D-pad, or click to choose"
-                f"  -  {input_manager.describe_help_binding('confirm')} or click confirms"
-                f"  -  {input_manager.describe_help_binding('back')}, ESC, or Back click backs"
+                f"Controller {joystick_id + 1}: stick or D-pad to choose"
+                f"  -  {input_manager.describe_help_binding('confirm')} confirms"
+                f"  -  {input_manager.describe_help_binding('back')} returns"
             )
-        return "Use your assigned controls or click to choose  -  Click Confirm/Back or press ESC"
+        return "Use your assigned controls to choose  -  Confirm selects  -  Back or ESC returns"
 
     def _keyboard_event_matches_current_slot(self, event: pygame.event.Event) -> bool:
         if not self.slot_queue_active:

@@ -48,7 +48,6 @@ class Game:
         filename = f"screenshot_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
         filepath = screenshot_dir / filename
         pygame.image.save(self.screen, filepath)
-        print(f"Screenshot saved: {filepath}")
         self._screenshot_notice_timer = SCREENSHOT_NOTICE_DURATION
 
     def _update_screenshot_notice(self, dt: float) -> None:

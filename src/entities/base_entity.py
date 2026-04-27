@@ -1,6 +1,14 @@
 import pygame
 from pygame.math import Vector2
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from settings import (
+    ENTITY_HEALTH_BAR_BG_COLOR,
+    ENTITY_HEALTH_BAR_HEIGHT,
+    ENTITY_HEALTH_BAR_HIGH_COLOR,
+    ENTITY_HEALTH_BAR_LOW_COLOR,
+    ENTITY_HEALTH_BAR_MED_COLOR,
+    ENTITY_HEALTH_BAR_WIDTH,
+    ENTITY_HEALTH_BAR_Y_OFFSET,
+)
 
 class BaseEntity(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, groups: tuple):
@@ -39,29 +47,44 @@ class BaseEntity(pygame.sprite.Sprite):
     def draw_health_bar(self, surface, offset: Vector2):
         """Draw a health bar above the entity."""
         if self.hp < self.max_hp:
-            # Calculate health bar dimensions
-            bar_width = 30
-            bar_height = 4
-            bar_x = self.rect.centerx - bar_width // 2
-            bar_y = self.rect.top - 10
+            bar_x = self.rect.centerx - ENTITY_HEALTH_BAR_WIDTH // 2
+            bar_y = self.rect.top - ENTITY_HEALTH_BAR_Y_OFFSET
 
             # Draw background
-            pygame.draw.rect(surface, (50, 50, 50), (bar_x - offset.x, bar_y - offset.y, bar_width, bar_height))
+            pygame.draw.rect(
+                surface,
+                ENTITY_HEALTH_BAR_BG_COLOR,
+                (
+                    bar_x - offset.x,
+                    bar_y - offset.y,
+                    ENTITY_HEALTH_BAR_WIDTH,
+                    ENTITY_HEALTH_BAR_HEIGHT,
+                ),
+            )
 
             # Calculate filled portion
             hp_ratio = self.hp / self.max_hp
-            filled_width = int(bar_width * hp_ratio)
+            filled_width = int(ENTITY_HEALTH_BAR_WIDTH * hp_ratio)
 
             # Set color based on health percentage
             if hp_ratio > 0.5:
-                color = (60, 200, 80)  # Green
+                color = ENTITY_HEALTH_BAR_HIGH_COLOR
             elif hp_ratio > 0.25:
-                color = (255, 255, 0)  # Yellow
+                color = ENTITY_HEALTH_BAR_MED_COLOR
             else:
-                color = (220, 60, 60)  # Red
+                color = ENTITY_HEALTH_BAR_LOW_COLOR
 
             # Draw filled portion
-            pygame.draw.rect(surface, color, (bar_x - offset.x, bar_y - offset.y, filled_width, bar_height))
+            pygame.draw.rect(
+                surface,
+                color,
+                (
+                    bar_x - offset.x,
+                    bar_y - offset.y,
+                    filled_width,
+                    ENTITY_HEALTH_BAR_HEIGHT,
+                ),
+            )
 
     @property
     def is_alive(self):
